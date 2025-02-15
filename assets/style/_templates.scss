@@ -1,0 +1,128 @@
+//temaplates
+$main-color: #00B074;
+
+$index: calc(1vw + 1vh);
+$conversion-factor: 24px;
+
+@function size($px) {
+  @return calc($px / $conversion-factor * $index);
+}
+
+@mixin main-container() {
+  width: 100%;
+  padding-right: size(120px);
+  padding-left: size(120px);
+  @media screen and (max-width: 1050px) {
+    padding-right: 20px;
+    padding-left: 20px;
+  }
+}
+
+@mixin btn($py, $px, $fon, $color) {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: size($py) size($px);
+  background: $fon;
+  border-radius: $border-radius;
+  color: $color;
+  font-size: size(18px);
+  font-weight: 600;
+  line-height: 100%;
+  word-wrap: break-word;
+  white-space: nowrap;
+  transition: all 0.5s ease-in-out;
+  @media screen and (max-width: 1050px) {
+    font-size: 16px;
+    padding: $py $px;
+  }
+}
+
+@mixin flex-start {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+}
+
+@mixin flex-center {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+@mixin flex-stretch {
+  display: flex;
+  align-items: stretch;
+}
+
+@mixin flex-end {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+}
+
+@mixin flex-col-center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+}
+
+@mixin flex-col-start {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+@mixin flex-col-stretch {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+}
+
+@mixin flex-col-end {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+
+.flex-start {
+  @include flex-start();
+}
+
+.flex-center {
+  @include flex-center();
+}
+
+.flex-end {
+  @include flex-end();
+}
+
+.flex-col-start {
+  @include flex-col-start();
+}
+
+.flex-col-center {
+  @include flex-col-center();
+}
+
+.flex-col-end {
+  @include flex-col-end();
+}
+
+.flex-stretch {
+  @include flex-stretch;
+}
+
+@media screen and (max-width: 1050px) {
+  .not-mobile {
+    display: none !important;
+  }
+}
+
+@media screen and (min-width: 1050px) {
+  .not-desktop {
+    display: none !important;
+  }
+}
