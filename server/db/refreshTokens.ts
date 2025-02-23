@@ -1,6 +1,6 @@
 import {prisma} from "~/server/db/index";
 
-export const createOrUpdateRefreshToken = async (data) => {
+export const createOrUpdateRefreshToken = async (data: any) => {
     const existingToken = await prisma.refreshToken.findUnique({
         where: {token: data.token},
     });
@@ -22,7 +22,7 @@ export const createOrUpdateRefreshToken = async (data) => {
     }
 };
 
-export const getRefreshTokenByToken = (token) => {
+export const getRefreshTokenByToken = (token: any) => {
     return prisma.refreshToken.findUnique({
         where: {
             token
@@ -30,7 +30,7 @@ export const getRefreshTokenByToken = (token) => {
     })
 }
 
-export const removeRefreshToken = (token) => {
+export const removeRefreshToken = (token: any) => {
     return prisma.refreshToken.delete({
         where: {
             token

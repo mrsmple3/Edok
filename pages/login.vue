@@ -76,6 +76,7 @@
 import {useForm} from 'vee-validate'
 import {toTypedSchema} from '@vee-validate/zod'
 import * as z from 'zod'
+import {useUserStore} from "~/store/user.store";
 
 const formSchema = toTypedSchema(z.object({
   username: z.string().min(2).max(50),
@@ -86,8 +87,31 @@ const form = useForm({
   validationSchema: formSchema,
 })
 
-const onSubmit = form.handleSubmit((values) => {
-  console.log('Form submitted!', values);
+const router = useRouter();
+
+const authStore = useUserStore();
+
+const onSubmit = form.handleSubmit( async(values) => {
+  let response = ref();
+  if (values.username.includes('@')) {
+    response.value = await authStore.login({
+      email: values.username,
+      password_hash: values.password
+    });
+  } else {
+    response.value = await authStore.login({
+      phone: values.username,
+      password_hash: values.password
+    });
+  }
+  //TODO: ADD TOAST there to errors and success
+  if (!response.value.body.error) {
+    await authStore.initAuth().then(()=> {
+      router.push('/');
+    });
+  } else {
+    console.log(response.value.message);
+  }
 })
 
 </script>

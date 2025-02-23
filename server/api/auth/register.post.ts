@@ -1,29 +1,53 @@
 import {createUser} from "~/server/db/users";
 import {userTransformer} from "~/server/transformers/user";
 import {sendError} from "h3";
+import {generateTokens, sendRefreshToken} from "~/server/utils/jwt";
+import {createOrUpdateRefreshToken} from "~/server/db/refreshTokens";
 
 export default defineEventHandler(async (event) => {
     try {
-        const {name, email, phone, password, role} = await readBody(event);
+        const {name, email, phone, password_hash, role} = await readBody(event);
 
-        if (!password && !email || !phone) {
-            return {message: 'Необходимо указать email или телефон'};
+        if (!password_hash && !email || !phone) {
+            return {
+                code: '400',
+                body: {
+                    error: 'Необходимо указать email или телефон'
+                }
+            };
         }
 
         let userData = {
-            email,
-            phone,
-            password,
-            role,
-        }
+                email,
+                phone,
+                password_hash,
+                role,
+            };
 
         const user = await createUser(userData);
 
-        return userTransformer(user);
+        const {accessToken, refreshToken} = generateTokens(user);
+
+        // Save it inside the database
+        await createOrUpdateRefreshToken({
+            token: refreshToken,
+            userId: user.id
+        });
+
+        sendRefreshToken(event, refreshToken);
+
+        return {
+            code: 200,
+            body: {
+                access_token: accessToken,
+                user: userTransformer(user)
+            }
+
+        };
     } catch (error: any) {
-        return sendError(event, createError({
-            statusCode: 500,
-            message: 'Ошибка создания пользователя: ' + error.message
-        }));
+        return {
+            code: 500,
+            error: 'Ошибка регистрации: ' + error
+        }
     }
 });

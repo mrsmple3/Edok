@@ -10,22 +10,25 @@ datasource db {
 }
 
 model User {
-  id                  Int      @id @default(autoincrement())
-  email               String   @unique
-  phone               String?
-  password_hash       String
-  company_type        String
-  region              String
-  district            String
-  city                String
-  address             String
-  iban                String
-  bank_name           String
-  mfo                 String
-  business_activity   String
-  partner_organization String
-  agreed_to_terms     Boolean
-  RefreshToken        RefreshToken[]
+  id                   Int            @id @default(autoincrement())
+  email                String?        @unique
+  phone                String?        @unique
+  password_hash        String
+  role                 String
+  company_type         String?
+  region               String?
+  district             String?
+  city                 String?
+  address              String?
+  iban                 String?
+  bank_name            String?
+  mfo                  String?
+  business_activity    String?
+  partner_organization String?
+  agreed_to_terms      Boolean?
+  RefreshToken         RefreshToken[]
+  Document             Document[]
+  Lead                 Lead[]
 }
 
 model RefreshToken {
@@ -38,4 +41,33 @@ model RefreshToken {
 
   @@index([userId])
   @@map("refresh_token")
+}
+
+model Document {
+  id        Int      @id @default(autoincrement())
+  title     String
+  filePath  String?
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id])
+  createdAt DateTime @default(now())
+  Lead      Lead[]
+
+  @@index([userId])
+}
+
+model Lead {
+  id                Int      @id @default(autoincrement())
+  type              String
+  quantity          Int
+  documetnsQuantity Int
+  moderators        String
+  createdAt         DateTime @default(now())
+  contragent        String
+  author            User     @relation(fields: [authorId], references: [id])
+  authorId          Int
+  documents         Document @relation(fields: [documentsId], references: [id], onDelete: Cascade)
+  documentsId       Int
+
+  @@index([authorId])
+  @@index([documentsId])
 }

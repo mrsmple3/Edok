@@ -3,7 +3,7 @@
     <TableHeader class="w-full h-[80px]">
       <TableRow class="border-none">
         <TableHead class="t-head">
-          <Checkbox :checked="isAllActive" class="bg-[#FFFFFF] border-[#DBDBDB]" @update:checked="allActive"/>
+          <Checkbox :checked="isAllActive" class="bg-[#FFFFFF] border-[#DBDBDB]" @update:checked="isAllActive = !isAllActive"/>
         </TableHead>
         <TableHead class="t-head">
           Название
@@ -53,15 +53,15 @@ const props = defineProps({
   }
 });
 
-const isAllActive = ref(props.tableData.every((item: any) => item.isActive));
+const isAllActive = ref(false);
 
-const allActive = () => {
-  props.tableData.forEach((item: any) => {
-    item.isActive = !item.isActive;
-  });
-
-  isAllActive.value = !isAllActive.value;
-}
+// const allActive = () => {
+//   props.tableData.forEach((item: any) => {
+//     item.isActive = !item.isActive;
+//   });
+//
+//   isAllActive.value = !isAllActive.value;
+// }
 </script>
 
 

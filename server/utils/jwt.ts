@@ -1,15 +1,16 @@
-import jwt from "jsonwebtoken";
+import jwt from 'jsonwebtoken';
+import {User} from "@prisma/client";
 
-const generateAccessToken = (user) => {
+const generateAccessToken = (user: User) => {
     const config = useRuntimeConfig();
     return jwt.sign({userId: user.id}, config.jwtAccessSecret, {expiresIn: '15m'});
 }
-const generateRefreshToken = (user) => {
+const generateRefreshToken = (user: User) => {
     const config = useRuntimeConfig();
     return jwt.sign({userId: user.id}, config.jwtRefreshSecret, {expiresIn: '4h'});
 }
 
-export const generateTokens = (user) => {
+export const generateTokens = (user: User) => {
     const accessToken = generateAccessToken(user);
     const refreshToken = generateRefreshToken(user);
 
@@ -19,7 +20,7 @@ export const generateTokens = (user) => {
     }
 }
 
-export const decodeRefreshToken = (token) => {
+export const decodeRefreshToken = (token: string) => {
     const config = useRuntimeConfig();
 
     try {
@@ -29,7 +30,7 @@ export const decodeRefreshToken = (token) => {
     }
 }
 
-export const decodeAccessToken = (token) => {
+export const decodeAccessToken = (token: string) => {
     const config = useRuntimeConfig();
 
     try {
@@ -39,7 +40,7 @@ export const decodeAccessToken = (token) => {
     }
 }
 
-export const sendRefreshToken = (event, token) => {
+export const sendRefreshToken = (event: any, token: any) => {
     setCookie(event, "refreshToken", token, {
         httpOnly: true,
         sameSite: true

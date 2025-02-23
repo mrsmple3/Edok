@@ -43,17 +43,20 @@
       <NuxtLink class="breadcrumbs" to="">Угоди</NuxtLink>
     </div>
     <div class="page__block  pt-[40px] pb-[40px] px-[42px]">
-      <LeadsFirstType v-if="!chatState" :invoices="invoices"/>
-      <LeadsSecondType v-else :invoices="invoices"/>
+      <LeadsFirstType v-if="!chatState" :invoices="userStore.leadsGetter"/>
+      <LeadsSecondType v-else :invoices="userStore.leadsGetter"/>
     </div>
   </div>
 </template>
 
 <script lang="ts" setup>
+import {useUserStore} from "~/store/user.store";
+
 definePageMeta({
   layout: 'page',
 });
 const chatState = useState('isChat');
+
 const invoices = [
   {
     name: '2100359852 Commodity - Corn - DAP ЧЕРНОМОРСКАЯ - ХЮРРЕМ ООО (38852547)',
@@ -92,6 +95,14 @@ const invoices = [
     concordants: '1'
   },
 ]
+
+const userStore = useUserStore();
+
+onBeforeMount( ()=> {
+  callOnce(async () => {
+    await userStore.getLeads(userStore.userGetter.id);
+  })
+})
 </script>
 
 

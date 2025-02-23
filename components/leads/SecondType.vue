@@ -43,19 +43,22 @@
 </template>
 
 <script lang="ts" setup>
+import type {Document, User} from "~/store/user.store";
+
 defineProps({
   invoices: {
     type: Array as PropType<{
-      name: string,
+      id: number,
       type: string,
-      quantity: string,
-      docs: string,
+      quantity: number,
+      documentsQuantity: number,
       moderators: string,
-      data: string,
-      contragents: string,
-      author: string,
-      status: string,
-      concordants: string
+      createdAt: Date,
+      contragent: string,
+      documentsId: number,
+      authorId: number,
+      author: User,
+      documents: Document,
     }[]>,
     required: true
   }

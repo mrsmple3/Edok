@@ -1,236 +1,168 @@
-interface TokenRefresh {
-    refresh: string,// JWT
-    access: string,// JWT
+import {useFetchApi} from "~/utils/api";
+
+export interface ApiResponse<T> {
+    code: number;
+    body: T;
 }
 
 export interface User {
-    id: string,// UUID
-    first_name: string,// Nullable
-    last_name: string,// Nullable
-    patronymic_name: string,// Nullable
-    phone: string,// Nullable
-    avatar: string,// Nullable, URI
-    role: string,// Nullable
+    id?: number,// UUID
+    email?: string,// Nullable
+    phone?: string,// Nullable
+    password_hash: string,// Nullable
+    company_type?: string,// Nullable
+    region?: string,// Nullable
+    district?: string,// Nullable
+    city?: string,// Nullable
+    address?: string,// Nullable
+    iban?: string,// Nullable
+    bank_name?: string,// Nullable
+    mfo?: string,// Nullable
+    business_activity?: string,// Nullable
+    partner_organization?: string,// Nullable
+    agreed_to_terms?: boolean,// Nullable
 }
 
-export interface UserUpdate {
-    first_name: string;
-    last_name: string;
-    patronymic_name: string;
-    avatar: string;
-    birthday: string;
-    email: string;
+export interface Document {
+    id: string,
+    title: string,
+    file: File,
+    userId: string,
 }
 
-export interface RestaurantMetaData {
-    id: string; // UUID
-    rest_id: string; // UUID
-    wifi_name?: string; // Nullable
-    wifi_pass?: string; // Nullable
-    phone?: string; // Nullable
-    photo?: string; // Nullable, URI
-    description?: string; // Nullable
-    start_work_time?: string; // Nullable
-    end_work_time?: string; // Nullable
+export interface Lead {
+    id: number,
+    type: string,
+    quantity: number,
+    documentsQuantity: number,
+    moderators: string,
+    createdAt: Date,
+    contragent: string,
+    documentsId: number,
+    authorId: number,
+    author: User,
+    documents: Document,
 }
 
-export interface ReturnLoginOrRegisterUser {
-    access: string,
-    refresh: string,
-    id_user: string,
-    role: string,
-}
+export interface UserResponse extends ApiResponse<{ user: User }> {}
+export interface LeadsResponse extends ApiResponse<{ leads: Lead[] }> {}
+export interface TokenResponse extends ApiResponse<{ token: string }> {}
+export interface ErrorResponse extends ApiResponse<{ error: string }> {}
 
 const defaultValue:
     {
-        url: string,
-        anonim: Anonim,
-        media: RestaurantMetaData,
-        returnUser: ReturnLoginOrRegisterUser,
-        refresh: TokenRefresh,
-        user: User
+        token: string,
+        user: User,
+        leads: Lead[],
     } = {
-    url: "https://api.teastymenu.ru/",
-    anonim: {
-        id: '',
-        session_id: '',
-        avatar_url: '',
-        name: '',
-    },
-    media: {
-        id: '',
-        rest_id: '',
-        wifi_name: '',
-        wifi_pass: '',
-        phone: '',
-        photo: '',
-        discription: '',
-        start_work_time: '',
-        end_work_time: '',
-    },
-    returnUser: {
-        access: '',
-        refresh: '',
-        id_user: '',
-        role: '',
-    },
-    refresh: {
-        refresh: '',
-        access: '',
-    },
+    token: '',
     user: {
-        id: '',
-        first_name: '',
-        last_name: '',
-        patronymic_name: '',
+        id: null,
+        email: '',
         phone: '',
-        avatar: '',
-        role: '',
-    }
+        password_hash: '',
+        company_type: '',
+        region: '',
+        district: '',
+        city: '',
+        address: '',
+        iban: '',
+        bank_name: '',
+        mfo: '',
+        business_activity: '',
+        partner_organization: '',
+        agreed_to_terms: false,
+    },
+    leads: [],
 }
 
-export const useAuthStore = defineStore('auth', {
+export const useUserStore = defineStore('auth', {
     state: () => defaultValue,
     getters: {
         userGetter: (state): User => state.user,
-        isUserAdmin: state => state.user.role.includes('admin'),
-        isAuthenticated: (state): boolean => !!state.user.id,
-        currentUser: (state) => state.user.id ? state.user : state.anonim,
-        currentUserId: (state) => state.user.id ? state.user.id : state.anonim.session_id,
-        currentAvatar: (state) => state.user.id ? state.user.avatar : state.anonim.avatar_url,
-        currentName: (state) => state.user.id ? state.user.first_name : state.anonim.name,
-        currentUserAvatar: (state) => (order) => order.user ? order.user.avatar : order.anonim.avatar_url,
+        tokenGetter: (state): string => state.token,
+        isAuth: (state): boolean => !!state.token,
+        leadsGetter: (state): Lead[] => state.leads,
     },
     actions: {
-        async createAnonimUser(anonim: Anonim) {
+        async register(user: User) {
             try {
-                const response = await $fetch(`${this.url}api/anonim/`, {
-                    method: "POST",
-                    body: {
-                        session_id: anonim.session_id,
-                        meta_data: anonim.media_data,
-                    }
+                const response = await $fetch<UserResponse>('/api/auth/register', {
+                   method: 'POST',
+                    body: user,
                 });
-                this.$patch({anonim: response});
-            } catch (error) {
-                console.error("Error creating anonim user:", error);
-            }
-        },
-        async fetchAnonimUser(session_id: string) {
-            try {
-                const response = await $fetch(`${this.url}api/anonim/${session_id}/`);
-                if (response.message === 'This session_id not found anonim user') {
-                    return false;
-                }
-                this.$patch({anonim: response});
-            } catch (error) {
-                console.error("Error fetching anonim user:", error);
-            }
-        },
-        async fetchMedia(rest_id: string) {
-            try {
-                const response: RestaurantMetaData = await $fetch(`${this.url}api/user/restaurant/meta/${rest_id}/`);
-                this.$patch({media: response});
-            } catch (error) {
-                console.error("Error fetching media:", error);
-            }
-        },
-        async register({phone, password, role, session_id, meta_data}) {
-            try {
-                const response: ReturnLoginOrRegisterUser = await $fetch('https://api.teastymenu.ru/api/register/', {
-                    method: 'POST',
-                    body: {
-                        phone: phone,
-                        password: password,
-                        role: role,
-                        session_id: session_id,
-                        meta_data: meta_data
-                    },
-                });
-                this.$patch({returnUser: response});
-                localStorage.setItem('access_token', response.access);
-                localStorage.setItem('refresh_token', response.refresh);
-            } catch (error) {
-                console.log('Ошибка при регистрации:', error);
-            }
-        },
-        async login({phone, password, media_data = 'test_meta_data', remember = true}) {
-            try {
-                const response: ReturnLoginOrRegisterUser = await $fetch('https://api.teastymenu.ru/api/login/', {
-                    method: 'POST',
-                    body: {
-                        phone: phone,
-                        password: password,
-                        meta_data: media_data,
-                    },
-                });
-                this.$patch({returnUser: response});
-
-                localStorage.setItem('access_token', response.access);
-                localStorage.setItem('refresh_token', response.refresh);
-            } catch (error) {
-                console.log('Ошибка при входе:', error);
-            }
-        },
-        async refreshToken() {
-            try {
-                const refreshToken = localStorage.getItem('refresh_token');
-                if (!refreshToken) throw new Error('Refresh token not found');
-
-                const response: TokenRefresh = await useFetchApi('https://api.teastymenu.ru/api/refresh/', {
-                    method: 'POST',
-                    body: {
-                        refresh: refreshToken,
-                    },
-                });
-
-                this.$patch({refresh: response});
-                localStorage.setItem('access_token', response.access);
-                localStorage.setItem('refresh_token', response.refresh);
-            } catch (error) {
-                console.log('Ошибка при обновлении токена:', error);
-            }
-        },
-        async initAuth() {
-            try {
-                await this.refreshToken().then(async () => {
-                    await this.getUser();
-                });
-            } catch (error) {
-                console.error("Error initializing auth:", error);
+                this.$patch({user: response.body.user});
+                return response;
+            } catch (error: any) {
                 throw error;
             }
         },
-        async getUser() {
+        async login(user: User) {
             try {
-                const response: User = await useFetchApi("https://api.teastymenu.ru/api/user/");
-                this.$patch({user: response});
-            } catch (error) {
-                console.error("Error getting user:", error);
+                const response = await $fetch<UserResponse>('/api/auth/login', {
+                    method: 'POST',
+                    body: user,
+                });
+                this.$patch({user: response.body.user});
+                return response;
+            } catch (error: any) {
                 throw error;
             }
         },
         async logout() {
             try {
-                localStorage.removeItem('access_token');
-                localStorage.removeItem('refresh_token');
-                this.$reset();
+                await useFetchApi('/api/auth/logout', {
+                    method: 'POST',
+                });
+                this.$patch({user: defaultValue.user, token: defaultValue.token});
             } catch (error) {
                 console.error("Error logging out:", error);
                 throw error;
             }
         },
-        async updateUser(user: UserUpdate) {
+        async refreshToken() {
             try {
-                const response: User = await useFetchApi('https://api.teastymenu.ru/api/user/', {
-                    method: 'PUT',
-                    body: user,
-                });
-                this.$patch({user: response});
+                const response = await $fetch<TokenResponse>("/api/auth/refresh");
+                this.$patch({token: response.body.token});
+                return response;
             } catch (error) {
-                console.error("Error updating user:", error);
+                console.error("Error refreshing token:", error);
                 throw error;
             }
         },
+        async getUser() {
+            try {
+                const response: any = await useFetchApi('/api/auth/user', {
+                    method: 'GET',
+                });
+                this.$patch({user: response.body.user});
+                return response;
+            } catch (error: any) {
+                throw error;
+            }
+        },
+        async initAuth() {
+            try {
+                const refresh = await this.refreshToken();
+                if (refresh.body.error) {
+                    return;
+                }
+                await this.getUser();
+            } catch (error) {
+                console.error("Error initializing auth:", error);
+                throw error;
+            }
+        },
+        async getLeads(userId: number) {
+            try {
+                const response: any = await useFetchApi(`/api/user/leads/${userId}`, {
+                    method: 'GET',
+                });
+                this.$patch({leads: response.body.leads});
+                return response;
+            } catch (error: any) {
+                throw error;
+            }
+        }
     }
 })

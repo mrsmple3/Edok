@@ -21,45 +21,50 @@
       </TableRow>
     </TableHeader>
     <TableBody class="w-full">
-      <TableRow v-for="(invoice, index) in invoices" :key="index" class="hover:bg-[#2d9cdb]/20"
-                @click="chatState = true">
+      <TableRow v-for="(invoice, index) in invoices" :key="invoice.id" class="hover:bg-[#2d9cdb]/20">
+<!--        @click="chatState = true"-->
+
         <TableCell class="flex-center justify-start gap-[20px] t-cell">
           <img alt="doc" class="w-[33px] h-[45px]" src="/icons/lead-doc.svg">
-          <div>
-            {{ invoice.name.length > 23 ? invoice.name.substring(0, 20) + '...' : invoice.name }}
-          </div>
+          <NuxtLink :to="`/document/${invoice.documents.id}`">
+            {{ invoice.documents.title.length > 23 ? invoice.documents.title.substring(0, 20) + '...' : invoice.documents.title }}
+          </NuxtLink>
         </TableCell>
         <TableCell class="w-[114px] t-cell">{{ invoice.type }}
         </TableCell>
         <TableCell class="w-[20px] t-cell">{{ invoice.quantity }}
         </TableCell>
-        <TableCell class="t-cell">{{ invoice.docs }}</TableCell>
+        <TableCell class="t-cell">{{ invoice.documentsQuantity }}</TableCell>
         <TableCell class="t-cell">{{ invoice.moderators }}
         </TableCell>
-        <TableCell class="t-cell">{{ invoice.data }}</TableCell>
-        <TableCell class="t-cell">{{ invoice.contragents }}
+        <TableCell class="t-cell">{{ invoice.createdAt }}</TableCell>
+        <TableCell class="t-cell">{{ invoice.contragent }}
         </TableCell>
-        <TableCell class="t-cell">{{ invoice.author }}</TableCell>
+        <TableCell class="t-cell">{{ invoice.author.email }}</TableCell>
       </TableRow>
     </TableBody>
   </Table>
-
 </template>
 
 <script lang="ts" setup>
+import type {Document, User} from "~/store/user.store";
+
 const chatState = useState('isChat');
 
 defineProps({
   invoices: {
     type: Array as PropType<{
-      name: string,
+      id: number,
       type: string,
-      quantity: string,
-      docs: string,
+      quantity: number,
+      documentsQuantity: number,
       moderators: string,
-      data: string,
-      contragents: string,
-      author: string
+      createdAt: Date,
+      contragent: string,
+      documentsId: number,
+      authorId: number,
+      author: User,
+      documents: Document,
     }[]>,
     required: true
   }

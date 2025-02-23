@@ -37,7 +37,7 @@
 </template>
 
 <script lang="ts" setup>
-const chatState = useState('isChat', () => true);
+const chatState = useState('isChat');
 const sidebarLinks = ref([
   {
     title: 'Мої задачі',
