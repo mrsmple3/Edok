@@ -20,27 +20,28 @@
         <TableHead class="t-head">Автор</TableHead>
       </TableRow>
     </TableHeader>
+    <DocumentViewer v-if="documentView" :document-url="documentUrl"/>
     <TableBody class="w-full">
-      <TableRow v-for="(invoice, index) in invoices" :key="invoice.id" class="hover:bg-[#2d9cdb]/20">
+      <TableRow v-for="(invoice, index) in invoices" :key="invoice.id" class="hover:bg-[#2d9cdb]/20" @click="openDocument(invoice)">
 <!--        @click="chatState = true"-->
+          <TableCell class="flex-center justify-start gap-[20px] t-cell">
 
-        <TableCell class="flex-center justify-start gap-[20px] t-cell">
-          <img alt="doc" class="w-[33px] h-[45px]" src="/icons/lead-doc.svg">
-          <NuxtLink :to="`/document/${invoice.documents.id}`">
-            {{ invoice.documents.title.length > 23 ? invoice.documents.title.substring(0, 20) + '...' : invoice.documents.title }}
-          </NuxtLink>
-        </TableCell>
-        <TableCell class="w-[114px] t-cell">{{ invoice.type }}
-        </TableCell>
-        <TableCell class="w-[20px] t-cell">{{ invoice.quantity }}
-        </TableCell>
-        <TableCell class="t-cell">{{ invoice.documentsQuantity }}</TableCell>
-        <TableCell class="t-cell">{{ invoice.moderators }}
-        </TableCell>
-        <TableCell class="t-cell">{{ invoice.createdAt }}</TableCell>
-        <TableCell class="t-cell">{{ invoice.contragent }}
-        </TableCell>
-        <TableCell class="t-cell">{{ invoice.author.email }}</TableCell>
+            <img alt="doc" class="w-[33px] h-[45px]" src="/icons/lead-doc.svg">
+            <div>
+              {{ invoice.documents.title.length > 23 ? invoice.documents.title.substring(0, 20) + '...' : invoice.documents.title }}
+            </div>
+          </TableCell>
+          <TableCell class="w-[114px] t-cell">{{ invoice.type }}
+          </TableCell>
+          <TableCell class="w-[20px] t-cell">{{ invoice.quantity }}
+          </TableCell>
+          <TableCell class="t-cell">{{ invoice.documentsQuantity }}</TableCell>
+          <TableCell class="t-cell">{{ invoice.moderators }}
+          </TableCell>
+          <TableCell class="t-cell">{{ invoice.createdAt }}</TableCell>
+          <TableCell class="t-cell">{{ invoice.contragent }}
+          </TableCell>
+          <TableCell class="t-cell">{{ invoice.author.email }}</TableCell>
       </TableRow>
     </TableBody>
   </Table>
@@ -50,6 +51,14 @@
 import type {Document, User} from "~/store/user.store";
 
 const chatState = useState('isChat');
+
+const documentView = useState('isDocumentView', () => false);
+
+const documentUrl = ref('');
+const openDocument = (invoice) => {
+  documentUrl.value = invoice.documents.filePath;
+  documentView.value = true;
+}
 
 defineProps({
   invoices: {

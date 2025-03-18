@@ -14,7 +14,7 @@
           <img alt="doc" class="w-[33px] h-[45px]" src="/icons/lead-doc.svg">
           <div class="w-max flex flex-col items-start">
                 <span class="text-[#494949] text-[15px] font-medium font-['Barlow']">{{
-                    invoice.name.length > 23 ? invoice.name.substring(0, 33) + '...' : invoice.name
+                    invoice.documents.title.length > 23 ? invoice.documents.title.substring(0, 33) + '...' : invoice.documents.title
                   }}</span>
             <span
                 class="text-[#898989] text-[15px] font-['Barlow']">Для информации Подтверждающие</span>
@@ -22,7 +22,7 @@
                 class="text-[#404040] text-[11px] font-['Barlow']">Шевченко Людмила Николаевна</span>
           </div>
         </TableCell>
-        <TableCell class="t-cell">{{ invoice.data }}</TableCell>
+        <TableCell class="t-cell">{{ invoice.createdAt }}</TableCell>
         <TableCell :class="{
           'text-[#494949]': invoice.status === 'Информационный',
           'text-[#00B074]': invoice.status === 'На підписанні контрагентом',

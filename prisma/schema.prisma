@@ -14,28 +14,26 @@ model User {
   email                String?        @unique
   phone                String?        @unique
   password_hash        String
-  role                 String
+  role                 String 				// Роль: "admin", "moderator", "contragent"
+	organization_name 	 String?
+	organization_INN 	 	 String?
   company_type         String?
-  region               String?
-  district             String?
-  city                 String?
-  address              String?
-  iban                 String?
-  bank_name            String?
-  mfo                  String?
-  business_activity    String?
-  partner_organization String?
-  agreed_to_terms      Boolean?
   RefreshToken         RefreshToken[]
   Document             Document[]
-  Lead                 Lead[]
+  Counterparty    		 Counterparty[]
+	Signature       		 Signature[]
+  MessageSender   		 Message[]      @relation("Sender")
+  MessageReceiver 		 Message[]      @relation("Receiver")
+  LeadAuthor      		 Lead[]         @relation("LeadAuthor")
+  LeadModerator   		 Lead[]         @relation("LeadModerator")
+  LeadContragent  		 Lead[]         @relation("LeadContragent")
 }
 
 model RefreshToken {
   id        String   @id @default(cuid())
   token     String   @unique
   userId    Int
-  user      User     @relation(fields: [userId], references: [id])
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -43,31 +41,81 @@ model RefreshToken {
   @@map("refresh_token")
 }
 
-model Document {
-  id        Int      @id @default(autoincrement())
-  title     String
-  filePath  String?
-  userId    Int
-  user      User     @relation(fields: [userId], references: [id])
-  createdAt DateTime @default(now())
-  Lead      Lead[]
+model Counterparty {
+  id        Int        @id @default(autoincrement())
+  name      String
+  type      String // Тип: "FOP", "OOO", "FG"
+  userId    Int // Связанный пользователь
+  user      User       @relation(fields: [userId], references: [id])
+  documents Document[]
+  createdAt DateTime   @default(now())
 
   @@index([userId])
+}
+
+model Document {
+  id              Int           @id @default(autoincrement())
+  title           String?
+  content         String?
+  filePath        String?
+  type            String // Тип: "contract", "invoice", "act"
+  status          String // Статус: "pending", "signed", "rejected"
+  deleteSignCount Int           @default(0)
+  userId          Int
+  user            User          @relation(fields: [userId], references: [id])
+  counterpartyId  Int?
+  counterparty    Counterparty? @relation(fields: [counterpartyId], references: [id])
+  leadId          Int?
+  lead            Lead?         @relation(fields: [leadId], references: [id])
+  Signature       Signature[]
+  createdAt       DateTime      @default(now())
+
+  @@index([leadId])
+  @@index([userId])
+  @@index([counterpartyId])
 }
 
 model Lead {
   id                Int      @id @default(autoincrement())
   type              String
   quantity          Int
-  documetnsQuantity Int
-  moderators        String
-  createdAt         DateTime @default(now())
-  contragent        String
-  author            User     @relation(fields: [authorId], references: [id])
-  authorId          Int
-  documents         Document @relation(fields: [documentsId], references: [id], onDelete: Cascade)
-  documentsId       Int
+  status       			String     @default("Информационный")
+  moderatorsId 			Int?
+  moderators   			User?      @relation("LeadModerator", fields: [moderatorsId], references: [id])
+  contragentId 			Int?
+  contragent   			User?      @relation("LeadContragent", fields: [contragentId], references: [id])
+  authorId     			Int
+  author       			User       @relation("LeadAuthor", fields: [authorId], references: [id])
+  documents    			Document[]
+  createdAt    			DateTime   @default(now())
 
   @@index([authorId])
-  @@index([documentsId])
+  @@index([moderatorsId])
+  @@index([contragentId])
+}
+
+model Message {
+  id         Int      @id @default(autoincrement())
+  content    String
+  senderId   Int // Отправитель
+  receiverId Int // Получатель
+  receiver   User     @relation("Receiver", fields: [receiverId], references: [id])
+  sender     User     @relation("Sender", fields: [senderId], references: [id])
+  createdAt  DateTime @default(now())
+
+  @@index([senderId])
+  @@index([receiverId])
+}
+
+model Signature {
+  id         Int      @id @default(autoincrement())
+  signature  String // Электронная подпись
+  documentId Int // Связанный документ
+  document   Document @relation(fields: [documentId], references: [id])
+  userId     Int // Пользователь, который подписал
+  user       User     @relation(fields: [userId], references: [id])
+  createdAt  DateTime @default(now())
+
+  @@index([documentId])
+  @@index([userId])
 }

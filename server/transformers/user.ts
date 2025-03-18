@@ -4,9 +4,6 @@ export const userTransformer = (user: any) => {
         name: user.name,
         email: user.email,
         phone: user.phone,
-        address: user.address,
-        files: user.files,
         role: user.role,
-        company: user.company
     }
 }

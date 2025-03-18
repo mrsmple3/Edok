@@ -8,7 +8,11 @@ export default defineEventHandler(async (event) => {
 
   try {
     const leads = await prisma.lead.findMany({
-      where: { authorId: parseInt(id) },
+      where: {
+        authorId: {
+          equals: parseInt(id),
+        },
+      },
       include: {
         author: true,
         documents: true,

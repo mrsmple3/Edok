@@ -5,7 +5,9 @@ import {JwtPayload} from "jsonwebtoken";
 
 export default defineEventHandler(async (event) => {
     const token = event.req.headers['authorization']?.split(' ')[1];
+
     if (!token) {
+        event.res.statusCode = 400;
         return {
             code: 400,
             body: {
@@ -13,9 +15,11 @@ export default defineEventHandler(async (event) => {
             }
         }
     }
+		
     const decoded = decodeAccessToken(token) as JwtPayload;
 
     if (!decoded) {
+        event.res.statusCode = 400;
         return {
             code: 400,
             body: {
@@ -36,6 +40,7 @@ export default defineEventHandler(async (event) => {
             }
         };
     } catch (error) {
+        event.res.statusCode = 500;
         return {
             code: 500,
             body: {

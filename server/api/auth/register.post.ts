@@ -1,53 +1,87 @@
-import {createUser} from "~/server/db/users";
-import {userTransformer} from "~/server/transformers/user";
-import {sendError} from "h3";
-import {generateTokens, sendRefreshToken} from "~/server/utils/jwt";
-import {createOrUpdateRefreshToken} from "~/server/db/refreshTokens";
+import { createUser, getUserByEmail, getUserByPhone } from "~/server/db/users";
+import { userTransformer } from "~/server/transformers/user";
+import { sendError } from "h3";
+import { generateTokens, sendRefreshToken } from "~/server/utils/jwt";
+import { createOrUpdateRefreshToken } from "~/server/db/refreshTokens";
 
 export default defineEventHandler(async (event) => {
-    try {
-        const {name, email, phone, password_hash, role} = await readBody(event);
+	try {
+		const body = await readBody(event);
 
-        if (!password_hash && !email || !phone) {
-            return {
-                code: '400',
-                body: {
-                    error: 'Необходимо указать email или телефон'
-                }
-            };
-        }
+		const { name, email, phone, password_hash, role, organization_name, organization_INN } = body;
 
-        let userData = {
-                email,
-                phone,
-                password_hash,
-                role,
-            };
+		if (!password_hash || (!email && !phone) || !role) {
+			event.res.statusCode = 400;
+			return {
+				code: "400",
+				body: {
+					error: "Необходимо указать email или телефон",
+				},
+			};
+		}
 
-        const user = await createUser(userData);
+		let userData = {
+			name,
+			email,
+			phone,
+			password_hash,
+			role,
+			organization_name,
+			organization_INN,
+		};
 
-        const {accessToken, refreshToken} = generateTokens(user);
+		if (email) {
+			const userExists = await getUserByEmail(email);
 
-        // Save it inside the database
-        await createOrUpdateRefreshToken({
-            token: refreshToken,
-            userId: user.id
-        });
+			if (userExists) {
+				event.res.statusCode = 400;
+				return {
+					code: 400,
+					body: {
+						error: "Пользователь с таким email уже существует",
+					},
+				};
+			}
+		}
 
-        sendRefreshToken(event, refreshToken);
+		if (phone) {
+			const userExists = await getUserByPhone(phone);
 
-        return {
-            code: 200,
-            body: {
-                access_token: accessToken,
-                user: userTransformer(user)
-            }
+			if (userExists) {
+				event.res.statusCode = 400;
+				return {
+					code: 400,
+					body: {
+						error: "Пользователь с таким номером уже существует",
+					},
+				};
+			}
+		}
 
-        };
-    } catch (error: any) {
-        return {
-            code: 500,
-            error: 'Ошибка регистрации: ' + error
-        }
-    }
+		const user = await createUser(userData);
+
+		const { accessToken, refreshToken } = generateTokens(user);
+
+		// Save it inside the database
+		await createOrUpdateRefreshToken({
+			token: refreshToken,
+			userId: user.id,
+		});
+
+		sendRefreshToken(event, refreshToken);
+
+		return {
+			code: 200,
+			body: {
+				access_token: accessToken,
+				user: userTransformer(user),
+			},
+		};
+	} catch (error: any) {
+		event.res.statusCode = 500;
+		return {
+			code: 500,
+			error: "Ошибка регистрации: " + error,
+		};
+	}
 });
