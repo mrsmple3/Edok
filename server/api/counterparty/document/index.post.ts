@@ -1,5 +1,6 @@
 import { defineEventHandler, readFormData } from "h3";
 import { createDocument, createFile } from "~/server/db/document";
+import { getUserById } from "~/server/db/users";
 
 export default defineEventHandler(async (event) => {
 	try {
@@ -16,6 +17,17 @@ export default defineEventHandler(async (event) => {
 
 		if (fileUrl.status !== 200) {
 			return fileUrl;
+		}
+
+		const user = await getUserById(parseInt(userId));
+		if (!user) {
+			event.res.statusCode = 404;
+			return {
+				code: 404,
+				body: {
+					error: "Пользователь не найден",
+				},
+			};
 		}
 
 		const document = await createDocument({

@@ -54,7 +54,7 @@ export default defineEventHandler(async (event) => {
 					body: {
 						error: "Пользователь с таким номером уже существует",
 					},
-				};
+				};	
 			}
 		}
 
