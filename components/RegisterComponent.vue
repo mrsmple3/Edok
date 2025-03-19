@@ -144,7 +144,7 @@
 						documents: response.value.map((doc: Document) => doc.id),
 					});
 				}
-				router.push("/");
+				router.push("/leads");
 			});
 		} catch (error: any) {
 			const { toast } = useToast();

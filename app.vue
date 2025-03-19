@@ -18,7 +18,7 @@
 	onBeforeMount(() => {
 		callOnce(async () => {
 			await userStore.initAuth().finally(() => {
-				if (!userStore.isAuth) {
+				if (!userStore.$state.isAuth) {
 					router.push("/login");
 				}
 			});

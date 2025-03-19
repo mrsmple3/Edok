@@ -9,12 +9,16 @@ datasource db {
   relationMode = "prisma"
 }
 
+// TODO: Need to add name field to Lead and add name to User
 model User {
   id                   Int            @id @default(autoincrement())
   email                String?        @unique
   phone                String?        @unique
   password_hash        String
   role                 String 				// Роль: "admin", "moderator", "contragent"
+	name 								 String?
+	surname 						 String?
+	patronymic 					 String?
 	organization_name 	 String?
 	organization_INN 	 	 String?
   company_type         String?
@@ -77,6 +81,7 @@ model Document {
 
 model Lead {
   id                Int      @id @default(autoincrement())
+	name 							String?
   type              String
   quantity          Int
   status       			String     @default("Информационный")

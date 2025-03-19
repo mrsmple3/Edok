@@ -39,9 +39,10 @@ export interface Lead {
 	moderatorsId: number;
 	contragentId: number;
 	authorId: number;
-	documents: Document;
+	documents: Document[];
 	status: string;
 	createdAt: Date;
+	author: User;
 }
 
 export interface UserResponse extends ApiResponse<{ user: User }> {}
@@ -55,6 +56,8 @@ const defaultValue: {
 	token: string;
 	user: User;
 	leads: Lead[];
+	isAuth: boolean;
+	isAuthInitialized: boolean;
 } = {
 	token: "",
 	user: {
@@ -68,15 +71,15 @@ const defaultValue: {
 		role: "",
 	},
 	leads: [],
+	isAuth: false,
+	isAuthInitialized: false,
 };
 
 export const useUserStore = defineStore("auth", {
 	state: () => defaultValue,
 	getters: {
 		userGetter: (state): User => state.user,
-		tokenGetter: (state): string => state.token,
-		isAuth: (state): boolean => !!state.token,
-		leadsGetter: (state): Lead[] => state.leads,
+		tokenGetter: (state): string => state.token
 	},
 	actions: {
 		async register(user: User) {
@@ -146,20 +149,12 @@ export const useUserStore = defineStore("auth", {
 			try {
 				const refresh = await this.refreshToken();
 				const user = await this.getUser();
+				this.isAuth = !!user.body.user.id;
 			} catch (error: any) {
 				handleApiError(error);
+			} finally {
+				this.isAuthInitialized = true;
 			}
-		},
-		async getLeads(userId: number) {
-			try {
-				const response: any = await useFetchApi(`/api/user/leads/${userId}`, {
-					method: "GET",
-				});
-				this.$patch({ leads: response.body.leads });
-				return response;
-			} catch (error: any) {
-				handleApiError(error);
-			}
-		},
+		}
 	},
 });

@@ -39,18 +39,20 @@
 			<NuxtLink class="breadcrumbs" to="">Угоди</NuxtLink>
 		</div>
 		<div class="page__block pt-[40px] pb-[40px] px-[42px]">
-			<LeadsFirstType v-if="!chatState" :invoices="userStore.leadsGetter" />
-			<LeadsSecondType v-else :invoices="userStore.leadsGetter" />
+			<LeadsFirstType v-if="!chatState" :invoices="counterpartyStore.leadsGetter" />
+			<LeadsSecondType v-else :invoices="counterpartyStore.leadsGetter" />
 		</div>
 	</div>
 </template>
 
 <script lang="ts" setup>
+	import { useCounterpartyStore } from "~/store/counterparty.store";
 	import { useUserStore } from "~/store/user.store";
 
 	definePageMeta({
 		layout: "page",
 	});
+	
 	const chatState = useState("isChat");
 
 	const invoices = [
@@ -66,38 +68,20 @@
 			status: "Информационный",
 			concordants: "1",
 		},
-		{
-			name: "2100359852 Commodity - Corn - DAP ЧЕРНОМОРСКАЯ - ХЮРРЕМ ООО (38852547)",
-			type: "Двухстороннее соглашение",
-			quantity: "2",
-			docs: "57",
-			moderators: "Васильчук",
-			data: "06.12.2024",
-			contragents: 'ООО "АО Каргилл""',
-			author: 'ООО "АО Каргилл"',
-			status: "На підписанні контрагентом",
-			concordants: "1",
-		},
-		{
-			name: "2100359852 Commodity - Corn - DAP ЧЕРНОМОРСКАЯ - ХЮРРЕМ ООО (38852547)",
-			type: "Двухстороннее соглашение",
-			quantity: "2",
-			docs: "57",
-			moderators: "Васильчук",
-			data: "06.12.2024",
-			contragents: 'ООО "АО Каргилл""',
-			author: 'ООО "АО Каргилл"',
-			status: "Відхилено контрагентом",
-			concordants: "1",
-		},
 	];
 
+	const counterpartyStore = useCounterpartyStore();
 	const userStore = useUserStore();
 
 	onBeforeMount(() => {
-		callOnce(async () => {
-			await userStore.getLeads(userStore.userGetter.id);
-		});
+		watch(
+			() => userStore.isAuthInitialized,
+			async (newVal) => {
+				if (newVal) {
+					await counterpartyStore.getLeadByUserId(userStore.userGetter.id);
+				}
+			}
+		);
 	});
 </script>
 

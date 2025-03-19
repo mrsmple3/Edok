@@ -74,7 +74,7 @@
 				});
 			}
 			await authStore.initAuth().then(() => {
-				router.push("/");
+				router.push("/leads");
 			});
 		} catch (error: any) {
 			const { toast } = useToast();

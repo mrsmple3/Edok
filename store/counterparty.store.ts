@@ -1,11 +1,21 @@
 import { useFetchApi } from "~/utils/api";
 import { handleApiError } from "~/utils/errorHandler";
+import type { Document, Lead, LeadsResponse } from "./user.store";
 
-const defaultValue: {} = {};
+const defaultValue: {
+	leads: Lead[];
+	documents: Document[];
+} = {
+	leads: [],
+	documents: [],
+};
 
 export const useCounterpartyStore = defineStore("counterparty", {
 	state: () => defaultValue,
-	getters: {},
+	getters: {
+		leadsGetter: (state): Lead[] => state.leads,
+		documentsGetter: (state): Document[] => state.documents,
+	},
 	actions: {
 		async createDocument(document: any, file: File) {
 			try {
@@ -34,6 +44,15 @@ export const useCounterpartyStore = defineStore("counterparty", {
 				handleApiError(error);
 			}
 		},
+		async getDocumentsByLeadId(leadId: any) {
+			try {
+				const response: any = await useFetchApi(`/api/counterparty/document/lead/${leadId}`);
+				this.$patch({ documents: response.body.documents });
+				return response.body.documents;
+			} catch (error) {
+				handleApiError(error);
+			}
+		},
 		async createLead(lead: any) {
 			try {
 				const response: any = await useFetchApi("/api/counterparty/lead", {
@@ -42,6 +61,18 @@ export const useCounterpartyStore = defineStore("counterparty", {
 				});
 				return response.body.lead;
 			} catch (error) {}
+		},
+		async getLeadByUserId(userId: number | null | undefined) {
+			try {
+				if (!userId) {
+					throw new Error("Необходимо указать userId");
+				}
+				const response: any = await useFetchApi(`/api/counterparty/lead/user/${userId}`);
+				this.$patch({ leads: response.body.leads });
+				return response.body.lead;
+			} catch (error) {
+				handleApiError(error);
+			}
 		},
 	},
 });

@@ -187,7 +187,7 @@ export const createFile = async (
 	}
 
 	const buffer = Buffer.from(await file.arrayBuffer());
-	const relativeUploadDir = `../tmp/uploads/${new Date(Date.now())
+	const relativeUploadDir = `/uploads/${new Date(Date.now())
 		.toLocaleDateString("id-ID", {
 			day: "2-digit",
 			month: "2-digit",
@@ -255,6 +255,10 @@ export const createDocumentWithFile = async (event: H3Event<EventHandlerRequest>
 export const getDocumentsByLead = (leadId: number) => {
 	return prisma.document.findMany({
 		where: { leadId },
+		include: {
+			lead: true,
+			user: true,
+		},
 	});
 };
 
