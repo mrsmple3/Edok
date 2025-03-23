@@ -22,12 +22,23 @@ import mime from "mime";
 // }
 
 export const getAllDocuments = () => {
-	return prisma.document.findMany();
+	return prisma.document.findMany({
+		include: {
+			user: true,
+			counterparty: true,
+			lead: true,
+		},
+	});
 };
 
 export const getDocumentById = (id: number) => {
 	return prisma.document.findUnique({
 		where: { id },
+		include: {
+			user: true,
+			counterparty: true,
+			lead: true,
+		},
 	});
 };
 
@@ -41,6 +52,9 @@ export const createDocument = (data: any) => {
 			status: data.status,
 			user: {
 				connect: { id: data.userId },
+			},
+			counterparty: {
+				connect: { id: data.counterpartyId },
 			},
 		},
 	});
@@ -256,8 +270,9 @@ export const getDocumentsByLead = (leadId: number) => {
 	return prisma.document.findMany({
 		where: { leadId },
 		include: {
-			lead: true,
 			user: true,
+			counterparty: true,
+			lead: true,
 		},
 	});
 };
@@ -265,6 +280,11 @@ export const getDocumentsByLead = (leadId: number) => {
 export const getDocumentsByUserId = (userId: number) => {
 	return prisma.document.findMany({
 		where: { userId: userId },
+		include: {
+			user: true,
+			counterparty: true,
+			lead: true,
+		},
 	});
 };
 

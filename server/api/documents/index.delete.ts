@@ -1,8 +1,5 @@
-import { PrismaClient } from "@prisma/client";
-import { defineEventHandler } from "h3";
 import {deleteDocuments} from "~/server/db/document";
 
-const prisma = new PrismaClient();
 
 export default defineEventHandler(async (event) => {
     try {

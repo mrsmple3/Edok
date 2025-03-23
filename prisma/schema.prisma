@@ -9,13 +9,12 @@ datasource db {
   relationMode = "prisma"
 }
 
-// TODO: Need to add name field to Lead and add name to User
 model User {
   id                   Int            @id @default(autoincrement())
   email                String?        @unique
   phone                String?        @unique
   password_hash        String
-  role                 String 				// Роль: "admin", "moderator", "contragent"
+  role                 String 				// Роль: "admin", "moderator", "counterparty"
 	name 								 String?
 	surname 						 String?
 	patronymic 					 String?
@@ -24,13 +23,14 @@ model User {
   company_type         String?
   RefreshToken         RefreshToken[]
   Document             Document[]
-  Counterparty    		 Counterparty[]
+	DocumentCounterparty Document[]     @relation("DocumentCounterparty")
 	Signature       		 Signature[]
   MessageSender   		 Message[]      @relation("Sender")
   MessageReceiver 		 Message[]      @relation("Receiver")
   LeadAuthor      		 Lead[]         @relation("LeadAuthor")
   LeadModerator   		 Lead[]         @relation("LeadModerator")
-  LeadContragent  		 Lead[]         @relation("LeadContragent")
+  LeadCounterparty  	 Lead[]         @relation("LeadCounterparty")
+	createdAt            DateTime       @default(now())
 }
 
 model RefreshToken {
@@ -45,18 +45,6 @@ model RefreshToken {
   @@map("refresh_token")
 }
 
-model Counterparty {
-  id        Int        @id @default(autoincrement())
-  name      String
-  type      String // Тип: "FOP", "OOO", "FG"
-  userId    Int // Связанный пользователь
-  user      User       @relation(fields: [userId], references: [id])
-  documents Document[]
-  createdAt DateTime   @default(now())
-
-  @@index([userId])
-}
-
 model Document {
   id              Int           @id @default(autoincrement())
   title           String?
@@ -68,7 +56,7 @@ model Document {
   userId          Int
   user            User          @relation(fields: [userId], references: [id])
   counterpartyId  Int?
-  counterparty    Counterparty? @relation(fields: [counterpartyId], references: [id])
+  counterparty    User? 				@relation("DocumentCounterparty", fields: [counterpartyId], references: [id])
   leadId          Int?
   lead            Lead?         @relation(fields: [leadId], references: [id])
   Signature       Signature[]
@@ -87,8 +75,8 @@ model Lead {
   status       			String     @default("Информационный")
   moderatorsId 			Int?
   moderators   			User?      @relation("LeadModerator", fields: [moderatorsId], references: [id])
-  contragentId 			Int?
-  contragent   			User?      @relation("LeadContragent", fields: [contragentId], references: [id])
+  counterpartyId 		Int?
+  counterparty   		User?      @relation("LeadCounterparty", fields: [counterpartyId], references: [id])
   authorId     			Int
   author       			User       @relation("LeadAuthor", fields: [authorId], references: [id])
   documents    			Document[]
@@ -96,7 +84,7 @@ model Lead {
 
   @@index([authorId])
   @@index([moderatorsId])
-  @@index([contragentId])
+  @@index([counterpartyId])
 }
 
 model Message {

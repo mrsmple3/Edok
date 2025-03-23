@@ -29,8 +29,10 @@
 	import { useUserStore } from "~/store/user.store";
 	import { useToast } from "./ui/toast";
 	import ToastAction from "./ui/toast/ToastAction.vue";
+	import { useCounterpartyStore } from "~/store/counterparty.store";
 
 	const authStore = useUserStore();
+	const counterpartyStore = useCounterpartyStore();
 
 	const router = useRouter();
 
@@ -73,7 +75,8 @@
 					password_hash: values.password,
 				});
 			}
-			await authStore.initAuth().then(() => {
+			await authStore.initAuth().then(async () => {
+				await counterpartyStore.getLeadByUserId(authStore.userGetter.id);
 				router.push("/leads");
 			});
 		} catch (error: any) {

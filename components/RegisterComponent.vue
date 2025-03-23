@@ -50,7 +50,7 @@
 	import { useForm } from "vee-validate";
 	import { toTypedSchema } from "@vee-validate/zod";
 	import * as z from "zod";
-	import { useUserStore, type Document, type DocumentResponse } from "~/store/user.store";
+	import { useUserStore, type Document } from "~/store/user.store";
 	import { useToast } from "./ui/toast";
 	import { useCounterpartyStore } from "~/store/counterparty.store";
 
@@ -139,9 +139,18 @@
 						status: "Информационный",
 						quantity: 1,
 						authorId: authStore.userGetter.id,
-						contragentId: authStore.userGetter.id,
+						counterpartyId: authStore.userGetter.id,
 						moderatorsId: authStore.userGetter.id,
 						documents: response.value.map((doc: Document) => doc.id),
+					});
+				} else {
+					await counterpartyStore.createLead({
+						type: "Двухстороннее соглашение",
+						status: "Информационный",
+						quantity: 1,
+						authorId: authStore.userGetter.id,
+						counterpartyId: authStore.userGetter.id,
+						moderatorsId: authStore.userGetter.id,
 					});
 				}
 				router.push("/leads");

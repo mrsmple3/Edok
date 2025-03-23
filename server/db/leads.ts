@@ -1,78 +1,86 @@
-import {prisma} from "~/server/db/index";
-import {EventHandlerRequest, H3Event} from "h3";
+import { prisma } from "~/server/db/index";
+import { EventHandlerRequest, H3Event } from "h3";
 
 export const getAllLeads = async () => {
-    return prisma.lead.findMany(
-        {
-            include: {
-                documents: true,
-            }
-        }
-    );
-}
+	return prisma.lead.findMany({
+		include: {
+			documents: true,
+		},
+	});
+};
 
-export const getLeadById = async (id: number) => {
-    return prisma.lead.findUnique({
-        where: { id },
-        include: {
-            documents: true,
-        }
-    });
-}
+export const getLeadById = async (id: any) => {
+	return prisma.lead.findUnique({
+		where: { id },
+		include: {
+			documents: true,
+		},
+	});
+};
 
 export const getLeadsByAuthorId = async (authorId: number) => {
-    const leads = await prisma.lead.findMany({
-        where: {
-            authorId: {
-                equals: authorId,
-            },
-        },
-        include: {
-            author: true,
-            documents: true,
-        },
-    });
+	const leads = await prisma.lead.findMany({
+		where: {
+			authorId: {
+				equals: authorId,
+			},
+		},
+		include: {
+			author: true,
+			documents: true,
+			moderators: true,
+			counterparty: true,
+		},
+	});
 
-    return leads;
-}
+	return leads;
+};
 
 export const createLead = async (event: H3Event<EventHandlerRequest>, data: any) => {
-    return prisma.lead.create({
-        data: {
-            type: data.type,
-            quantity: data.quantity,
-            author: {connect: {id: data.authorId}},
-            moderators: {connect: {id: data.moderatorsId}},
-            contragent: {connect: {id: data.contragentId}},
-            documents: {
-                connect: data.documents.map((documentId: number) => ({ id: documentId }))
-            },
-        },
-    });
-}
+	return prisma.lead.create({
+		data: {
+			name: data.name,
+			type: data.type,
+			quantity: data.quantity,
+			author: { connect: { id: data.authorId } },
+			counterparty: data.counterpartyId ? { connect: { id: data.counterpartyId } } : undefined,
+			moderators: data.moderatorsId ? { connect: { id: data.moderatorsId } } : undefined,
+			documents: {
+				connect: data.documents.map((documentId: number) => ({ id: documentId })),
+			},
+		},
+		include: {
+			author: true,
+			counterparty: true,
+			moderators: true,
+			documents: true,
+		},
+	});
+};
 
 export const updateLead = async (id: number, data: any) => {
-    return prisma.lead.update({
-        where: { id },
-        data: {
-            type: data.type,
-            quantity: data.quantity,
-            author: {connect: {id: data.authorId}},
-            moderators: {connect: {id: data.moderatorsId}},
-            contragent: {connect: {id: data.contragentId}},
-            documents: {
-                connect: data.documents.map((documentId: number) => ({ id: documentId }))
-            },
-        }
-    });
-}
+	return prisma.lead.update({
+		where: { id },
+		data: {
+			name: data.name,
+			type: data.type,
+			quantity: data.quantity,
+			author: { connect: { id: data.authorId } },
+			counterparty: data.counterpartyId ? { connect: { id: data.counterpartyId } } : undefined,
+			moderators: data.moderatorsId ? { connect: { id: data.moderatorsId } } : undefined,
+			documents: {
+				connect: data.documents.map((documentId: number) => ({ id: documentId })),
+			},
+		},
+	});
+};
 
 export const deleteLead = async (id: number) => {
-    return prisma.lead.delete({
-        where: { id }
-    });
-}
+	return prisma.lead.delete({
+		where: { id },
+	});
+};
 
 export const deleteLeads = async () => {
-    return prisma.lead.deleteMany();
-}
+	return prisma.lead.deleteMany();
+};

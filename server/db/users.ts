@@ -41,7 +41,7 @@ export const updateUser = (id: number, userData: User) => {
 
 export const getUserById = (id: number) => {
 	return prisma.user.findUnique({
-		where: { id },
+		where: { id }
 	});
 };
 
@@ -63,4 +63,19 @@ export const deleteUserById = (id: number) => {
 	return prisma.user.delete({
 		where: { id },
 	});
+};
+
+export const getUserByRole = (role: string) => {
+	return prisma.user.findMany({
+		where: {
+			role: role,
+		},
+	});
+};
+
+export const checkRoleUser = (role: string) => {
+	if (role === "admin" || role === "moderator" || role === "counterparty" || role === "lawyer" || role === "boogalter") {
+		return true;
+	}
+	return false;
 };

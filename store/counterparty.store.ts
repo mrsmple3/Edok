@@ -1,6 +1,6 @@
 import { useFetchApi } from "~/utils/api";
 import { handleApiError } from "~/utils/errorHandler";
-import type { Document, Lead, LeadsResponse } from "./user.store";
+import type { Document, Lead, LeadsResponse, User } from "./user.store";
 
 const defaultValue: {
 	leads: Lead[];
@@ -15,6 +15,7 @@ export const useCounterpartyStore = defineStore("counterparty", {
 	getters: {
 		leadsGetter: (state): Lead[] => state.leads,
 		documentsGetter: (state): Document[] => state.documents,
+		
 	},
 	actions: {
 		async createDocument(document: any, file: File) {
@@ -59,6 +60,7 @@ export const useCounterpartyStore = defineStore("counterparty", {
 					method: "POST",
 					body: lead,
 				});
+				this.$patch({ leads: [...this.leads, response.body.lead] });
 				return response.body.lead;
 			} catch (error) {}
 		},

@@ -11,6 +11,7 @@ export interface User {
 	email?: string; // Nullable
 	phone?: string; // Nullable
 	role: string;
+	name?: string;
 	password_hash: string; // Nullable
 	organization_name?: string; // Nullable
 	organization_INN?: string; // Nullable
@@ -28,16 +29,22 @@ export interface Document {
 	content?: string;
 	deleteSignCount: number;
 	counterpartyId?: number;
+	counterparty: User;
 	leadId?: number;
+	lead: Lead;
+	user: User;
 	createdAt: Date;
 }
 
 export interface Lead {
 	id: number;
+	name: string;
 	type: string;
 	quantity: number;
 	moderatorsId: number;
-	contragentId: number;
+	moderators?: User | null;
+	counterpartyId: number;
+	counterparty?: User | null;
 	authorId: number;
 	documents: Document[];
 	status: string;
@@ -51,13 +58,15 @@ export interface TokenResponse extends ApiResponse<{ token?: string; error?: str
 export interface ErrorResponse extends ApiResponse<{ error: string }> {}
 export interface MessageResponse extends ApiResponse<{ message: string }> {}
 export interface DocumentResponse extends ApiResponse<{ document: Document }> {}
-
+export interface ModeratorsResponse extends ApiResponse<{ user: User[] }> {}
+	
 const defaultValue: {
 	token: string;
 	user: User;
 	leads: Lead[];
 	isAuth: boolean;
 	isAuthInitialized: boolean;
+	moderators: User[];
 } = {
 	token: "",
 	user: {
@@ -73,13 +82,15 @@ const defaultValue: {
 	leads: [],
 	isAuth: false,
 	isAuthInitialized: false,
+	moderators: [],
 };
 
 export const useUserStore = defineStore("auth", {
 	state: () => defaultValue,
 	getters: {
 		userGetter: (state): User => state.user,
-		tokenGetter: (state): string => state.token
+		tokenGetter: (state): string => state.token,
+		moderatorsGetter: (state): User[] => state.moderators,
 	},
 	actions: {
 		async register(user: User) {
@@ -155,6 +166,32 @@ export const useUserStore = defineStore("auth", {
 			} finally {
 				this.isAuthInitialized = true;
 			}
-		}
+		},
+		async getUserByRole(role: string) {
+			try {
+				const response = await $fetch<UserResponse>(`/api/user/role/${role}`);
+				return response.body.user;
+			} catch (error: any) {
+				handleApiError(error);
+			}
+		},
+		async getModerators() {
+			try {
+				const response = await $fetch<ModeratorsResponse>(`/api/user/role/moderator`);
+				this.$patch({ moderators: response.body.user });
+				return response.body.user;
+			} catch (error: any) {
+				handleApiError(error);
+				
+			}
+		},
+		async getUserById(id: number) {
+			try {
+				const response = await $fetch<UserResponse>(`/api/user/${id}`);
+				return response.body.user;
+			} catch (error: any) {
+				handleApiError(error);
+			}
+		},
 	},
 });

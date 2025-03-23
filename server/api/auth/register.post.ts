@@ -1,4 +1,4 @@
-import { createUser, getUserByEmail, getUserByPhone } from "~/server/db/users";
+import { checkRoleUser, createUser, getUserByEmail, getUserByPhone } from "~/server/db/users";
 import { userTransformer } from "~/server/transformers/user";
 import { sendError } from "h3";
 import { generateTokens, sendRefreshToken } from "~/server/utils/jwt";
@@ -16,6 +16,16 @@ export default defineEventHandler(async (event) => {
 				code: "400",
 				body: {
 					error: "Необходимо указать email или телефон",
+				},
+			};
+		}
+
+		if (!checkRoleUser(role)) {
+			event.res.statusCode = 400;
+			return {
+				code: 400,
+				body: {
+					error: "Такой роли не существует",
 				},
 			};
 		}
@@ -54,7 +64,7 @@ export default defineEventHandler(async (event) => {
 					body: {
 						error: "Пользователь с таким номером уже существует",
 					},
-				};	
+				};
 			}
 		}
 

@@ -1,4 +1,5 @@
 import { getDocumentById, updateDocument } from "~/server/db/document";
+import { getUserById } from "~/server/db/users";
 
 export default defineEventHandler(async (event) => {
 	try {
@@ -6,6 +7,30 @@ export default defineEventHandler(async (event) => {
 		const body = await readBody(event);
 
 		const document = await getDocumentById(parseInt(id));
+
+		if (body.userId) {
+			const user = await getUserById(parseInt(body.userId));
+			if (!user) {
+				event.res.statusCode = 404;
+				return {
+					code: 404,
+					body: {
+						error: "Пользователь не найден",
+					},
+				};
+			}
+		} else if (body.counterpartyId) {
+			const user = await getUserById(parseInt(body.counterpartyId));
+			if (!user) {
+				event.res.statusCode = 404;
+				return {
+					code: 404,
+					body: {
+						error: "Контрагент не найден",
+					},
+				};
+			}
+		}
 
 		if (!document) {
 			event.res.statusCode = 404;

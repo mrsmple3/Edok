@@ -60,14 +60,14 @@
 							<img alt="doc" class="w-[33px] h-[45px]" src="/icons/lead-doc.svg" />
 							<div class="w-max flex flex-col items-start">
 								<span class="text-[#494949] text-[15px] font-medium font-['Barlow']">{{
-									invoice.content ? (invoice.content.length > 23 ? invoice.content.substring(0, 33) + "..." : invoice.content) : ""
+									invoice.title ? (invoice.title.length > 23 ? invoice.title.substring(0, 33) + "..." : invoice.content) : ""
 								}}</span>
 								<span class="text-[#898989] text-[15px] font-['Barlow']">Для информации Подтверждающие</span>
-								<span class="text-[#404040] text-[11px] font-['Barlow']">Шевченко Людмила Николаевна</span>
+								<span class="text-[#404040] text-[11px] font-['Barlow']">{{ invoice.user.name }}</span>
 							</div>
 						</TableCell>
-						<TableCell class="w-[250px] t-cell">2100359852 Commodity - Corn - DAP ЧОРНОМОРСЬКА - ХЮРРЕМ ТОВ (38852547)</TableCell>
-						<TableCell class="t-cell">ТОВ "АТ Каргілл" 20010397</TableCell>
+						<TableCell class="w-[250px] t-cell">{{ invoice.lead.name }}</TableCell>
+						<TableCell class="t-cell">{{ invoice.counterparty ? invoice.counterparty.name : "Не выбран" }}</TableCell>
 						<TableCell class="t-cell">{{ new Date(invoice.createdAt).toLocaleDateString("ru-RU") }}</TableCell>
 						<TableCell class="t-cell">{{ invoice.status }}</TableCell>
 						<TableCell class="t-cell">
@@ -113,10 +113,10 @@
 		documentView.value = true;
 	};
 
-	onBeforeMount(() => {
+	onBeforeMount(async () => {
 		watch(
-			() => userStore.isAuthInitialized,
-			async (newVal) => {
+			() => [userStore.isAuthInitialized, route.fullPath],
+			async (newVal, routeFull) => {
 				if (newVal) {
 					await counterpartyStore.getDocumentsByLeadId(route.query.id);
 				}

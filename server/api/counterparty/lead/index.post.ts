@@ -1,13 +1,10 @@
-import { PrismaClient } from "@prisma/client";
-import { defineEventHandler } from "h3";
 import { createLead } from "~/server/db/leads";
-
-const prisma = new PrismaClient();
+import { getUserById } from "~/server/db/users";
 
 export default defineEventHandler(async (event) => {
 	const body = await readBody(event);
 
-	const { type, quantity, moderatorsId, contragentId, authorId, documents } = body;
+	const { type, quantity, moderatorsId, counterpartyId, authorId, documents } = body;
 
 	if (!type || !quantity || !authorId || !documents) {
 		event.res.statusCode = 400;
@@ -21,7 +18,49 @@ export default defineEventHandler(async (event) => {
 	}
 
 	try {
-		const lead = await createLead(event, { type, quantity, moderatorsId, contragentId, authorId, documents });
+		const author = await getUserById(authorId);
+
+		if (!author) {
+			event.res.statusCode = 404;
+			return {
+				code: 404,
+				body: { error: "Пользователь не найден" },
+			};
+		}
+
+		if (moderatorsId) {
+			const moderator = await getUserById(moderatorsId);
+			if (!moderator) {
+				event.res.statusCode = 404;
+				return {
+					code: 404,
+					body: { error: "Модератор не найден" },
+				};
+			} else if (moderator.role !== "moderator") {
+				event.res.statusCode = 400;
+				return {
+					code: 400,
+					body: { error: "Модератора с таким id не существует" },
+				};
+			}
+		} else if (counterpartyId) {
+			const counterparty = await getUserById(counterpartyId);
+			if (!counterparty) {
+				event.res.statusCode = 404;
+				return {
+					code: 404,
+					body: { error: "Контрагент не найден" },
+				};
+			}	else if (counterparty.role !== "counterparty") {
+				event.res.statusCode = 400;
+				return {
+					code: 400,
+					body: { error: "Контрагента с таким id не существует" },
+				};
+			}
+		}
+
+		const lead = await createLead(event, body);
 
 		return {
 			status: 201,
