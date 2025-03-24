@@ -1,5 +1,6 @@
 import { prisma } from "~/server/db/index";
 import { EventHandlerRequest, H3Event } from "h3";
+import { Lead } from "@prisma/client";
 
 export const getAllLeads = async () => {
 	return prisma.lead.findMany({
@@ -13,6 +14,9 @@ export const getLeadById = async (id: any) => {
 	return prisma.lead.findUnique({
 		where: { id },
 		include: {
+			author: true,
+			counterparty: true,
+			moderators: true,
 			documents: true,
 		},
 	});
@@ -41,7 +45,6 @@ export const createLead = async (event: H3Event<EventHandlerRequest>, data: any)
 		data: {
 			name: data.name,
 			type: data.type,
-			quantity: data.quantity,
 			author: { connect: { id: data.authorId } },
 			counterparty: data.counterpartyId ? { connect: { id: data.counterpartyId } } : undefined,
 			moderators: data.moderatorsId ? { connect: { id: data.moderatorsId } } : undefined,
@@ -64,13 +67,17 @@ export const updateLead = async (id: number, data: any) => {
 		data: {
 			name: data.name,
 			type: data.type,
-			quantity: data.quantity,
-			author: { connect: { id: data.authorId } },
 			counterparty: data.counterpartyId ? { connect: { id: data.counterpartyId } } : undefined,
 			moderators: data.moderatorsId ? { connect: { id: data.moderatorsId } } : undefined,
 			documents: {
-				connect: data.documents.map((documentId: number) => ({ id: documentId })),
+				connect: data.documents ? data.documents.map((documentId: number) => ({ id: documentId })) : undefined,
 			},
+		},
+		include: {
+			author: true,
+			counterparty: true,
+			moderators: true,
+			documents: true,
 		},
 	});
 };

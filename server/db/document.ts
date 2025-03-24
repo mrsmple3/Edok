@@ -57,6 +57,11 @@ export const createDocument = (data: any) => {
 				connect: { id: data.counterpartyId },
 			},
 		},
+		include: {
+			user: true,
+			counterparty: true,
+			lead: true,
+		},
 	});
 };
 
@@ -64,6 +69,11 @@ export const updateDocument = (id: number, data: any) => {
 	return prisma.document.update({
 		where: { id },
 		data,
+		include: {
+			user: true,
+			counterparty: true,
+			lead: true,
+		},
 	});
 };
 

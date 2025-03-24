@@ -15,7 +15,6 @@ export const useCounterpartyStore = defineStore("counterparty", {
 	getters: {
 		leadsGetter: (state): Lead[] => state.leads,
 		documentsGetter: (state): Document[] => state.documents,
-		
 	},
 	actions: {
 		async createDocument(document: any, file: File) {
@@ -54,16 +53,6 @@ export const useCounterpartyStore = defineStore("counterparty", {
 				handleApiError(error);
 			}
 		},
-		async createLead(lead: any) {
-			try {
-				const response: any = await useFetchApi("/api/counterparty/lead", {
-					method: "POST",
-					body: lead,
-				});
-				this.$patch({ leads: [...this.leads, response.body.lead] });
-				return response.body.lead;
-			} catch (error) {}
-		},
 		async getLeadByUserId(userId: number | null | undefined) {
 			try {
 				if (!userId) {
@@ -75,6 +64,16 @@ export const useCounterpartyStore = defineStore("counterparty", {
 			} catch (error) {
 				handleApiError(error);
 			}
+		},
+		async createLead(lead: any) {
+			try {
+				const response: any = await useFetchApi("/api/counterparty/lead", {
+					method: "POST",
+					body: lead,
+				});
+				this.$patch({ leads: [...this.leads, response.body.lead] });
+				return response.body.lead;
+			} catch (error) {}
 		},
 	},
 });

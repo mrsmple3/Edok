@@ -42,7 +42,14 @@ export default defineEventHandler(async (event) => {
 			};
 		}
 
-		return await updateDocument(parseInt(id), body);
+		const updatedDocument = await updateDocument(parseInt(id), body);
+
+		return {
+			code: 200,
+			body: {
+				document: updatedDocument,
+			},
+		};
 	} catch (error) {
 		console.error("Error updating document:", error);
 		event.res.statusCode = 500;

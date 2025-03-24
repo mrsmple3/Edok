@@ -1,5 +1,5 @@
 import { getDocumentsByLead } from "~/server/db/document";
-import { updateLead } from "~/server/db/leads";
+import { getLeadById, updateLead } from "~/server/db/leads";
 import { getUserById } from "~/server/db/users";
 
 export default defineEventHandler(async (event) => {
@@ -7,18 +7,6 @@ export default defineEventHandler(async (event) => {
 	const body = await readBody(event);
 
 	try {
-		if (body.authorId) {
-			const author = await getUserById(body.authorId);
-
-			if (!author) {
-				event.res.statusCode = 404;
-				return {
-					code: 404,
-					body: { error: "Пользователь не найден" },
-				};
-			}
-		}
-
 		if (body.moderatorsId) {
 			const moderator = await getUserById(body.moderatorsId);
 			if (!moderator) {
@@ -37,6 +25,16 @@ export default defineEventHandler(async (event) => {
 					body: { error: "Контрагент не найден" },
 				};
 			}
+		}
+
+		const existLead = await getLeadById(parseInt(id));
+
+		if (!existLead) {
+			event.res.statusCode = 404;
+			return {
+				code: 404,
+				body: { error: "Лид не найден" },
+			};
 		}
 
 		const lead = await updateLead(parseInt(id), body);

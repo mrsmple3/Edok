@@ -134,24 +134,8 @@
 
 						response.value.push(document);
 					}
-					await counterpartyStore.createLead({
-						type: "Двухстороннее соглашение",
-						status: "Информационный",
-						quantity: 1,
-						authorId: authStore.userGetter.id,
-						counterpartyId: authStore.userGetter.id,
-						moderatorsId: authStore.userGetter.id,
-						documents: response.value.map((doc: Document) => doc.id),
-					});
 				} else {
-					await counterpartyStore.createLead({
-						type: "Двухстороннее соглашение",
-						status: "Информационный",
-						quantity: 1,
-						authorId: authStore.userGetter.id,
-						counterpartyId: authStore.userGetter.id,
-						moderatorsId: authStore.userGetter.id,
-					});
+					// TODO: add some logic for leads
 				}
 				router.push("/leads");
 			});

@@ -51,22 +51,18 @@
 				</TableHeader>
 				<DocumentViewer v-if="documentView" :documentUrl="documentUrl" />
 				<TableBody class="w-full">
-					<TableRow
-						v-for="(invoice, index) in counterpartyStore.documentsGetter"
-						:key="index"
-						class="hover:bg-[#2d9cdb]/20"
-						@click="openDocument(invoice.filePath)">
+					<TableRow v-for="(invoice, index) in adminStore.$state.documents" :key="index" class="relative hover:bg-[#2d9cdb]/20">
 						<TableCell class="w-max flex-center gap-[20px]">
 							<img alt="doc" class="w-[33px] h-[45px]" src="/icons/lead-doc.svg" />
 							<div class="w-max flex flex-col items-start">
 								<span class="text-[#494949] text-[15px] font-medium font-['Barlow']">{{
-									invoice.title ? (invoice.title.length > 23 ? invoice.title.substring(0, 33) + "..." : invoice.content) : ""
+									invoice.title.length > 23 ? invoice.title.substring(0, 33) + "..." : invoice.title
 								}}</span>
 								<span class="text-[#898989] text-[15px] font-['Barlow']">Для информации Подтверждающие</span>
 								<span class="text-[#404040] text-[11px] font-['Barlow']">{{ invoice.user.name }}</span>
 							</div>
 						</TableCell>
-						<TableCell class="w-[250px] t-cell">{{ invoice.lead.name }}</TableCell>
+						<TableCell class="t-cell">{{ invoice.lead.name }}</TableCell>
 						<TableCell class="t-cell">{{ invoice.counterparty ? invoice.counterparty.name : "Не выбран" }}</TableCell>
 						<TableCell class="t-cell">{{ new Date(invoice.createdAt).toLocaleDateString("ru-RU") }}</TableCell>
 						<TableCell class="t-cell">{{ invoice.status }}</TableCell>
@@ -76,6 +72,7 @@
 								1
 							</div>
 						</TableCell>
+						<DocumentDropDown :invoice="invoice" />
 					</TableRow>
 				</TableBody>
 			</Table>
@@ -84,41 +81,26 @@
 </template>
 
 <script lang="ts" setup>
-	import { useCounterpartyStore } from "~/store/counterparty.store";
 	import { useUserStore } from "../store/user.store";
+	import { useAdminStore } from "~/store/admin.store";
 
 	definePageMeta({
 		layout: "page",
 	});
 
-	const invoices = [
-		{
-			name: "2100359852 Commodity - Corn - DAP ЧЕРНОМОРСКАЯ - ХЮРРЕМ ООО (38852547)",
-			data: "06.12.2024",
-			contragents: 'ТОВ "АТ Каргілл"\n' + "20010397",
-			lead: "2100359852 Commodity - Corn - DAP ЧОРНОМОРСЬКА - ХЮРРЕМ ТОВ (38852547)",
-			state: "Информационный",
-			concordants: "1",
-		},
-	];
-
 	const route = useRoute();
 	const userStore = useUserStore();
-	const counterpartyStore = useCounterpartyStore();
+	const adminStore = useAdminStore();
 
-	const documentView = useState("isDocumentView");
-	const documentUrl = ref("");
-	const openDocument = (filePath: any) => {
-		documentUrl.value = filePath;
-		documentView.value = true;
-	};
+	const documentView = useState("isDocumentView", () => false);
+	const documentUrl = useState("documentUrl", () => "");
 
 	onBeforeMount(async () => {
 		watch(
 			() => [userStore.isAuthInitialized, route.fullPath],
 			async (newVal, routeFull) => {
 				if (newVal) {
-					await counterpartyStore.getDocumentsByLeadId(route.query.id);
+					await adminStore.getDocumentsByLeadId(route.query.id);
 				}
 			}
 		);

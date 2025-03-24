@@ -1,3 +1,4 @@
+import * as z from 'zod';
 <template>
 	<div class="document-viewer" @click.self="documentView = false">
 		<div class="document-viewer__content">
@@ -29,6 +30,7 @@
 		@include flex-center();
 		justify-content: center;
 		background: rgba(0, 0, 0, 0.5);
+		z-index: 1000;
 	}
 	.document-viewer__content {
 		width: 60vw;

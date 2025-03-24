@@ -4,15 +4,15 @@ import { getUserById } from "~/server/db/users";
 export default defineEventHandler(async (event) => {
 	const body = await readBody(event);
 
-	const { type, quantity, moderatorsId, counterpartyId, authorId, documents } = body;
+	const { type, moderatorsId, counterpartyId, authorId, documents } = body;
 
-	if (!type || !quantity || !authorId || !documents) {
+	if (!type || !authorId || !documents) {
 		event.res.statusCode = 400;
 		return {
 			code: 400,
 			body: {
 				error: "Необходимо указать все поля",
-				missingFields: [!type ? "type" : null, !quantity ? "quantity" : null, !authorId ? "authorId" : null, !documents ? "documents" : null].filter(Boolean),
+				missingFields: [!type ? "type" : null, !authorId ? "authorId" : null, !documents ? "documents" : null].filter(Boolean),
 			},
 		};
 	}

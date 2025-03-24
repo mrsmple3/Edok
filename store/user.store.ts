@@ -19,7 +19,7 @@ export interface User {
 }
 
 export interface Document {
-	id: string;
+	id: number;
 	title: string;
 	file: File;
 	filePath?: string;
@@ -40,7 +40,6 @@ export interface Lead {
 	id: number;
 	name: string;
 	type: string;
-	quantity: number;
 	moderatorsId: number;
 	moderators?: User | null;
 	counterpartyId: number;
@@ -59,7 +58,7 @@ export interface ErrorResponse extends ApiResponse<{ error: string }> {}
 export interface MessageResponse extends ApiResponse<{ message: string }> {}
 export interface DocumentResponse extends ApiResponse<{ document: Document }> {}
 export interface ModeratorsResponse extends ApiResponse<{ user: User[] }> {}
-	
+
 const defaultValue: {
 	token: string;
 	user: User;
@@ -67,6 +66,7 @@ const defaultValue: {
 	isAuth: boolean;
 	isAuthInitialized: boolean;
 	moderators: User[];
+	counterparties: User[];
 } = {
 	token: "",
 	user: {
@@ -83,6 +83,7 @@ const defaultValue: {
 	isAuth: false,
 	isAuthInitialized: false,
 	moderators: [],
+	counterparties: [],
 };
 
 export const useUserStore = defineStore("auth", {
@@ -91,6 +92,7 @@ export const useUserStore = defineStore("auth", {
 		userGetter: (state): User => state.user,
 		tokenGetter: (state): string => state.token,
 		moderatorsGetter: (state): User[] => state.moderators,
+		counterpartiesGetter: (state): User[] => state.counterparties,
 	},
 	actions: {
 		async register(user: User) {
@@ -182,7 +184,14 @@ export const useUserStore = defineStore("auth", {
 				return response.body.user;
 			} catch (error: any) {
 				handleApiError(error);
-				
+			}
+		},
+		async getCounterparties() {
+			try {
+				const response = await $fetch<ModeratorsResponse>(`/api/user/role/counterparty`);
+				this.$patch({ counterparties: response.body.user });
+			} catch (error: any) {
+				handleApiError(error);
 			}
 		},
 		async getUserById(id: number) {
