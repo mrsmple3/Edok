@@ -1,13 +1,16 @@
 import { useFetchApi } from "~/utils/api";
 import { handleApiError } from "~/utils/errorHandler";
-import type { Lead, Document } from "~/store/user.store"; // Предположим, что у вас есть тип Lead
+import type { Lead, Document, UserResponse } from "~/store/user.store"; // Предположим, что у вас есть тип Lead
+import type { User } from "@prisma/client";
 
 const defaultValue: {
 	leads: Lead[];
 	documents: Document[];
+	users: User[];
 } = {
 	leads: [],
 	documents: [],
+	users: [],
 };
 
 export const useAdminStore = defineStore("admin", {
@@ -137,6 +140,15 @@ export const useAdminStore = defineStore("admin", {
 				this.$patch({ leads: response.body.leads });
 				return response.body.lead;
 			} catch (error) {
+				handleApiError(error);
+			}
+		},
+		async getUserByRole(role: string) {
+			try {
+				const response: any = await useFetchApi(`/api/user/role/${role}`);
+				this.$patch({ users: response.body.user });
+				return response.body.user;
+			} catch (error: any) {
 				handleApiError(error);
 			}
 		},

@@ -25,6 +25,8 @@ export const useCounterpartyStore = defineStore("counterparty", {
 				formData.append("file", file);
 				formData.append("type", document.type);
 				formData.append("status", document.status);
+				formData.append("counterpartyId", document.counterpartyId);
+				formData.append("content", "Для информации Подтверждающие");
 
 				const response: any = await useFetchApi("/api/counterparty/document", {
 					method: "POST",

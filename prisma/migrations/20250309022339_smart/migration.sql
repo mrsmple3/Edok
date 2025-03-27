@@ -1,4 +1,0 @@
--- AlterTable
-ALTER TABLE "Document" ADD COLUMN     "deleteSignCount" INTEGER NOT NULL DEFAULT 0,
-ALTER COLUMN "counterpartyId" DROP NOT NULL,
-ALTER COLUMN "leadId" DROP NOT NULL;

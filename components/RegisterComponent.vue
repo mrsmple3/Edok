@@ -126,6 +126,7 @@
 							{
 								title: file.name,
 								userId: authStore.userGetter.id,
+								counterpartyId: authStore.userGetter.id,
 								type: "act",
 								status: "Информационный",
 							},

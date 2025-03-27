@@ -1,0 +1,27 @@
+[
+	{
+		"id": "1",
+		"value": "admin",
+		"name": "Админ"
+	},
+	{
+		"id": "2",
+		"value": "counterparty",
+		"name": "Контрагент"
+	},
+	{
+		"id": "3",
+		"value": "boogalter",
+		"name": "Бугалтер"
+	},
+	{
+		"id": "4",
+		"value": "lawyer",
+		"name": "Юрист"
+	},
+	{
+		"id": "5",
+		"value": "moderator",
+		"name": "Модератор"
+	}
+]

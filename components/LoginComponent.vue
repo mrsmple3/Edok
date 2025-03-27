@@ -30,9 +30,11 @@
 	import { useToast } from "./ui/toast";
 	import ToastAction from "./ui/toast/ToastAction.vue";
 	import { useCounterpartyStore } from "~/store/counterparty.store";
+import { useAdminStore } from "~/store/admin.store";
 
 	const authStore = useUserStore();
 	const counterpartyStore = useCounterpartyStore();
+	const adminStore = useAdminStore();
 
 	const router = useRouter();
 
@@ -76,8 +78,14 @@
 				});
 			}
 			await authStore.initAuth().then(async () => {
-				await counterpartyStore.getLeadByUserId(authStore.userGetter.id);
-				router.push("/leads");
+				if (authStore.userGetter.role === "admin") {
+					await adminStore.getUserByRole('counterparty');
+					router.push("/contacts");
+				} else if (authStore.userGetter.role === "counterparty") {
+					await counterpartyStore.getLeadByUserId(authStore.userGetter.id);
+					router.push("/leads");
+				}
+				
 			});
 		} catch (error: any) {
 			const { toast } = useToast();

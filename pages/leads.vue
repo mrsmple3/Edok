@@ -61,10 +61,13 @@
 	onBeforeMount(async () => {
 		watch(
 			() => [userStore.isAuthInitialized, route.fullPath],
-			async ([newVal, route]) => {
+			async ([newVal, changedRoute]) => {
 				if (newVal) {
 					await adminStore.getLeadByUserId(userStore.userGetter.id);
 				}
+			},
+			{
+				immediate: true,
 			}
 		);
 	});

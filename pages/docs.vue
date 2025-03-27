@@ -102,6 +102,9 @@
 				if (newVal) {
 					await adminStore.getDocumentsByLeadId(route.query.id);
 				}
+			},
+			{
+				immediate: true,
 			}
 		);
 	});

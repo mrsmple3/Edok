@@ -93,6 +93,7 @@ export const useUserStore = defineStore("auth", {
 		tokenGetter: (state): string => state.token,
 		moderatorsGetter: (state): User[] => state.moderators,
 		counterpartiesGetter: (state): User[] => state.counterparties,
+		userRole: (state) => state.user.role,
 	},
 	actions: {
 		async register(user: User) {
