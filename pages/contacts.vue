@@ -44,9 +44,7 @@
 				<Badge class="w-12 h-12 bg-[#2d9cdb]/20 rounded-[15px] hover:bg-[#2d9cdb]/30">
 					<img alt="filter" src="/icons/filter.svg" />
 				</Badge>
-				<Badge class="w-12 h-12 bg-[#2d9cdb]/20 rounded-[15px] hover:bg-[#2d9cdb]/30">
-					<img alt="filter" src="/icons/restar.svg" />
-				</Badge>
+				<RefreshData :refreshFunction="async () => await adminStore.getUserByRole(selectedRole)" />
 			</div>
 		</div>
 		<div class="flex-center gap-[5px] mb-[26px]">
@@ -59,7 +57,7 @@
 				</SelectTrigger>
 				<SelectContent>
 					<SelectGroup>
-						<SelectItem v-for="role in getRoles" :key="role.id" :value="role.value" @select="onSelectUser(role.value)">
+						<SelectItem v-for="role in getRoles()" :key="role.id" :value="role.value" @select="onSelectUser(role.value)">
 							{{ role.name }}
 						</SelectItem>
 					</SelectGroup>
@@ -84,8 +82,12 @@
 	const adminStore = useAdminStore();
 	const userStore = useUserStore();
 
+	const selectedRole = ref("counterparty");
+
 	const onSelectUser = async (role: string) => {
-		await adminStore.getUserByRole(role);
+		await adminStore.getUserByRole(role).then(() => {
+			selectedRole.value = role;
+		})
 	};
 
 	onBeforeMount(() => {
@@ -93,7 +95,7 @@
 			() => [userStore.isAuthInitialized, route.fullPath],
 			async ([newVal, changedRoute]) => {
 				if (newVal) {
-					await adminStore.getUserByRole("counterparty");
+					await adminStore.getUserByRole(selectedRole.value);
 				}
 			},
 			{
@@ -103,23 +105,15 @@
 	});
 
 	const getRoles = (): { id: string; name: string; value: string }[] => {
-		switch (userStore.userGetter.role) {
-			case "admin":
-				return roles.filter((role) => role.value !== "admin");
-				break;
-			case "moderator":
-				return roles.filter((role) => role.value === "counterparty");
-				break;
-			case "boogalter":
-				return roles.filter((role) => role.value === "counterparty");
-				break;
-			case "lawyer":
-				return roles.filter((role) => role.value === "counterparty");
-				break;
-			default:
-				return roles.filter((role) => role.value === "counterparty");
-				break;
-		}
+		const userRole = userStore.userGetter.role;
+
+		const filteredRoles = roles.filter((role) => {
+			if (userRole === "admin") return role.value !== "admin";
+			return role.value === "counterparty";
+		});
+
+		console.log("Filtered roles:", filteredRoles); // Отладка
+		return filteredRoles;
 	};
 
 	const contactData = [

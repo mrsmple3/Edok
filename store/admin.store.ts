@@ -86,6 +86,8 @@ export const useAdminStore = defineStore("admin", {
 					body: formData,
 				});
 
+				this.$patch({ documents: [...this.documentsGetter, response.body.document] });
+
 				return response.body.document;
 			} catch (error) {
 				handleApiError(error);
@@ -114,9 +116,10 @@ export const useAdminStore = defineStore("admin", {
 				handleApiError(error);
 			}
 		},
-		async getDocumentsByUserId(userId: number) {
+		async getDocumentsByUserId(userId: any) {
 			try {
-				const response: any = await useFetchApi(`/api/counterparty/document/user/${userId}`);
+				const response: any = await useFetchApi(`/api/admin/document/user/${userId}`);
+				this.$patch({ documents: response.body.documents });
 				return response.body.documents;
 			} catch (error) {
 				handleApiError(error);
@@ -124,7 +127,8 @@ export const useAdminStore = defineStore("admin", {
 		},
 		async getDocumentsByLeadId(leadId: any) {
 			try {
-				const response: any = await useFetchApi(`/api/counterparty/document/lead/${leadId}`);
+				const response: any = await useFetchApi(`/api/admin/lead/document/${leadId}`);
+				console.log(response.body.documents);
 				this.$patch({ documents: response.body.documents });
 				return response.body.documents;
 			} catch (error) {
@@ -152,5 +156,16 @@ export const useAdminStore = defineStore("admin", {
 				handleApiError(error);
 			}
 		},
+		async deleteUser(id: number) {
+			try {
+				const response: any = await useFetchApi(`/api/admin/user/${id}`, {
+					method: "DELETE",
+				});
+				this.$patch({ users: this.users.filter((u) => u.id !== id) });
+				return response.body.user;
+			} catch (error) {
+				handleApiError(error);
+			}
+		}
 	},
 });

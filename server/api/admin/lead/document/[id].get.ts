@@ -4,12 +4,12 @@ export default defineEventHandler(async (event) => {
     const { id } = event.context.params;
 
     try {
-        const document = await getDocumentsByLead(parseInt(id));
+        const documents = await getDocumentsByLead(parseInt(id));
 
         return {
             code: 200,
             body: {
-                document
+                documents
             }
         }
     } catch(error) {

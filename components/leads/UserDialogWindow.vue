@@ -6,7 +6,7 @@
 		</DialogTrigger>
 		<DialogContent>
 			<DialogHeader>
-				<DialogTitle>Добавить Угоду</DialogTitle>
+				<DialogTitle>Добавить Угоду пользователя</DialogTitle>
 				<DialogDescription> Заполните поля сделки </DialogDescription>
 			</DialogHeader>
 			<div class="grid gap-4 py-4">
@@ -32,10 +32,6 @@
 						</FormControl>
 					</FormItem>
 				</FormField>
-				<div class="grid grid-cols-4 items-center gap-4">
-					<Label for="documents" class="text-[12px] text-start"> Документы </Label>
-					<Input id="documents" type="file" accept="application/pdf" @change="handleFileChange" multiple class="col-span-3" />
-				</div>
 				<FormField v-slot="{ componentField }" name="moderator">
 					<FormItem>
 						<Select v-bind="componentField">
@@ -54,26 +50,6 @@
 						<FormMessage />
 					</FormItem>
 				</FormField>
-				<FormField v-slot="{ componentField }" name="counterparty">
-					<FormItem>
-						<Select v-bind="componentField">
-							<FormControl>
-								<SelectTrigger>
-									<SelectValue placeholder="Выберите контрагента" />
-								</SelectTrigger>
-							</FormControl>
-							<SelectContent>
-								<SelectGroup>
-									<SelectLabel>Модераторы</SelectLabel>
-									<SelectItem v-for="counterparty in userStore.counterpartiesGetter" :key="counterparty.id" :value="counterparty.id">
-										{{ counterparty.name }}
-									</SelectItem>
-								</SelectGroup>
-							</SelectContent>
-						</Select>
-						<FormMessage />
-					</FormItem>
-				</FormField>
 			</div>
 			<DialogFooter> <Button @click="createLead">Создать</Button> </DialogFooter>
 		</DialogContent>
@@ -81,7 +57,6 @@
 </template>
 
 <script setup lang="ts">
-
 	import { useForm } from "vee-validate";
 	import { toTypedSchema } from "@vee-validate/zod";
 	import * as z from "zod";
@@ -90,28 +65,32 @@
 	import type { Document } from "~/store/user.store";
 	import { useAdminStore } from "~/store/admin.store";
 
+  const props = defineProps({
+    documents: {
+      type: Object,
+      required: true,
+    },
+    counterpartyId: {
+      type: Number,
+      required: true,
+    },
+    getFunction: {
+      type: Function,
+      required: true,
+    },
+  });
+
 	const adminStore = useAdminStore();
 	const userStore = useUserStore();
 
 	const typeOfLead = ref("Двухстороннее соглашение");
-	const uploadedFiles = ref<File[]>([]);
 	const isDialogOpen = ref(false);
-
-	const handleFileChange = (event: Event) => {
-		const target = event.target as HTMLInputElement;
-		if (target.files) {
-			for (let i = 0; i < target.files.length; i++) {
-				uploadedFiles.value.push(target.files[i]);
-			}
-		}
-	};
 
 	const formSchema = toTypedSchema(
 		z.object({
 			name: z.string().min(2).max(120),
 			type: z.string().min(2).max(50).default(typeOfLead.value),
 			moderator: z.number().min(1).max(50),
-			counterparty: z.number().min(1).max(50),
 		})
 	);
 
@@ -122,33 +101,16 @@
 	const createLead = form.handleSubmit(async (values) => {
 		try {
 			let response = ref();
-			if (uploadedFiles.value) {
-				response.value = [];
-				for (let i = 0; i < uploadedFiles.value.length; i++) {
-					const file = uploadedFiles.value[i];
-					const document: any = await adminStore.createDocument(
-						{
-							title: file.name,
-							userId: userStore.userGetter.id,
-							counterpartyId: values.counterparty,
-							type: "act",
-							status: "Информационный",
-						},
-						file
-					);
-
-					response.value.push(document);
-				}
-			}
-			await adminStore.createLead({
+			response.value = await adminStore.createLead({
 				name: values.name,
 				type: values.type,
 				status: "Информационный",
 				authorId: userStore.userGetter.id,
-				counterpartyId: values.counterparty,
+				counterpartyId: props.counterpartyId,
 				moderatorsId: values.moderator,
-				documents: response.value.map((doc: Document) => doc.id),
+				documents: props.documents,
 			});
+      props.getFunction();
 			isDialogOpen.value = false;
 		} catch (error: any) {
 			const { toast } = useToast();
@@ -173,7 +135,6 @@
 	watch(isDialogOpen, async (newVal) => {
 		if (newVal) {
 			await userStore.getModerators();
-			await userStore.getCounterparties();
 		}
 	});
 </script>

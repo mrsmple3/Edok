@@ -14,7 +14,7 @@
 			</TableRow>
 		</TableHeader>
 		<TableBody class="w-full">
-			<TableRow v-for="(invoice, index) in tableData" :key="index" class="hover:bg-[#2d9cdb]/20">
+			<TableRow v-for="(invoice, index) in tableData" :key="index" class="relative hover:bg-[#2d9cdb]/20">
 				<TableCell class="px-2 w-5">
 					<Checkbox :checked="checkBoxUsers[index]?.id !== null" class="bg-[#FFFFFF] border-[#DBDBDB]" @update:checked="updateCheckbox(index, invoice.id)" />
 				</TableCell>
@@ -24,14 +24,13 @@
 				<TableCell class="t-cell">{{ invoice.email ? invoice.email : "Не задано" }}</TableCell>
 				<TableCell class="t-cell">{{ invoice.phone ? invoice.phone : "Не задано" }}</TableCell>
 				<TableCell class="t-cell">{{ new Date(invoice.createdAt).toLocaleDateString("ru-RU") }}</TableCell>
+				<ContactsDropDown :invoice="invoice"/>
 			</TableRow>
 		</TableBody>
 	</Table>
 </template>
 
 <script lang="ts" setup>
-	import { ref, watch } from "vue";
-
 	const props = defineProps({
 		tableData: {
 			type: Object,
