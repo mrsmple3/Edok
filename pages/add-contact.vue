@@ -45,60 +45,7 @@
           </TabsTrigger>
         </TabsList>
         <TabsContent value="account">
-          <form class="flex flex-col items-center" @submit="onSubmit">
-            <div class="w-full flex flex-col items-stretch gap-[13px] mb-[57px]">
-              <FormField v-slot="{ componentField }" name="company">
-                <FormItem>
-                  <FormControl>
-                    <Input class="form__input"
-                           placeholder="Название компании"
-                           type="text"
-                           v-bind="componentField"/>
-                  </FormControl>
-                  <FormMessage/>
-                </FormItem>
-              </FormField>
-              <FormField v-slot="{ componentField }" name="code">
-                <FormItem>
-                  <FormControl>
-                    <Input class="form__input"
-                           placeholder="ЄДРПОУ/РНОКПП"
-                           type="text"
-                           v-bind="componentField"/>
-                  </FormControl>
-                  <FormMessage/>
-                </FormItem>
-              </FormField>
-              <FormField v-slot="{ componentField }" name="username">
-                <FormItem>
-                  <FormControl>
-                    <Input class="form__input"
-                           placeholder="Електронна адреса"
-                           type="text"
-                           v-bind="componentField"/>
-                  </FormControl>
-                  <FormMessage/>
-                </FormItem>
-              </FormField>
-              <FormField v-slot="{ componentField }" name="phone">
-                <FormItem>
-                  <FormControl>
-                    <Input v-mask="'+###(##) ###-##-##'" class="form__input" placeholder="Телефон" type="tel"
-                           v-bind="componentField"/>
-                  </FormControl>
-                  <FormMessage/>
-                </FormItem>
-              </FormField>
-            </div>
-            <div class="flex-center gap-[30px]">
-              <Button class="form__submit-btn outline" @click="router.push({path: '/contacts'})">
-                Отменить
-              </Button>
-              <Button class="form__submit-btn" type="submit">
-                Сохранить
-              </Button>
-            </div>
-          </form>
+          <ContactsAddCounterparty />
         </TabsContent>
         <TabsContent value="password">
           <Card>
@@ -132,25 +79,6 @@
 definePageMeta({
   layout: 'page',
 });
-import {useForm} from 'vee-validate'
-import {toTypedSchema} from '@vee-validate/zod'
-import * as z from 'zod'
-
-const formSchema = toTypedSchema(z.object({
-  company: z.string().min(2).max(50),
-  code: z.string().min(6).max(50),
-  username: z.string().min(2).max(50),
-  phone: z.string().min(9).max(50),
-}))
-
-const form = useForm({
-  validationSchema: formSchema,
-})
-
-const onSubmit = form.handleSubmit((values) => {
-  console.log('Form submitted!', values);
-});
-const router = useRouter();
 </script>
 
 <style lang="scss" scoped>

@@ -3,7 +3,7 @@
 		<div class="w-full flex-center justify-between mb-[18px]">
 			<div class="flex-center">
 				<h2 class="page__title mr-[32px]">Угоди</h2>
-				<LeadsDialogWindow/>
+				<LeadsDialogWindow />
 
 				<!-- <div class="flex-center gap-6">
 					<img alt="list" class="max-w-[24px] max-h-[24px] min-h-max min-w-max cursor-pointer" src="/icons/leads-icon-list-1.svg" />
@@ -51,14 +51,22 @@ onBeforeMount(async () => {
 		() => [userStore.isAuthInitialized, route.fullPath],
 		async ([newVal, changedRoute]) => {
 			if (newVal) {
-				await adminStore.getLeadByUserId(userStore.userGetter.id)
+				await getLead();
 			}
 		},
 		{
 			immediate: true,
 		}
 	)
-})
+});
+
+const getLead = async () => {
+	if (userStore.userRole !== "counterparty") {
+		await adminStore.getLeads();
+	} else {
+		await adminStore.getLeadByUserId(userStore.userGetter.id);
+	}
+}
 </script>
 
 <style lang="scss" scoped></style>

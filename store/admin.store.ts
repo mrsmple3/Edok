@@ -2,6 +2,7 @@ import { useFetchApi } from "~/utils/api";
 import { handleApiError } from "~/utils/errorHandler";
 import type { Lead, Document, UserResponse } from "~/store/user.store"; // Предположим, что у вас есть тип Lead
 import type { User } from "@prisma/client";
+import { updateUser } from "~/server/db/users";
 
 const defaultValue: {
 	leads: Lead[];
@@ -66,7 +67,20 @@ export const useAdminStore = defineStore("admin", {
 		async getLeads() {
 			try {
 				const response: any = await useFetchApi("/api/admin/lead");
+				this.$patch({ leads: response.body.leads });
 				return response.body.leads;
+			} catch (error) {
+				handleApiError(error);
+			}
+		},
+		async getLeadByUserId(userId: number | null | undefined) {
+			try {
+				if (!userId) {
+					throw new Error("Необходимо указать userId");
+				}
+				const response: any = await useFetchApi(`/api/counterparty/lead/user/${userId}`);
+				this.$patch({ leads: response.body.leads });
+				return response.body.lead;
 			} catch (error) {
 				handleApiError(error);
 			}
@@ -89,6 +103,15 @@ export const useAdminStore = defineStore("admin", {
 				this.$patch({ documents: [...this.documentsGetter, response.body.document] });
 
 				return response.body.document;
+			} catch (error) {
+				handleApiError(error);
+			}
+		},
+		async getAllDocuments() {
+			try {
+				const response: any = await useFetchApi("/api/admin/document");
+				this.$patch({ documents: response.body.documents });
+				return response.body.documents;
 			} catch (error) {
 				handleApiError(error);
 			}
@@ -135,18 +158,6 @@ export const useAdminStore = defineStore("admin", {
 				handleApiError(error);
 			}
 		},
-		async getLeadByUserId(userId: number | null | undefined) {
-			try {
-				if (!userId) {
-					throw new Error("Необходимо указать userId");
-				}
-				const response: any = await useFetchApi(`/api/counterparty/lead/user/${userId}`);
-				this.$patch({ leads: response.body.leads });
-				return response.body.lead;
-			} catch (error) {
-				handleApiError(error);
-			}
-		},
 		async getUserByRole(role: string) {
 			try {
 				const response: any = await useFetchApi(`/api/user/role/${role}`);
@@ -162,6 +173,30 @@ export const useAdminStore = defineStore("admin", {
 					method: "DELETE",
 				});
 				this.$patch({ users: this.users.filter((u) => u.id !== id) });
+				return response.body.user;
+			} catch (error) {
+				handleApiError(error);
+			}
+		},
+		async updateUser(user: any) {
+			try {
+				const response: any = await useFetchApi(`/api/admin/user/${user.id}`, {
+					method: "PUT",
+					body: user,
+				});
+				this.$patch({ users: this.users.map((u) => (u.id === user.id ? response.body.user : u)) });
+				return response.body.user;
+			} catch (error) {
+				handleApiError(error);
+			}
+		},
+		async createUser(user: any) {
+			try {
+				const response: any = await useFetchApi("/api/admin/user", {
+					method: "POST",
+					body: user,
+				});
+				this.$patch({ users: [...this.users, response.body.user] });
 				return response.body.user;
 			} catch (error) {
 				handleApiError(error);

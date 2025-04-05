@@ -3,7 +3,7 @@ import bcrypt from "bcrypt";
 import { User } from "@prisma/client";
 
 export const createUser = (userData: { role: any; phone: any; password_hash: any; email: any }) => {
-	const finalUserData = { ...userData, password_hash: bcrypt.hashSync(userData.password_hash, 10) };
+	const finalUserData = { ...userData, password_hash: bcrypt.hashSync(userData.password_hash, 10), isActive: userData.role === "counterparty" ? false : true };
 
 	return prisma.user.create({
 		data: finalUserData,

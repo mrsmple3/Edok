@@ -1,12 +1,12 @@
 <template>
   <div class="sidebar__width w-full h-[100vh] flex-col-start bg-white pt-[30px] pr-[40px]">
     <div class="flex-col-start px-[50px]">
-      <LoGo class=" mb-[5px]"/>
+      <LoGo class=" mb-[5px]" />
       <p class=" text-[#b9babd] text-xs font-normal mb-[56px]">Сервис электронного <br> документаоборота</p>
     </div>
     <div class="flex-center gap-[13px] mb-[34px] pl-[50px]">
       <img alt="profile-pictures" class="w-14 h-14 rounded-[63px] border-4 border-[#00b074]"
-           src="/images/placeholder-profile-img.png">
+        src="/images/placeholder-profile-img.png">
       <div class="text-[#464154] text-base font-normal font-['Barlow']">Здравствуйте, <strong>Николай</strong></div>
     </div>
     <div class="flex-stretch self-center justify-self-center gap-[20px] mb-[32px]">
@@ -21,13 +21,10 @@
       </button>
     </div>
     <div class="w-full flex-col-start gap-2">
-      <NuxtLink
-          v-for="link in sidebarLinks"
-          :to="link.route"
-          class="sidebar__link pl-[50px]"
-          exact-active-class="active" @click="chatState = false">
+      <NuxtLink v-for="link in sidebarLinks" :to="link.route" class="sidebar__link pl-[50px]"
+        exact-active-class="active" @click="chatState = false">
         <div
-            class="sidebar__link__item relative min-w-[250px] flex-center !justify-start  gap-[20px] text-black text-lg font-medium font-['Barlow'] py-3 px-[50px] rounded-lg">
+          class="sidebar__link__item relative min-w-[250px] flex-center !justify-start  gap-[20px] text-black text-lg font-medium font-['Barlow'] py-3 px-[50px] rounded-lg">
           <img :src="link.icon" alt="sms" class="w-[30px] h-[30px]">
           <span>{{ link.title }}</span>
         </div>
@@ -37,6 +34,8 @@
 </template>
 
 <script lang="ts" setup>
+import { useUserStore } from '~/store/user.store';
+
 const chatState = useState('isChat');
 const sidebarLinks = ref([
   {
@@ -59,12 +58,33 @@ const sidebarLinks = ref([
     icon: '/icons/Product%20Documents.svg',
     route: '/archive'
   },
-  {
-    title: 'Контакти',
-    icon: '/icons/Document%20Writer.svg',
-    route: '/contacts'
-  }
-])
+]);
+
+const userStore = useUserStore();
+const route = useRoute();
+
+onBeforeMount(async () => {
+  watch(
+    () => [userStore.isAuthInitialized, route.fullPath],
+    async ([newVal, changedRoute]) => {
+      if (newVal && userStore.userRole !== 'counterparty') {
+        callOnce(() => {
+          if (sidebarLinks.value.find(link => link.title === 'Контакти')) {
+            return;
+          }
+          sidebarLinks.value.push({
+            title: 'Контакти',
+            icon: '/icons/Document%20Writer.svg',
+            route: '/contacts'
+          })
+        });
+      }
+    },
+    {
+      immediate: true,
+    }
+  )
+})
 </script>
 
 <style lang="scss" scoped>

@@ -1,13 +1,13 @@
 generator client {
-  provider = "prisma-client-js"
+  provider        = "prisma-client-js"
   previewFeatures = ["relationJoins"]
 }
 
 datasource db {
-  provider = "mysql"
-  url      = env("DATABASE_URL")
-	shadowDatabaseUrl = env("SHADOW_DATABASE_URL")
-  relationMode = "prisma"
+  provider          = "mysql"
+  url               = env("DATABASE_URL")
+  shadowDatabaseUrl = env("SHADOW_DATABASE_URL")
+  relationMode      = "prisma"
 }
 
 model User {
@@ -15,23 +15,24 @@ model User {
   email                String?        @unique
   phone                String?        @unique
   password_hash        String
-  role                 String 				// Роль: "admin", "moderator", "counterparty"
-	name 								 String?
-	surname 						 String?
-	patronymic 					 String?
-	organization_name 	 String?
-	organization_INN 	 	 String?
+  role                 String // Роль: "admin", "moderator", "counterparty"
+  isActive             Boolean?       @default(false)
+  name                 String?
+  surname              String?
+  patronymic           String?
+  organization_name    String?
+  organization_INN     String?
   company_type         String?
   RefreshToken         RefreshToken[]
   Document             Document[]
-	DocumentCounterparty Document[]     @relation("DocumentCounterparty")
-	Signature       		 Signature[]
-  MessageSender   		 Message[]      @relation("Sender")
-  MessageReceiver 		 Message[]      @relation("Receiver")
-  LeadAuthor      		 Lead[]         @relation("LeadAuthor")
-  LeadModerator   		 Lead[]         @relation("LeadModerator")
-  LeadCounterparty  	 Lead[]         @relation("LeadCounterparty")
-	createdAt            DateTime       @default(now())
+  DocumentCounterparty Document[]     @relation("DocumentCounterparty")
+  Signature            Signature[]
+  MessageSender        Message[]      @relation("Sender")
+  MessageReceiver      Message[]      @relation("Receiver")
+  LeadAuthor           Lead[]         @relation("LeadAuthor")
+  LeadModerator        Lead[]         @relation("LeadModerator")
+  LeadCounterparty     Lead[]         @relation("LeadCounterparty")
+  createdAt            DateTime       @default(now())
 }
 
 model RefreshToken {
@@ -47,21 +48,21 @@ model RefreshToken {
 }
 
 model Document {
-  id              Int           @id @default(autoincrement())
+  id              Int         @id @default(autoincrement())
   title           String?
   content         String?
   filePath        String?
   type            String // Тип: "contract", "invoice", "act"
   status          String // Статус: "pending", "signed", "rejected"
-  deleteSignCount Int           @default(0)
+  deleteSignCount Int         @default(0)
   userId          Int
-  user            User          @relation(fields: [userId], references: [id])
+  user            User        @relation(fields: [userId], references: [id])
   counterpartyId  Int?
-  counterparty    User? 				@relation("DocumentCounterparty", fields: [counterpartyId], references: [id])
+  counterparty    User?       @relation("DocumentCounterparty", fields: [counterpartyId], references: [id])
   leadId          Int?
-  lead            Lead?         @relation(fields: [leadId], references: [id])
+  lead            Lead?       @relation(fields: [leadId], references: [id])
   Signature       Signature[]
-  createdAt       DateTime      @default(now())
+  createdAt       DateTime    @default(now())
 
   @@index([leadId])
   @@index([userId])
@@ -69,18 +70,18 @@ model Document {
 }
 
 model Lead {
-  id                Int      @id @default(autoincrement())
-	name 							String?
-  type              String
-  status       			String     @default("Информационный")
-  moderatorsId 			Int?
-  moderators   			User?      @relation("LeadModerator", fields: [moderatorsId], references: [id])
-  counterpartyId 		Int?
-  counterparty   		User?      @relation("LeadCounterparty", fields: [counterpartyId], references: [id])
-  authorId     			Int
-  author       			User       @relation("LeadAuthor", fields: [authorId], references: [id])
-  documents    			Document[]
-  createdAt    			DateTime   @default(now())
+  id             Int        @id @default(autoincrement())
+  name           String?
+  type           String
+  status         String     @default("Информационный")
+  moderatorsId   Int?
+  moderators     User?      @relation("LeadModerator", fields: [moderatorsId], references: [id])
+  counterpartyId Int?
+  counterparty   User?      @relation("LeadCounterparty", fields: [counterpartyId], references: [id])
+  authorId       Int
+  author         User       @relation("LeadAuthor", fields: [authorId], references: [id])
+  documents      Document[]
+  createdAt      DateTime   @default(now())
 
   @@index([authorId])
   @@index([moderatorsId])

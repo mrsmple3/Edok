@@ -24,7 +24,7 @@
 				<TableCell class="t-cell">{{ invoice.documents && invoice.documents.length }}</TableCell>
 				<TableCell class="t-cell">{{ invoice.moderators ? invoice.moderators.name : "Не выбрано" }} </TableCell>
 				<TableCell class="t-cell">{{ new Date(invoice.createdAt).toLocaleDateString("ru-RU") }}</TableCell>
-				<TableCell class="t-cell">{{ invoice.counterparty ? invoice.counterparty.name : "Не выбран" }} </TableCell>
+				<TableCell class="t-cell">{{ invoice.counterparty ? invoice.counterparty.organization_name : "Не выбран" }} </TableCell>
 				<TableCell class="t-cell">{{ invoice.author.email }}</TableCell>
 				<LeadsDropDown :invoice="invoice" />
 			</TableRow>

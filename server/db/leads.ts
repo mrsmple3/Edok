@@ -5,7 +5,10 @@ import { Lead } from "@prisma/client";
 export const getAllLeads = async () => {
 	return prisma.lead.findMany({
 		include: {
+			author: true,
 			documents: true,
+			moderators: true,
+			counterparty: true,
 		},
 	});
 };
