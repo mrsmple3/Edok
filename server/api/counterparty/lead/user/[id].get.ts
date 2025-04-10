@@ -1,4 +1,4 @@
-import { getAllLeads, getLeadsByAuthorId } from "~/server/db/leads";
+import { getLeadsByCounterpartyId } from "~/server/db/leads";
 import { getUserById } from "~/server/db/users";
 
 export default defineEventHandler(async (event) => {
@@ -17,7 +17,7 @@ export default defineEventHandler(async (event) => {
 			};
 		}
 
-		const leads = await getLeadsByAuthorId(parseInt(id));
+		const leads = await getLeadsByCounterpartyId(user.id);
 
 		return {
 			code: 200,

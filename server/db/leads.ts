@@ -43,6 +43,42 @@ export const getLeadsByAuthorId = async (authorId: number) => {
 	return leads;
 };
 
+export const getLeadsByCounterpartyId = async (counterpartyId: number) => {
+	const leads = await prisma.lead.findMany({
+		where: {
+			counterpartyId: {
+				equals: counterpartyId,
+			},
+		},
+		include: {
+			author: true,
+			documents: true,
+			moderators: true,
+			counterparty: true,
+		},
+	});
+
+	return leads;
+};
+
+export const getLeadsByModeratorId = async (moderatorId: number) => {
+	const leads = await prisma.lead.findMany({
+		where: {
+			moderatorsId: {
+				equals: moderatorId,
+			},
+		},
+		include: {
+			author: true,
+			documents: true,
+			moderators: true,
+			counterparty: true,
+		},
+	});
+
+	return leads;
+};
+
 export const createLead = async (event: H3Event<EventHandlerRequest>, data: any) => {
 	return prisma.lead.create({
 		data: {

@@ -2,10 +2,10 @@ import { getAllDocuments } from "~/server/db/document";
 
 export default defineEventHandler(async (event) => {
 	try {
-		const document = getAllDocuments();
+		const documents = getAllDocuments();
 		return {
 			code: 200,
-			body: { document },
+			body: { documents },
 		};
 	} catch (error) {
 		console.error("Error deleting leads:", error);

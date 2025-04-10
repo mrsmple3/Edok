@@ -1,19 +1,33 @@
-import {getDocumentsByLead, getDocumentsByUserId} from "~/server/db/document";
-import {getLeadsByAuthorId} from "~/server/db/leads";
+import { getDocumentsByLead, getDocumentsByUserId } from "~/server/db/document";
+import { getLeadsByAuthorId } from "~/server/db/leads";
+import { getUserById } from "~/server/db/users";
 
 export default defineEventHandler(async (event) => {
     const { id } = event.context.params;
 
     try {
-        const lead = await getLeadsByAuthorId(parseInt(id));
+
+        const user = await getUserById(parseInt(id));
+
+        if (!user) {
+            event.res.statusCode = 404;
+            return {
+                code: 404,
+                body: {
+                    error: "Пользователь не найден",
+                },
+            };
+        }
+
+        const leads = await getLeadsByAuthorId(user.id);
 
         return {
             code: 200,
             body: {
-                lead
+                leads
             }
         }
-    } catch(error) {
+    } catch (error) {
         console.error("Error getting user leads:", error);
         event.res.statusCode = 500;
         return {

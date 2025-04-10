@@ -3,11 +3,11 @@ import { getAllDocuments } from "~/server/db/document";
 
 export default defineEventHandler(async (event) => {
     try {
-        const document = await getAllDocuments();
+        const documents = await getAllDocuments();
 
         return {
             code: 200,
-            body: { document },
+            body: { documents },
         };
     } catch (error) {
         console.error("Error getting leads:", error);
