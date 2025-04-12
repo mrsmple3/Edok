@@ -5,15 +5,14 @@
 				<h2 class="page__title mr-[32px]">Контакты</h2>
 
 				<button
-					class="submenu-parent relative flex-center gap-[11px] rounded-[14px] border border-[#2d9cdb] py-2 px-7 text-[#2d9cdb] text-[18px] font-bold font-['Barlow'] mr-[24px] hover:active"
-					@click="router.push('/add-contact')">
+					class="submenu-parent relative flex-center gap-[11px] rounded-[14px] border border-[#2d9cdb] py-2 px-7 text-[#2d9cdb] text-[18px] font-bold font-['Barlow'] mr-[24px] hover:active">
 					<img alt="plus" class="w-[19px] h-[19px] min-h-max min-w-max" src="/icons/plus-blue.svg" />
 					Новый
 					<div class="submenu">
-						<span>Модератор</span>
-						<span>Контрагент</span>
-						<span>Бухгалтер</span>
-						<span>Юрист</span>
+						<span @click="router.push({ path: '/add-contact', query: { role: 'moderator' } })">Модератор</span>
+						<span @click="router.push({ path: '/add-contact', query: { role: 'counterparty' } })">Контрагент</span>
+						<span @click="router.push({ path: '/add-contact', query: { role: 'boogalter' } })">Бухгалтер</span>
+						<span @click="router.push({ path: '/add-contact', query: { role: 'lawyer' } })">Юрист</span>
 					</div>
 				</button>
 				<button

@@ -1,5 +1,5 @@
 import { getDocumentsByLead, getDocumentsByUserId } from "~/server/db/document";
-import { getLeadsByAuthorId } from "~/server/db/leads";
+import { getLeadsByAuthorId, getLeadsByRole } from "~/server/db/leads";
 import { getUserById } from "~/server/db/users";
 
 export default defineEventHandler(async (event) => {
@@ -19,7 +19,7 @@ export default defineEventHandler(async (event) => {
             };
         }
 
-        const leads = await getLeadsByAuthorId(user.id);
+        const leads = await getLeadsByRole(user.role, user.id);
 
         return {
             code: 200,

@@ -85,17 +85,6 @@ export const useAdminStore = defineStore("admin", {
 				handleApiError(error);
 			}
 		},
-		async getLeadByCounterpartyId(counterpartyId: any) {
-			try {
-				if (!counterpartyId) {
-					throw new Error("Необходимо указать userId");
-				}
-				const response: any = await useFetchApi(`/api/admin/lead/user/counterparty/${counterpartyId}`);
-				this.$patch({ leads: response.body.leads });
-			} catch (error) {
-				handleApiError(error);
-			}
-		},
 		async getLeadByModeratorId(moderatorId: any) {
 			try {
 				if (!moderatorId) {

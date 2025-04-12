@@ -61,6 +61,71 @@ export const getLeadsByCounterpartyId = async (counterpartyId: number) => {
 	return leads;
 };
 
+export const getLeadsByRole = async (role: string, id: number) => {
+	switch (role) {
+		case "counterparty":
+			return await prisma.lead.findMany({
+				where: {
+					counterpartyId: {
+						equals: id,
+					},
+				},
+				include: {
+					author: true,
+					documents: true,
+					moderators: true,
+					counterparty: true,
+				},
+			});
+			break;
+		case "moderator":
+			return await prisma.lead.findMany({
+				where: {
+					moderatorsId: {
+						equals: id,
+					},
+				},
+				include: {
+					author: true,
+					documents: true,
+					moderators: true,
+					counterparty: true,
+				},
+			});
+			break;
+		case "author":
+			return await prisma.lead.findMany({
+				where: {
+					authorId: {
+						equals: id,
+					},
+				},
+				include: {
+					author: true,
+					documents: true,
+					moderators: true,
+					counterparty: true,
+				},
+			});
+			break;
+		default:
+			return await prisma.lead.findMany({
+				where: {
+					authorId: {
+						equals: id,
+					},
+				},
+				include: {
+					author: true,
+					documents: true,
+					moderators: true,
+					counterparty: true,
+				},
+			});
+			break;
+	}
+}
+
 export const getLeadsByModeratorId = async (moderatorId: number) => {
 	const leads = await prisma.lead.findMany({
 		where: {

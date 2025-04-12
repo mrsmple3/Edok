@@ -22,7 +22,7 @@
 						class="bg-[#FFFFFF] border-[#DBDBDB] absolute top-1/2 -translate-y-1/2 z-[10]"
 						@update:checked="updateCheckbox(index, invoice.id)" />
 				</TableCell>
-				<TableCell class="w-[300px] t-cell text-[17px]">{{ invoice.organization_name }}</TableCell>
+				<TableCell class="w-[300px] t-cell text-[17px]">{{ invoice.organization_name || invoice.name }}</TableCell>
 				<TableCell class="t-cell">{{ invoice.id }}</TableCell>
 				<TableCell class="t-cell">{{ invoice.role }}</TableCell>
 				<TableCell class="t-cell">{{ invoice.email ? invoice.email : "Не задано" }}</TableCell>

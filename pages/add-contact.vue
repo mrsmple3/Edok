@@ -4,7 +4,7 @@
       <div class="flex-center">
         <h2 class="page__title mr-[32px]">Контакты</h2>
 
-        <button
+        <!-- <button
             class="submenu-parent relative flex-center gap-[11px] rounded-[14px] border border-[#2d9cdb] py-2 px-7 text-[#2d9cdb] text-[18px] font-bold font-['Barlow'] mr-[24px] hover:active">
           <img alt="plus" class="w-[19px] h-[19px] min-h-max min-w-max" src="/icons/plus-blue.svg">
           Створити нову угоду
@@ -14,7 +14,7 @@
             <span>Добавить накладную</span>
             <span>Добавить подтверждающие документы</span>
           </div>
-        </button>
+        </button> -->
       </div>
 
       <div class="flex-center gap-[15px]">
@@ -34,18 +34,19 @@
       <Tabs class="form__container" default-value="account">
         <TabsList class="w-full flex items-center bg-transparent justify-center gap-8 mb-[122px]">
           <TabsTrigger
-              class="!w-max data-[state=active]:!bg-[#00b074]/20 rounded-lg !text-center !text-[#464154] data-[state=active]:!text-[#00b074] !text-lg !font-bold py-[15px] px-[30px]"
-              value="account">
+            class="!w-max data-[state=active]:!bg-[#00b074]/20 rounded-lg !text-center !text-[#464154] data-[state=active]:!text-[#00b074] !text-lg !font-bold py-[15px] px-[30px]"
+            value="account">
             Данные контакта
           </TabsTrigger>
           <TabsTrigger
-              class="!w-max data-[state=active]:!bg-[#00b074]/20 rounded-lg !text-center !text-[#464154] data-[state=active]:!text-[#00b074] !text-lg !font-bold py-[15px] px-[30px]"
-              value="password">
+            class="!w-max data-[state=active]:!bg-[#00b074]/20 rounded-lg !text-center !text-[#464154] data-[state=active]:!text-[#00b074] !text-lg !font-bold py-[15px] px-[30px]"
+            value="password">
             Соглашения
           </TabsTrigger>
         </TabsList>
         <TabsContent value="account">
-          <ContactsAddCounterparty />
+          <ContactsAddCounterparty v-if="route.query.role === 'counterparty'" />
+          <ContactsAddModerator v-else />
         </TabsContent>
         <TabsContent value="password">
           <Card>
@@ -58,11 +59,11 @@
             <CardContent class="space-y-2">
               <div class="space-y-1">
                 <Label for="current">Current password</Label>
-                <Input id="current" type="password"/>
+                <Input id="current" type="password" />
               </div>
               <div class="space-y-1">
                 <Label for="new">New password</Label>
-                <Input id="new" type="password"/>
+                <Input id="new" type="password" />
               </div>
             </CardContent>
             <CardFooter>
@@ -79,6 +80,7 @@
 definePageMeta({
   layout: 'page',
 });
+const route = useRoute();
 </script>
 
 <style lang="scss" scoped>

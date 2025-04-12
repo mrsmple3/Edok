@@ -51,7 +51,7 @@ onBeforeMount(async () => {
     () => [userStore.isAuthInitialized, route.fullPath],
     async ([newVal, changedRoute]) => {
       if (newVal) {
-        await getLead();
+        await adminStore.getLeadByUserId(route.query.id);
       }
     },
     {
@@ -59,16 +59,6 @@ onBeforeMount(async () => {
     }
   )
 });
-
-const getLead = async () => {
-  if (route.query.role === 'counterparty') {
-    await adminStore.getLeadByCounterpartyId(route.query.id);
-  } else if (route.query.role === 'moderator') {
-    await adminStore.getLeadByModeratorId(route.query.id);
-  } else {
-    await adminStore.getLeadByUserId(route.query.id);
-  }
-};
 </script>
 
 <style lang="scss" scoped></style>

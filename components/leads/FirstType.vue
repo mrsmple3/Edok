@@ -16,7 +16,7 @@
 				<!--        @click="chatState = true"-->
 				<TableCell class="flex-center justify-start gap-[20px] t-cell">
 					<img alt="doc" class="w-[33px] h-[45px]" src="/icons/lead-doc.svg" />
-					<div>
+					<div class="text-start">
 						{{ invoice.name.length > 23 ? invoice.name.substring(0, 20) + "..." : invoice.name }}
 					</div>
 				</TableCell>
