@@ -28,7 +28,6 @@ model User {
   DocumentCounterparty Document[]     @relation("DocumentCounterparty")
   Signature            Signature[]
   MessageSender        Message[]      @relation("Sender")
-  MessageReceiver      Message[]      @relation("Receiver")
   LeadAuthor           Lead[]         @relation("LeadAuthor")
   LeadModerator        Lead[]         @relation("LeadModerator")
   LeadCounterparty     Lead[]         @relation("LeadCounterparty")
@@ -89,16 +88,15 @@ model Lead {
 }
 
 model Message {
-  id         Int      @id @default(autoincrement())
-  content    String
-  senderId   Int // Отправитель
-  receiverId Int // Получатель
-  receiver   User     @relation("Receiver", fields: [receiverId], references: [id])
-  sender     User     @relation("Sender", fields: [senderId], references: [id])
-  createdAt  DateTime @default(now())
+  id        Int      @id @default(autoincrement())
+  content   String
+  senderId  Int
+  room      String
+  sender    User     @relation("Sender", fields: [senderId], references: [id])
+  createdAt DateTime @default(now())
+  userId    Int?
 
   @@index([senderId])
-  @@index([receiverId])
 }
 
 model Signature {

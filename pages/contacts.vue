@@ -47,8 +47,8 @@
 		<div class="flex-center gap-[5px] mb-[26px]">
 			<NuxtLink class="breadcrumbs" to="">Контакты</NuxtLink>
 		</div>
-		<div class="page__block relative pt-[40px] pb-[40px] px-[42px]">
-			<Select defaultValue="counterparty">
+		<div class="page__block relative py-[30px] px-[42px]">
+			<Select defaultValue="counterparty" v-model="selectedRole">
 				<SelectTrigger class="w-[180px] absolute top-1 right-1 z-10">
 					<SelectValue placeholder="Пользователи" />
 				</SelectTrigger>
@@ -61,8 +61,28 @@
 					</SelectGroup>
 				</SelectContent>
 			</Select>
-			<ContactTable ref="contactTableRef" :tableData="adminStore.$state.users" />
+			<ContactTable ref="contactTableRef" :tableData="paginatedUsers" />
 		</div>
+		<Pagination class="pagination-class" v-slot="{ page }" :items-per-page="itemsPerPage"
+			:total="adminStore.$state.users.length" :sibling-count="1" show-edges :default-page="1"
+			@update:page="(newPage) => (currentPage = newPage)">
+			<PaginationList v-slot="{ items }" class="flex items-center gap-1">
+				<PaginationFirst />
+				<PaginationPrev />
+
+				<template v-for="(item, index) in items">
+					<PaginationListItem v-if="item.type === 'page'" :key="index" :value="item.value" as-child>
+						<Button class="w-9 h-9 p-0" :variant="item.value === page ? 'default' : 'outline'">
+							{{ item.value }}
+						</Button>
+					</PaginationListItem>
+					<PaginationEllipsis v-else :key="item.type" :index="index" />
+				</template>
+
+				<PaginationNext />
+				<PaginationLast />
+			</PaginationList>
+		</Pagination>
 	</div>
 </template>
 
@@ -89,8 +109,24 @@ const selectedRole = ref("counterparty");
 const onSelectUser = async (role: string) => {
 	await adminStore.getUserByRole(role).then(() => {
 		selectedRole.value = role;
+		router.push({ path: '/contacts', query: { role: selectedRole.value } });
 	})
 };
+
+const currentPage = ref(1); // Текущая страница
+const itemsPerPage = 7; // Количество элементов на странице
+
+// Получаем данные для текущей страницы
+const paginatedUsers = computed(() => {
+	const start = (currentPage.value - 1) * itemsPerPage;
+	const end = start + itemsPerPage;
+	return adminStore.$state.users.slice(start, end);
+});
+
+// Общее количество страниц
+const totalPages = computed(() => {
+	return Math.ceil(adminStore.$state.users.length / itemsPerPage);
+});
 
 onBeforeMount(() => {
 	watch(
@@ -98,6 +134,14 @@ onBeforeMount(() => {
 		async ([newVal, changedRoute]) => {
 			if (newVal) {
 				await adminStore.getUserByRole(selectedRole.value);
+
+				router.replace({
+					path: route.path,
+					query: {
+						...route.query,
+						role: selectedRole.value,
+					},
+				});
 			}
 		},
 		{

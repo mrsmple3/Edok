@@ -60,7 +60,7 @@ export const useCounterpartyStore = defineStore("counterparty", {
 				if (!userId) {
 					throw new Error("Необходимо указать userId");
 				}
-				const response: any = await useFetchApi(`/api/counterparty/lead/user/counterparty/${userId}`);
+				const response: any = await useFetchApi(`/api/counterparty/lead/user/${userId}`);
 				this.$patch({ leads: response.body.leads });
 				return response.body.lead;
 			} catch (error) {

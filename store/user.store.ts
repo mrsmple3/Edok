@@ -1,3 +1,4 @@
+import type { Socket } from "socket.io-client";
 import { useFetchApi } from "~/utils/api";
 import { handleApiError } from "~/utils/errorHandler";
 
@@ -11,11 +12,13 @@ export interface User {
 	email?: string; // Nullable
 	phone?: string; // Nullable
 	role: string;
+	isActive: boolean;
 	name?: string;
 	password_hash: string; // Nullable
 	organization_name?: string; // Nullable
 	organization_INN?: string; // Nullable
 	company_type?: string; // Nullable
+	createdAt: Date;
 }
 
 export interface Document {
@@ -50,14 +53,21 @@ export interface Lead {
 	createdAt: Date;
 	author: User;
 }
+export interface Message {
+	id: number;
+	content: string;
+	senderId: number;
+	room: string;
+	createdAt: Date;
+}
 
-export interface UserResponse extends ApiResponse<{ user: User }> {}
-export interface LeadsResponse extends ApiResponse<{ leads: Lead[] }> {}
-export interface TokenResponse extends ApiResponse<{ token?: string; error?: string }> {}
-export interface ErrorResponse extends ApiResponse<{ error: string }> {}
-export interface MessageResponse extends ApiResponse<{ message: string }> {}
-export interface DocumentResponse extends ApiResponse<{ document: Document }> {}
-export interface ModeratorsResponse extends ApiResponse<{ user: User[] }> {}
+export interface UserResponse extends ApiResponse<{ user: User }> { }
+export interface LeadsResponse extends ApiResponse<{ leads: Lead[] }> { }
+export interface TokenResponse extends ApiResponse<{ token?: string; error?: string }> { }
+export interface ErrorResponse extends ApiResponse<{ error: string }> { }
+export interface MessageResponse extends ApiResponse<{ message: string }> { }
+export interface DocumentResponse extends ApiResponse<{ document: Document }> { }
+export interface ModeratorsResponse extends ApiResponse<{ user: User[] }> { }
 
 const defaultValue: {
 	token: string;
@@ -67,23 +77,30 @@ const defaultValue: {
 	isAuthInitialized: boolean;
 	moderators: User[];
 	counterparties: User[];
+	socket: Socket | undefined;
+	messages: Message[];
 } = {
 	token: "",
 	user: {
 		id: null,
 		email: "",
 		phone: "",
+		name: "",
 		password_hash: "",
 		company_type: "",
 		organization_name: "",
 		organization_INN: "",
+		isActive: false,
 		role: "",
+		createdAt: new Date(),
 	},
 	leads: [],
 	isAuth: false,
 	isAuthInitialized: false,
 	moderators: [],
 	counterparties: [],
+	socket: undefined,
+	messages: [],
 };
 
 export const useUserStore = defineStore("auth", {
@@ -202,6 +219,18 @@ export const useUserStore = defineStore("auth", {
 			} catch (error: any) {
 				handleApiError(error);
 			}
+		},
+		async getMessages(messages: Message[]) {
+			this.$patch({ messages: messages });
+			return messages;
+		},
+		async setMessages(message: Message[]) {
+			this.$patch({ messages: message });
+			return message;
+		},
+		async setMessage(message: Message) {
+			this.$patch({ messages: [...this.messages, message] });
+			return message;
 		},
 	},
 });

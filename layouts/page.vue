@@ -1,8 +1,8 @@
 <template>
   <div :class="{ chat: chatState }" class="sidebar__container">
-    <SideBar/>
-    <slot/>
-    <ChatSidebar/>
+    <SideBar />
+    <slot />
+    <ChatSidebar />
   </div>
 </template>
 
@@ -12,8 +12,10 @@ const chatState = useState('isChat', () => false);
 
 <style lang="scss" scoped>
 .sidebar__container {
-  width: 100%;
+  width: 100vw;
   height: 100vh;
+  max-width: 100vw;
+  max-height: 100vh;
   display: grid;
   grid-template-columns: size(300px) 1fr;
   gap: size(85px);

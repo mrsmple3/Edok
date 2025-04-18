@@ -10,7 +10,8 @@
       <div class="text-[#464154] text-base font-normal font-['Barlow']">Здравствуйте, <strong>Николай</strong></div>
     </div>
     <div class="flex-stretch self-center justify-self-center gap-[20px] mb-[32px]">
-      <button class="relative w-12 h-12 bg-[#2d9cdb]/20 flex items-center justify-center rounded-[15px]">
+      <button class="relative w-12 h-12 bg-[#2d9cdb]/20 flex items-center justify-center rounded-[15px]"
+        @click="openChat">
         <img alt="sms" class="w-7 h-7" src="/icons/sms-blue.svg">
         <div class="chip">
           53
@@ -34,6 +35,8 @@
 </template>
 
 <script lang="ts" setup>
+import type { User } from "@prisma/client";
+import { io, Socket } from "socket.io-client";
 import { useUserStore } from '~/store/user.store';
 
 const chatState = useState('isChat');
@@ -61,7 +64,52 @@ const sidebarLinks = ref([
 ]);
 
 const userStore = useUserStore();
+const router = useRouter();
 const route = useRoute();
+const socket = ref<Socket>();
+
+const openChat = () => {
+  if (userStore.userRole === 'counterparty') {
+    if (!userStore.$state.socket) {
+      // Создаем соединение, если оно еще не создано
+      userStore.$state.socket = io({
+        path: '/api/socket.io',
+      });
+
+      // Обработка событий
+      userStore.$state.socket.on('joinMessage', (data: { message: string; user: User; room: string }) => {
+        console.log('Join message received:', data.message);
+      });
+      userStore.$state.socket.on('message', (message: any) => {
+        console.log('New message received:', message);
+        if (message.senderId === userStore.userGetter.id) {
+          console.log('Сообщение отправлено текущим пользователем, пропускаем');
+          return;
+        }
+        userStore.setMessage(message);
+      });
+    }
+
+    const room = `${route.query.room}${route.query.id}`;
+
+    if (chatState.value) {
+      // Выход из комнаты
+      userStore.$state.socket.emit('leaveRoom', room, (response: any) => {
+        console.log('Left room:', response);
+      });
+      router.push({ path: route.path });
+    } else {
+      // Вход в комнату
+      router.push({ path: route.path, query: { room: 'all', id: userStore.userGetter.id } });
+      userStore.$state.socket.emit('joinRoom', userStore.userGetter, 'all' + userStore.userGetter.id, (response: any) => {
+        console.log('Joined room:', response);
+        userStore.setMessages(response);
+      });
+    }
+
+    chatState.value = !chatState.value;
+  }
+};
 
 onBeforeMount(async () => {
   watch(

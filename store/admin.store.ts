@@ -19,6 +19,11 @@ export const useAdminStore = defineStore("admin", {
 	getters: {
 		leadsGetter: (state): Lead[] => state.leads,
 		documentsGetter: (state): Document[] => state.documents,
+		getterUserById: (state) => {
+			return (id: number) => {
+				return state.users.find((user) => user.id === id);
+			};
+		}
 	},
 	actions: {
 		async createLead(lead: any) {
@@ -81,17 +86,6 @@ export const useAdminStore = defineStore("admin", {
 				const response: any = await useFetchApi(`/api/admin/lead/user/${userId}`);
 				this.$patch({ leads: response.body.leads });
 				return response.body.lead;
-			} catch (error) {
-				handleApiError(error);
-			}
-		},
-		async getLeadByModeratorId(moderatorId: any) {
-			try {
-				if (!moderatorId) {
-					throw new Error("Необходимо указать userId");
-				}
-				const response: any = await useFetchApi(`/api/admin/lead/user/moderator/${moderatorId}`);
-				this.$patch({ leads: response.body.leads });
 			} catch (error) {
 				handleApiError(error);
 			}
