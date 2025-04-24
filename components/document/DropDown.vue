@@ -13,7 +13,9 @@
 </template>
 
 <script setup lang="ts">
+	import { useToast } from "~/components/ui/toast";
 	import { useAdminStore } from "~/store/admin.store";
+	import { useUserStore } from "~/store/user.store";
 
 	const props = defineProps({
 		invoice: {
@@ -24,6 +26,9 @@
 
 	const router = useRouter();
 	const adminStore = useAdminStore();
+	const userStore = useUserStore();
+	const { toast } = useToast();
+
 
 	const documentView = useState("isDocumentView");
 	const documentUrl = useState("documentUrl");
@@ -36,8 +41,33 @@
 		event.preventDefault();
 	};
 
+
 	const deleteDocument = async (invoice: any) => {
-		await adminStore.deleteDocument(parseInt(invoice.id));
+		try {
+			const reponse = await adminStore.deleteDocument(userStore.userGetter.id, invoice.id);
+			toast({
+				title: "Успех",
+				description: reponse,
+				variant: "default",
+			});
+		}
+		 catch (error: any) {
+			console.log(error);
+
+			if (error.message) {
+				toast({
+					title: "Ошибка",
+					description: error.message,
+					variant: "destructive",
+				});
+			} else {
+				toast({
+					title: "Неизвестная ошибка",
+					description: "Попробуйте позже",
+					variant: "destructive",
+				});
+			}
+		}
 	};
 </script>
 

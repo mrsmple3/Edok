@@ -7,6 +7,13 @@ export interface ApiResponse<T> {
 	body: T;
 }
 
+export interface DocumentDeleteSign {
+	id: number | null;
+	documentId: number;
+	userId: number;
+	createdAt: Date;
+}
+
 export interface User {
 	id?: number | null; // UUID
 	email?: string; // Nullable
@@ -36,6 +43,7 @@ export interface Document {
 	leadId?: number;
 	lead: Lead;
 	user: User;
+	deleteSigns: DocumentDeleteSign[];
 	createdAt: Date;
 }
 

@@ -11,12 +11,12 @@ datasource db {
 }
 
 model User {
-  id                   Int            @id @default(autoincrement())
-  email                String?        @unique
-  phone                String?        @unique
+  id                   Int                  @id @default(autoincrement())
+  email                String?              @unique
+  phone                String?              @unique
   password_hash        String
   role                 String // Роль: "admin", "moderator", "counterparty"
-  isActive             Boolean?       @default(false)
+  isActive             Boolean?             @default(false)
   name                 String?
   surname              String?
   patronymic           String?
@@ -25,13 +25,14 @@ model User {
   company_type         String?
   RefreshToken         RefreshToken[]
   Document             Document[]
-  DocumentCounterparty Document[]     @relation("DocumentCounterparty")
+  DocumentCounterparty Document[]           @relation("DocumentCounterparty")
   Signature            Signature[]
-  MessageSender        Message[]      @relation("Sender")
-  LeadAuthor           Lead[]         @relation("LeadAuthor")
-  LeadModerator        Lead[]         @relation("LeadModerator")
-  LeadCounterparty     Lead[]         @relation("LeadCounterparty")
-  createdAt            DateTime       @default(now())
+  MessageSender        Message[]            @relation("Sender")
+  LeadAuthor           Lead[]               @relation("LeadAuthor")
+  LeadModerator        Lead[]               @relation("LeadModerator")
+  LeadCounterparty     Lead[]               @relation("LeadCounterparty")
+  DocumentDeleteSign   DocumentDeleteSign[]
+  createdAt            DateTime             @default(now())
 }
 
 model RefreshToken {
@@ -47,25 +48,39 @@ model RefreshToken {
 }
 
 model Document {
-  id              Int         @id @default(autoincrement())
+  id              Int                  @id @default(autoincrement())
   title           String?
   content         String?
   filePath        String?
   type            String // Тип: "contract", "invoice", "act"
   status          String // Статус: "pending", "signed", "rejected"
-  deleteSignCount Int         @default(0)
+  deleteSignCount Int                  @default(0)
   userId          Int
-  user            User        @relation(fields: [userId], references: [id])
+  user            User                 @relation(fields: [userId], references: [id])
   counterpartyId  Int?
-  counterparty    User?       @relation("DocumentCounterparty", fields: [counterpartyId], references: [id])
+  counterparty    User?                @relation("DocumentCounterparty", fields: [counterpartyId], references: [id])
   leadId          Int?
-  lead            Lead?       @relation(fields: [leadId], references: [id])
+  lead            Lead?                @relation(fields: [leadId], references: [id])
   Signature       Signature[]
-  createdAt       DateTime    @default(now())
+  createdAt       DateTime             @default(now())
+  deleteSigns     DocumentDeleteSign[] // Связь с таблицей DocumentDeleteSign
 
   @@index([leadId])
   @@index([userId])
   @@index([counterpartyId])
+}
+
+model DocumentDeleteSign {
+  id         Int      @id @default(autoincrement())
+  documentId Int
+  document   Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  userId     Int
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt  DateTime @default(now())
+
+  @@unique([documentId, userId])
+  @@index([documentId])
+  @@index([userId])
 }
 
 model Lead {
@@ -101,10 +116,10 @@ model Message {
 
 model Signature {
   id         Int      @id @default(autoincrement())
-  signature  String // Электронная подпись
-  documentId Int // Связанный документ
+  signature  String
+  documentId Int
   document   Document @relation(fields: [documentId], references: [id])
-  userId     Int // Пользователь, который подписал
+  userId     Int
   user       User     @relation(fields: [userId], references: [id])
   createdAt  DateTime @default(now())
 

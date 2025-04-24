@@ -4,7 +4,7 @@
 			<div class="flex-center">
 				<h2 class="page__title mr-[32px]">Документи</h2>
 
-				<button
+				<button v-if="userStore.userRole === 'counterparty'"
 					class="submenu-parent relative flex-center gap-[11px] rounded-[14px] border border-[#2d9cdb] py-2 px-7 text-[#2d9cdb] text-[18px] font-bold font-['Barlow'] mr-[24px] hover:active">
 					<img alt="plus" class="w-[19px] h-[19px]" src="/icons/plus-blue.svg" />
 					Добавить соглашение
@@ -65,7 +65,8 @@
 				</TableHeader>
 				<DocumentViewer v-if="documentView" :documentUrl="documentUrl" />
 				<TableBody class="w-full">
-					<TableRow v-for="(invoice, index) in paginatedDocuments" :key="index" class="relative hover:bg-[#2d9cdb]/20">
+					<TableRow v-for="(invoice, index) in paginatedDocuments" :key="index" class="relative hover:bg-[#2d9cdb]/20"
+						:class="{ 'opacity-50 pointer-events-none': invoice.deleteSignCount !== 0 }">
 						<TableCell class="w-max flex-center gap-[20px]">
 							<img alt="doc" class="w-[33px] h-[45px]" src="/icons/lead-doc.svg" />
 							<div class="w-max flex flex-col items-start">
@@ -84,7 +85,8 @@
 								class="w-[49.59px] h-[50px] justify-self-center bg-[#2d9cdb]/20 flex items-center justify-center rounded-full text-[#2d9cdb] text-[25px] font-bold font-['Barlow']">
 								1</div>
 						</TableCell>
-						<DocumentDropDown :invoice="invoice" />
+						<DocumentDropDown :invoice="invoice"
+							:class="{ 'opacity-50 pointer-events-none': invoice.deleteSignCount !== 0 }" />
 					</TableRow>
 				</TableBody>
 			</Table>

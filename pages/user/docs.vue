@@ -68,8 +68,7 @@
         </TableHeader>
         <DocumentViewer v-if="documentView" :documentUrl="documentUrl" />
         <TableBody class="w-full">
-          <TableRow v-for="(invoice, index) in paginatedDocuments" :key="index"
-            class="relative hover:bg-[#2d9cdb]/20">
+          <TableRow v-for="(invoice, index) in paginatedDocuments" :key="index" class="relative hover:bg-[#2d9cdb]/20">
             <TableCell class="w-max flex-center gap-[20px]">
               <img alt="doc" class="w-[33px] h-[45px]" src="/icons/lead-doc.svg" />
               <div class="w-max flex flex-col items-start">
@@ -95,31 +94,32 @@
       <NotFoundDocument v-else />
     </div>
     <Pagination class="pagination-class" v-slot="{ page }" :items-per-page="itemsPerPage"
-			:total="adminStore.$state.documents.length" :sibling-count="1" show-edges :default-page="1"
-			@update:page="(newPage) => (currentPage = newPage)">
-			<PaginationList v-slot="{ items }" class="flex items-center gap-1">
-				<PaginationFirst />
-				<PaginationPrev />
+      :total="adminStore.$state.documents.length" :sibling-count="1" show-edges :default-page="1"
+      @update:page="(newPage) => (currentPage = newPage)">
+      <PaginationList v-slot="{ items }" class="flex items-center gap-1">
+        <PaginationFirst />
+        <PaginationPrev />
 
-				<template v-for="(item, index) in items">
-					<PaginationListItem v-if="item.type === 'page'" :key="index" :value="item.value" as-child>
-						<Button class="w-9 h-9 p-0" :variant="item.value === page ? 'default' : 'outline'">
-							{{ item.value }}
-						</Button>
-					</PaginationListItem>
-					<PaginationEllipsis v-else :key="item.type" :index="index" />
-				</template>
+        <template v-for="(item, index) in items">
+          <PaginationListItem v-if="item.type === 'page'" :key="index" :value="item.value" as-child>
+            <Button class="w-9 h-9 p-0" :variant="item.value === page ? 'default' : 'outline'">
+              {{ item.value }}
+            </Button>
+          </PaginationListItem>
+          <PaginationEllipsis v-else :key="item.type" :index="index" />
+        </template>
 
-				<PaginationNext />
-				<PaginationLast />
-			</PaginationList>
-		</Pagination>
+        <PaginationNext />
+        <PaginationLast />
+      </PaginationList>
+    </Pagination>
   </div>
 </template>
 
 <script lang="ts" setup>
 import { useUserStore } from "~/store/user.store"
 import { useAdminStore } from "~/store/admin.store"
+import { useToast } from "~/components/ui/toast"
 
 definePageMeta({
   layout: "page",
@@ -139,14 +139,14 @@ const itemsPerPage = 6; // Количество элементов на стра
 
 // Получаем данные для текущей страницы
 const paginatedDocuments = computed(() => {
-	const start = (currentPage.value - 1) * itemsPerPage;
-	const end = start + itemsPerPage;
-	return adminStore.$state.documents.slice(start, end);
+  const start = (currentPage.value - 1) * itemsPerPage;
+  const end = start + itemsPerPage;
+  return adminStore.$state.documents.slice(start, end);
 });
 
 // Общее количество страниц
 const totalPages = computed(() => {
-	return Math.ceil(adminStore.$state.documents.length / itemsPerPage);
+  return Math.ceil(adminStore.$state.documents.length / itemsPerPage);
 });
 
 onBeforeMount(async () => {
@@ -174,12 +174,13 @@ const handleFileUpload = (event: Event, documentType: string) => {
 
 
 const uploadDocument = async (file: File, documentType: string) => {
+  console.log(Number(route.query.id));
   try {
     const document = await adminStore.createDocument(
       {
         title: file.name,
         userId: userStore.userGetter.id,
-        counterpartyId: userStore.userGetter.id,
+        counterpartyId: Number(route.query.id),
         type: documentType,
         status: "Информационный",
       },

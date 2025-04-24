@@ -95,7 +95,7 @@ export const useAdminStore = defineStore("admin", {
 				const formData = new FormData();
 				formData.append("title", document.title);
 				formData.append("userId", document.userId);
-				formData.append("counterpartyId", document.userId);
+				formData.append("counterpartyId", document.counterpartyId);
 				formData.append("file", file);
 				formData.append("type", document.type);
 				formData.append("status", document.status);
@@ -133,13 +133,18 @@ export const useAdminStore = defineStore("admin", {
 				handleApiError(error);
 			}
 		},
-		async deleteDocument(id: number) {
+		async deleteDocument(userId: any, id: number) {
 			try {
-				const response: any = await useFetchApi(`/api/admin/document/${id}`, {
-					method: "DELETE",
+				const response: any = await useFetchApi(`/api/admin/document/delete`, {
+					method: "POST",
+					body: { userId, documentId: id },
 				});
-				this.$patch({ documents: this.documentsGetter.filter((d) => d.id !== id) });
-				return response.body.document;
+				if (response.body.message === 'Удаление подтверждено. Ожидается подтверждение второго пользователя.')
+					this.$patch({ documents: this.documentsGetter.map((d) => (d.id === id ? { ...d, deleteSignCount: d.deleteSignCount + 1 } : d)) });
+				else
+					this.$patch({ documents: this.documentsGetter.filter((d) => d.id !== id) });
+
+				return response.body.message;
 			} catch (error) {
 				handleApiError(error);
 			}

@@ -1,10 +1,12 @@
 import { defineEventHandler } from "h3";
 import { deleteDocuments } from "~/server/db/document";
-import {deleteLead, deleteLeads} from "~/server/db/leads";
+import { deleteLead, deleteLeads, getLeadById } from "~/server/db/leads";
 
 export default defineEventHandler(async (event) => {
     try {
         const { id } = event.context.params;
+
+        const lead = await getLeadById(parseInt(id));
 
         const deletedLead = await deleteLead(parseInt(id));
 

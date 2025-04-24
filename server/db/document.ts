@@ -193,13 +193,9 @@ export const createFile = async (
 	event: H3Event<EventHandlerRequest>,
 	file: File
 ): Promise<{ status: number; body: { fileUrl?: string; message?: string } }> => {
+
 	const allowedMimeTypes = [
-		"image/jpeg",
-		"image/png",
-		"image/svg+xml",
 		"application/pdf",
-		"application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-		"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
 	];
 
 	if (!allowedMimeTypes.includes(file.type)) {
@@ -299,25 +295,28 @@ export const getDocumentsByUserId = (userId: number) => {
 };
 
 export const getDocumentByUserRole = (userId: number, role: string) => {
-	switch (role) {
-		case "admin":
-			return prisma.document.findMany();
-			break;
-		case "user":
-			return prisma.document.findMany({
-				where: {
-					userId,
+	if (role === 'counterparty') {
+		return prisma.document.findMany({
+			where: {
+				counterpartyId: {
+					equals: userId,
 				},
-			});
-			break;
-		case "bookkeeper":
-			break;
-		case "lawyer":
-			break;
-		case "manager":
-			break;
-		default:
-			//
-			break;
+			},
+			include: {
+				user: true,
+				counterparty: true,
+				lead: true,
+			},
+		});
 	}
+	return prisma.document.findMany({
+		where: {
+			userId,
+		},
+		include: {
+			user: true,
+			counterparty: true,
+			lead: true,
+		},
+	});
 };
