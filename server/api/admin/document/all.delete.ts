@@ -3,33 +3,25 @@ import { deleteAllFilesOfDocuments, deleteDocuments, getAllDocuments } from "~/s
 
 export default defineEventHandler(async (event) => {
 	try {
-		const deletedFilesOfDocuments = await deleteAllFilesOfDocuments(event);
+		// const deletedFilesOfDocuments = await deleteAllFilesOfDocuments(event);
 
-		if (deletedFilesOfDocuments.code !== 200) {
-			event.res.statusCode = 400;
-			return deletedFilesOfDocuments;
-		}
+		// if (deletedFilesOfDocuments.code !== 200) {
+		// 	event.res.statusCode = 400;
+		// 	return deletedFilesOfDocuments;
+		// }
 
 		const deletedDocuments = await deleteDocuments();
-
-		if (deletedFilesOfDocuments.code !== 200) {
-			event.res.statusCode = 400;
-			return {
-				code: 400,
-				body: { error: "Ошибка при удалении файлов документов" },
-			};
-		}
 
 		return {
 			code: 200,
 			body: { deletedDocuments },
 		};
 	} catch (error) {
-		console.error("Error deleting leads:", error);
+		console.error("Error deleting documents:", error);
 		event.res.statusCode = 500;
 		return {
 			code: 500,
-			body: { error: "Ошибка при удалении лидов " + error },
+			body: { error: "Ошибка при удалении всех документов " + error },
 		};
 	}
 });
