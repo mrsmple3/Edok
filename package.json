@@ -10,6 +10,7 @@
 		"postinstall": "nuxt prepare"
 	},
 	"dependencies": {
+		"@internationalized/date": "^3.8.0",
 		"@nuxtjs/color-mode": "^3.0.0",
 		"@nuxtjs/tailwindcss": "^6.13.1",
 		"@pinia/nuxt": "0.9.0",

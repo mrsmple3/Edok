@@ -1,0 +1,39 @@
+<template>
+  <Table v-if="adminStore.$state.documents && adminStore.$state.documents.length > 0" class="w-full">
+    <TableHeader class="w-full h-[80px]">
+      <TableRow class="border-none">
+        <TableHead class="t-head">Название документа</TableHead>
+        <TableHead class="t-head">Угода</TableHead>
+        <TableHead class="t-head">Контрагент</TableHead>
+        <TableHead class="t-head">Загружено</TableHead>
+        <TableHead class="t-head">Состояние</TableHead>
+        <TableHead class="t-head">Согласующие</TableHead>
+      </TableRow>
+    </TableHeader>
+    <DocumentViewer v-if="documentView" :documentUrl="documentUrl" />
+    <TableBody class="w-full">
+      <DocumentTable v-for="(invoice, index) in paginatedDocuments" :key="index" :invoice="invoice" />
+    </TableBody>
+  </Table>
+</template>
+
+<script setup lang="ts">
+defineProps({
+  paginatedDocuments: {
+    type: Array as PropType<Document[]>,
+    required: true,
+  },
+});
+import { useToast } from "~/components/ui/toast"
+import { useUserStore, type Document } from "~/store/user.store"
+import { useAdminStore } from "~/store/admin.store"
+
+const route = useRoute()
+const userStore = useUserStore()
+const adminStore = useAdminStore()
+
+const documentView = useState("isDocumentView", () => false);
+const documentUrl = useState("documentUrl", () => "");
+</script>
+
+<style scoped lang="scss"></style>

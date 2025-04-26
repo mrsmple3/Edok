@@ -8,10 +8,12 @@ const defaultValue: {
 	leads: Lead[];
 	documents: Document[];
 	users: User[];
+	filteredDocuments: Document[];
 } = {
 	leads: [],
 	documents: [],
 	users: [],
+	filteredDocuments: [],
 };
 
 export const useAdminStore = defineStore("admin", {

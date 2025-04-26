@@ -42,9 +42,7 @@
 			</div>
 
 			<div class="flex-center gap-[15px]">
-				<Badge class="w-12 h-12 bg-[#2d9cdb]/20 rounded-[15px] hover:bg-[#2d9cdb]/30">
-					<img alt="filter" src="/icons/filter.svg" />
-				</Badge>
+				<DocumentFilter :counterparties="counterparties" />
 				<RefreshData :refreshFunction="async () => await adminStore.getDocumentsByLeadId(route.query.id)" />
 			</div>
 		</div>
@@ -52,48 +50,12 @@
 			<NuxtLink class="breadcrumbs" to="">Документи</NuxtLink>
 		</div>
 		<div class="page__block py-[30px] px-[42px]">
-			<Table v-if="adminStore.$state.documents && adminStore.$state.documents.length > 0" class="w-full">
-				<TableHeader class="w-full h-[80px]">
-					<TableRow class="border-none">
-						<TableHead class="t-head">Название документа</TableHead>
-						<TableHead class="t-head">Угода</TableHead>
-						<TableHead class="t-head">Контрагент</TableHead>
-						<TableHead class="t-head">Загружено</TableHead>
-						<TableHead class="t-head">Состояние</TableHead>
-						<TableHead class="t-head">Согласующие</TableHead>
-					</TableRow>
-				</TableHeader>
-				<DocumentViewer v-if="documentView" :documentUrl="documentUrl" />
-				<TableBody class="w-full">
-					<TableRow v-for="(invoice, index) in paginatedDocuments" :key="index" class="relative hover:bg-[#2d9cdb]/20"
-						:class="{ 'opacity-50 pointer-events-none': invoice.deleteSignCount !== 0 }">
-						<TableCell class="w-max flex-center gap-[20px]">
-							<img alt="doc" class="w-[33px] h-[45px]" src="/icons/lead-doc.svg" />
-							<div class="w-max flex flex-col items-start">
-								<span class="text-[#494949] text-[15px] font-medium font-['Barlow']">{{ invoice.title.length > 23 ?
-									invoice.title.substring(0, 33) + "..." : invoice.title }}</span>
-								<span class="text-[#898989] text-[15px] font-['Barlow']">{{ invoice.type }}</span>
-								<span class="text-[#404040] text-[11px] font-['Barlow']">{{ invoice.user.name }}</span>
-							</div>
-						</TableCell>
-						<TableCell class="t-cell">{{ invoice.lead ? invoice.lead.name : "Еще не создано" }}</TableCell>
-						<TableCell class="t-cell">{{ getInfoCounterparty(invoice) }}</TableCell>
-						<TableCell class="t-cell">{{ new Date(invoice.createdAt).toLocaleDateString("ru-RU") }}</TableCell>
-						<TableCell class="t-cell">{{ invoice.status }}</TableCell>
-						<TableCell class="t-cell">
-							<div
-								class="w-[49.59px] h-[50px] justify-self-center bg-[#2d9cdb]/20 flex items-center justify-center rounded-full text-[#2d9cdb] text-[25px] font-bold font-['Barlow']">
-								1</div>
-						</TableCell>
-						<DocumentDropDown :invoice="invoice"
-							:class="{ 'opacity-50 pointer-events-none': invoice.deleteSignCount !== 0 }" />
-					</TableRow>
-				</TableBody>
-			</Table>
+			<DocumentComponent v-if="adminStore.$state.filteredDocuments && adminStore.$state.filteredDocuments.length > 0"
+				:paginatedDocuments="paginatedDocuments" />
 			<NotFoundDocument v-else />
 		</div>
 		<Pagination class="pagination-class" v-slot="{ page }" :items-per-page="itemsPerPage"
-			:total="adminStore.$state.documents.length" :sibling-count="1" show-edges :default-page="1"
+			:total="adminStore.$state.filteredDocuments.length" :sibling-count="1" show-edges :default-page="1"
 			@update:page="(newPage) => (currentPage = newPage)">
 			<PaginationList v-slot="{ items }" class="flex items-center gap-1">
 				<PaginationFirst />
@@ -128,8 +90,7 @@ const route = useRoute()
 const userStore = useUserStore()
 const adminStore = useAdminStore()
 
-const documentView = useState("isDocumentView", () => false)
-const documentUrl = useState("documentUrl", () => "")
+const counterparties = ref();
 
 const selectedFile = ref<File | null>(null); // Хранение выбранного файла
 
@@ -150,7 +111,7 @@ const itemsPerPage = 6; // Количество элементов на стра
 const paginatedDocuments = computed(() => {
 	const start = (currentPage.value - 1) * itemsPerPage;
 	const end = start + itemsPerPage;
-	return adminStore.$state.documents.slice(start, end);
+	return adminStore.$state.filteredDocuments.slice(start, end);
 });
 
 // Общее количество страниц
@@ -164,6 +125,13 @@ onBeforeMount(async () => {
 		async (newVal, routeFull) => {
 			if (newVal) {
 				await getDocument();
+				adminStore.$state.filteredDocuments = adminStore.$state.documents;
+				await userStore.getCounterparties().then(() => {
+					counterparties.value = userStore.$state.counterparties.map((counterparty) => ({
+						value: counterparty.id,
+						label: counterparty.organization_name,
+					}));
+				})
 			}
 		},
 		{
@@ -213,20 +181,6 @@ const uploadDocument = async (file: File, documentType: string) => {
 		}
 	}
 };
-
-const getInfoCounterparty = (invoice: any) => {
-	if (invoice.counterparty) {
-		if (invoice.counterparty.name) {
-			return invoice.counterparty.name
-		} else if (invoice.counterparty.email) {
-			return invoice.counterparty.email
-		} else if (invoice.counterparty.phone) {
-			return invoice.counterparty.phone
-		}
-	} else {
-		return "Не выбран"
-	}
-}
 </script>
 
 <style lang="scss" scoped></style>
