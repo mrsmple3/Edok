@@ -106,7 +106,6 @@ const createLead = form.handleSubmit(async (values) => {
 		response.value = await adminStore.createLead({
 			name: values.name,
 			type: values.type,
-			status: "Информационный",
 			authorId: userStore.userGetter.id,
 			counterpartyId: props.counterpartyId,
 			moderatorsId: values.moderator,

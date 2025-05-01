@@ -27,6 +27,8 @@ export const getAllDocuments = () => {
 			user: true,
 			counterparty: true,
 			lead: true,
+			deleteSigns: true,
+			Signature: true,
 		},
 	});
 };
@@ -38,6 +40,8 @@ export const getDocumentById = (id: number) => {
 			user: true,
 			counterparty: true,
 			lead: true,
+			deleteSigns: true,
+			Signature: true,
 		},
 	});
 };
@@ -61,6 +65,8 @@ export const createDocument = (data: any) => {
 			user: true,
 			counterparty: true,
 			lead: true,
+			deleteSigns: true,
+			Signature: true,
 		},
 	});
 };
@@ -73,6 +79,8 @@ export const updateDocument = (id: number, data: any) => {
 			user: true,
 			counterparty: true,
 			lead: true,
+			deleteSigns: true,
+			Signature: true,
 		},
 	});
 };
@@ -81,6 +89,13 @@ export const updateDocumentStatusById = (id: number, status: string) => {
 	return prisma.document.update({
 		where: { id },
 		data: { status },
+		include: {
+			user: true,
+			counterparty: true,
+			lead: true,
+			deleteSigns: true,
+			Signature: true,
+		},
 	});
 };
 
@@ -279,6 +294,8 @@ export const getDocumentsByLead = (leadId: number) => {
 			user: true,
 			counterparty: true,
 			lead: true,
+			deleteSigns: true,
+			Signature: true,
 		},
 	});
 };
@@ -290,9 +307,27 @@ export const getDocumentsByUserId = (userId: number) => {
 			user: true,
 			counterparty: true,
 			lead: true,
+			deleteSigns: true,
+			Signature: true,
 		},
 	});
 };
+
+export const getUnsignedDocuments = () => {
+	return prisma.document.findMany({
+		where: {
+			status: {
+				not: "signed",
+			},
+		},
+		include: {
+			user: true,
+			counterparty: true,
+			lead: true,
+			deleteSigns: true,
+		},
+	});
+}
 
 export const getDocumentByUserRole = (userId: number, role: string) => {
 	if (role === 'counterparty') {
@@ -306,6 +341,8 @@ export const getDocumentByUserRole = (userId: number, role: string) => {
 				user: true,
 				counterparty: true,
 				lead: true,
+				deleteSigns: true,
+				Signature: true,
 			},
 		});
 	}
@@ -317,6 +354,7 @@ export const getDocumentByUserRole = (userId: number, role: string) => {
 			user: true,
 			counterparty: true,
 			lead: true,
+			deleteSigns: true,
 		},
 	});
 };

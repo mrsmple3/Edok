@@ -158,7 +158,7 @@ const uploadDocument = async (file: File, documentType: string) => {
 				userId: userStore.userGetter.id,
 				counterpartyId: userStore.userGetter ? userStore.userGetter.id : null,
 				type: documentType,
-				status: "Информационный",
+				content: "Информационный",
 			},
 			file
 		);

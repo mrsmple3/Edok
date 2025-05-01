@@ -53,7 +53,7 @@ model Document {
   content         String?
   filePath        String?
   type            String // Тип: "contract", "invoice", "act"
-  status          String // Статус: "pending", "signed", "rejected"
+  status          String               @default("pending")
   deleteSignCount Int                  @default(0)
   userId          Int
   user            User                 @relation(fields: [userId], references: [id])

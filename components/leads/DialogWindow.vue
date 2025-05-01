@@ -136,7 +136,7 @@ const createLead = form.handleSubmit(async (values) => {
 						userId: userStore.userGetter.id,
 						counterpartyId: values.counterparty,
 						type: "act",
-						status: "Информационный",
+						content: "Информационный",
 					},
 					file
 				);
@@ -147,7 +147,6 @@ const createLead = form.handleSubmit(async (values) => {
 		await adminStore.createLead({
 			name: values.name,
 			type: values.type,
-			status: "Информационный",
 			authorId: userStore.userGetter.id,
 			counterpartyId: values.counterparty,
 			moderatorsId: values.moderator,

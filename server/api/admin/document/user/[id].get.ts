@@ -16,6 +16,8 @@ export default defineEventHandler(async (event) => {
 		}
 
 		const documents = await getDocumentByUserRole(user.id, user.role);
+		console.log(documents);
+
 
 		return {
 			code: 200,

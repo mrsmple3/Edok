@@ -1,12 +1,12 @@
 <template>
-  <Table v-if="adminStore.$state.documents && adminStore.$state.documents.length > 0" class="w-full">
+  <Table class="w-full">
     <TableHeader class="w-full h-[80px]">
       <TableRow class="border-none">
         <TableHead class="t-head">Название документа</TableHead>
         <TableHead class="t-head">Угода</TableHead>
         <TableHead class="t-head">Контрагент</TableHead>
         <TableHead class="t-head">Загружено</TableHead>
-        <TableHead class="t-head">Состояние</TableHead>
+        <TableHead class="t-head">Автор</TableHead>
         <TableHead class="t-head">Согласующие</TableHead>
       </TableRow>
     </TableHeader>

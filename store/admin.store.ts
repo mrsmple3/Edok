@@ -9,11 +9,13 @@ const defaultValue: {
 	documents: Document[];
 	users: User[];
 	filteredDocuments: Document[];
+	unsignedDocuments: Document[];
 } = {
 	leads: [],
 	documents: [],
 	users: [],
 	filteredDocuments: [],
+	unsignedDocuments: [],
 };
 
 export const useAdminStore = defineStore("admin", {
@@ -21,6 +23,7 @@ export const useAdminStore = defineStore("admin", {
 	getters: {
 		leadsGetter: (state): Lead[] => state.leads,
 		documentsGetter: (state): Document[] => state.documents,
+		insigneDocumentsGetter: (state): Document[] => state.unsignedDocuments,
 		getterUserById: (state) => {
 			return (id: number) => {
 				return state.users.find((user) => user.id === id);
@@ -118,6 +121,15 @@ export const useAdminStore = defineStore("admin", {
 			try {
 				const response: any = await useFetchApi("/api/admin/document");
 				this.$patch({ documents: response.body.documents });
+				return response.body.documents;
+			} catch (error) {
+				handleApiError(error);
+			}
+		},
+		async getAllUnsignedDocuments() {
+			try {
+				const response: any = await useFetchApi("/api/admin/document/unsigned");
+				this.$patch({ unsignedDocuments: response.body.documents });
 				return response.body.documents;
 			} catch (error) {
 				handleApiError(error);

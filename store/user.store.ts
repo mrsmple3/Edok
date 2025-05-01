@@ -69,6 +69,16 @@ export interface Message {
 	createdAt: Date;
 }
 
+export interface Signature {
+	id: number;
+	signature: string;
+	documentId: number;
+	document: Document;
+	userId: number;
+	user: User;
+	createdAt: Date;
+}
+
 export interface UserResponse extends ApiResponse<{ user: User }> { }
 export interface LeadsResponse extends ApiResponse<{ leads: Lead[] }> { }
 export interface TokenResponse extends ApiResponse<{ token?: string; error?: string }> { }
@@ -240,5 +250,16 @@ export const useUserStore = defineStore("auth", {
 			this.$patch({ messages: [...this.messages, message] });
 			return message;
 		},
+		async toSign(document: Document) {
+			try {
+				const response = await $fetch<DocumentResponse>(`/api/sign`, {
+					method: "POST",
+					body: document,
+				});
+				return response.body.document;
+			} catch (error: any) {
+				handleApiError(error);
+			}
+		}
 	},
 });

@@ -1,6 +1,6 @@
 <template>
   <TableRow class="relative hover:bg-[#2d9cdb]/20"
-    :class="{ 'opacity-50 pointer-events-none': invoice.deleteSignCount !== 0 }">
+    :class="{ 'opacity-50 pointer-events-none': invoice.deleteSignCount !== 0 && invoice.deleteSigns.find(sign => sign.userId === userStore.userGetter.id) }">
     <TableCell class="w-max flex-center gap-[20px]">
       <img alt="doc" class="w-[33px] h-[45px]" src="/icons/lead-doc.svg" />
       <div class="w-max flex flex-col items-start">
@@ -13,18 +13,19 @@
     <TableCell class="t-cell">{{ invoice.lead ? invoice.lead.name : "Еще не создано" }}</TableCell>
     <TableCell class="t-cell">{{ getInfoCounterparty(invoice) }}</TableCell>
     <TableCell class="t-cell">{{ new Date(invoice.createdAt).toLocaleDateString("ru-RU") }}</TableCell>
-    <TableCell class="t-cell">{{ invoice.status }}</TableCell>
+    <TableCell class="t-cell">{{ invoice.user.email || invoice.user.organization_name }}</TableCell>
     <TableCell class="t-cell">
       <div
         class="w-[49.59px] h-[50px] justify-self-center bg-[#2d9cdb]/20 flex items-center justify-center rounded-full text-[#2d9cdb] text-[25px] font-bold font-['Barlow']">
         1</div>
     </TableCell>
-    <DocumentDropDown :invoice="invoice" :class="{ 'opacity-50 pointer-events-none': invoice.deleteSignCount !== 0 }" />
+    <DocumentDropDown :invoice="invoice"
+      :class="{ 'opacity-50 pointer-events-none': invoice.deleteSignCount !== 0 && invoice.deleteSigns.find(sign => sign.userId === userStore.userGetter.id) }" />
   </TableRow>
 </template>
 
 <script setup lang="ts">
-import type { Document } from '~/store/user.store';
+import { useUserStore, type Document } from '~/store/user.store';
 
 defineProps({
   invoice: {
@@ -33,6 +34,7 @@ defineProps({
   },
 });
 
+const userStore = useUserStore();
 
 const getInfoCounterparty = (invoice: any) => {
   if (invoice.counterparty) {
