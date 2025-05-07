@@ -14,14 +14,7 @@ const userStore = useUserStore();
 
 const router = useRouter();
 const route = useRoute();
-useHead({
-	script: [
-		{
-			src: '/js/eusign.js',
-			type: 'text/javascript',
-		},
-	],
-});
+
 onBeforeMount(() => {
 	callOnce(async () => {
 		await userStore.initAuth().finally(() => {

@@ -10,7 +10,6 @@
       </DialogHeader>
       <div class="">
         <div id="sign-widget-parent">
-          <!-- <iframe src="https://id.gov.ua/sign-widget/v20220527/" id="sign-widget"></iframe> -->
         </div>
       </div>
       <DialogFooter>
@@ -29,20 +28,6 @@ const isDialogOpen = ref(false);
 const signatureType = ref("file");
 const selectedFile = ref<File | null>(null);
 
-// onMounted(() => {
-//   if (window.EndUser) {
-//     const euSign = new window.EndUser(
-//       "sign-widget-parent",
-//       "sign-widget",
-//       "https://id.gov.ua/sign-widget/v20220527/",
-//       window.EndUser.FormType.SignFile
-//     );
-//     // инициализация или вызов методов
-//   } else {
-//     console.error("EndUser не загружен");
-//   }
-// });
-
 
 watch(isDialogOpen, async (newVal) => {
   if (newVal) {
@@ -54,12 +39,12 @@ watch(isDialogOpen, async (newVal) => {
       return;
     }
 
-    if (window.EndUser) {
-      const euSign = new window.EndUser(
+    if (typeof EndUser !== "undefined") {
+      const euSign = new EndUser(
         "sign-widget-parent",
         "sign-widget",
         "https://id.gov.ua/sign-widget/v20220527/",
-        window.EndUser.FormType.SignFile
+        EndUser.FormType.SignFile
       );
       // Можно сохранить euSign в ref, если он понадобится позже
     } else {
