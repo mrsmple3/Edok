@@ -32,7 +32,7 @@ export const getUserByPhone = (phone: string) => {
 	});
 };
 
-export const updateUser = (id: number, userData: User) => {
+export const updateUser = (id: number, userData: any) => {
 	return prisma.user.update({
 		where: { id },
 		data: userData,
@@ -79,3 +79,17 @@ export const checkRoleUser = (role: string) => {
 	}
 	return false;
 };
+
+export const changePassword = async (userId: number, oldPassword: string, newPassword: string) => {
+	const user = await prisma.user.findUnique({
+		where: { id: userId },
+	});
+
+	if (user && bcrypt.compareSync(oldPassword, user.password_hash)) {
+		return prisma.user.update({
+			where: { id: userId },
+			data: { password_hash: bcrypt.hashSync(newPassword, 10) },
+		});
+	}
+	return false;
+}

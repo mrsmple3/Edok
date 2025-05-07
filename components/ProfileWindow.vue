@@ -1,0 +1,159 @@
+<template>
+  <Dialog v-model:open="isDialogOpen">
+    <DialogTrigger class="flex-center gap-[13px] mb-[34px] pl-[50px]">
+      <img alt="profile-pictures" class="w-14 h-14 rounded-[63px] border-4 border-[#00b074]"
+        src="/images/placeholder-profile-img.png">
+      <div class="text-[#464154] text-base font-normal font-['Barlow']">Здравствуйте,
+        <strong>
+          {{ userStore.userGetter.name || userStore.userGetter.phone || userStore.userGetter.email }}
+        </strong>
+      </div>
+    </DialogTrigger>
+    <DialogContent>
+      <DialogHeader>
+        <DialogTitle>Профиль</DialogTitle>
+        <DialogDescription> Можете изменить данные {{ userStore.userGetter.name || userStore.userGetter.phone ||
+          userStore.userGetter.email }} </DialogDescription>
+      </DialogHeader>
+      <div class="grid gap-4 py-4">
+        <FormField name="name" v-slot="{ componentField }">
+          <FormItem class="grid grid-cols-4 items-center gap-4">
+            <FormControl>
+              <Label for="name" class="text-[12px] text-start"> Имя </Label>
+              <div class="col-span-3 flex flex-col gap-2">
+                <Input id="name" type="text" v-bind="componentField" />
+                <FormMessage />
+              </div>
+            </FormControl>
+          </FormItem>
+        </FormField>
+        <FormField name="email" v-slot="{ componentField }">
+          <FormItem class="grid grid-cols-4 items-center gap-4">
+            <FormControl>
+              <Label for="type" class="text-[12px] text-start"> Почта </Label>
+              <div class="col-span-3 flex flex-col gap-2">
+                <Input id="type" type="text" v-bind="componentField" />
+                <FormMessage />
+              </div>
+            </FormControl>
+          </FormItem>
+        </FormField>
+        <FormField name="phone" v-slot="{ componentField }">
+          <FormItem class="grid grid-cols-4 items-center gap-4">
+            <FormControl>
+              <Label for="phone" class="text-[12px] text-start"> Номер телефона </Label>
+              <div class="col-span-3 flex flex-col gap-2">
+                <Input id="phone" type="text" v-bind="componentField" />
+                <FormMessage />
+              </div>
+            </FormControl>
+          </FormItem>
+        </FormField>
+        <FormField name="oldPassword" v-slot="{ componentField }">
+          <FormItem class="grid grid-cols-4 items-center gap-4">
+            <FormControl>
+              <Label for="oldPassword" class="text-[12px] text-start"> Старая пароль </Label>
+              <div class="col-span-3 flex flex-col gap-2">
+                <Input id="oldPassword" type="text" v-bind="componentField" />
+                <FormMessage />
+              </div>
+            </FormControl>
+          </FormItem>
+        </FormField>
+        <FormField name="newPassword" v-slot="{ componentField }">
+          <FormItem class="grid grid-cols-4 items-center gap-4">
+            <FormControl>
+              <Label for="newPassword" class="text-[12px] text-start"> Новый пароль </Label>
+              <div class="col-span-3 flex flex-col gap-2">
+                <Input id="newPassword" type="text" v-bind="componentField" />
+                <FormMessage />
+              </div>
+            </FormControl>
+          </FormItem>
+        </FormField>
+      </div>
+      <DialogFooter> <Button @click="updateUser">Изменить</Button> </DialogFooter>
+    </DialogContent>
+  </Dialog>
+</template>
+
+<script setup lang="ts">
+import { useForm } from "vee-validate";
+import { toTypedSchema } from "@vee-validate/zod";
+import * as z from "zod";
+import { useUserStore } from "~/store/user.store";
+import { useToast } from "~/components/ui/toast";
+import type { Document } from "~/store/user.store";
+import { useAdminStore } from "~/store/admin.store";
+
+const adminStore = useAdminStore();
+const userStore = useUserStore();
+
+const isDialogOpen = ref(false);
+
+const formSchema = ref(
+  toTypedSchema(
+    z.object({
+      name: z.string().min(2).max(120).default(userStore.$state.user.name),
+      email: z.string().min(2).max(120).default(userStore.$state.user.email),
+      phone: z.string().min(1).max(50).default(userStore.$state.user.phone),
+      oldPassword: z.string().min(6).max(50),
+      newPassword: z.string().min(6).max(50),
+    })
+  )
+);
+
+const form = useForm({
+  validationSchema: formSchema.value,
+});
+
+const updateUser = form.handleSubmit(async (values) => {
+  try {
+    let response = ref();
+    const updatedUser = await userStore.updateUser({
+      id: userStore.userGetter.id,
+      name: values.name,
+      email: values.email,
+      phone: values.phone,
+      oldPassword: values.oldPassword,
+      newPassword: values.newPassword,
+      role: userStore.userGetter.role,
+    });
+    isDialogOpen.value = false;
+  } catch (error: any) {
+    const { toast } = useToast();
+    console.log(error);
+
+    if (error.message) {
+      toast({
+        title: "Ошибка",
+        description: error.message,
+        variant: "destructive",
+      });
+    } else {
+      toast({
+        title: "Неизвестная ошибка",
+        description: "Попробуйте позже",
+        variant: "destructive",
+      });
+    }
+  }
+});
+
+watch(isDialogOpen, async (newVal) => {
+  if (newVal) {
+    await userStore.getUser().then(() => {
+      formSchema.value = toTypedSchema(        z.object({
+          name: z.string().min(2).max(120).default(userStore.$state.user.name),
+          email: z.string().min(2).max(120).default(userStore.$state.user.email),
+          phone: z.string().min(1).max(50).default(userStore.$state.user.phone),
+          oldPassword: z.string().min(6).max(50),
+          newPassword: z.string().min(6).max(50),
+        })
+      );
+    })
+  }
+});
+</script>
+
+<style scoped></style>

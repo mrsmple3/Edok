@@ -4,11 +4,7 @@
       <LoGo class=" mb-[5px]" />
       <p class=" text-[#b9babd] text-xs font-normal mb-[56px]">Сервис электронного <br> документаоборота</p>
     </div>
-    <div class="flex-center gap-[13px] mb-[34px] pl-[50px]">
-      <img alt="profile-pictures" class="w-14 h-14 rounded-[63px] border-4 border-[#00b074]"
-        src="/images/placeholder-profile-img.png">
-      <div class="text-[#464154] text-base font-normal font-['Barlow']">Здравствуйте, <strong>Николай</strong></div>
-    </div>
+    <ProfileWindow />
     <div class="flex-stretch self-center justify-self-center gap-[20px] mb-[32px]">
       <button class="relative w-12 h-12 bg-[#2d9cdb]/20 flex items-center justify-center rounded-[15px]"
         @click="openChat">

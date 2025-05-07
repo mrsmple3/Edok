@@ -1,4 +1,4 @@
-import { checkRoleUser, getUserByEmail, getUserById, getUserByPhone, updateUser, updateUserRole } from "~/server/db/users";
+import { changePassword, checkRoleUser, getUserByEmail, getUserById, getUserByPhone, updateUser, updateUserRole } from "~/server/db/users";
 
 export default defineEventHandler(async (event) => {
 	const { id } = event.context.params;
@@ -42,7 +42,21 @@ export default defineEventHandler(async (event) => {
 			}
 		}
 
-		const user = await updateUser(parseInt(id), body);
+		const isChange = changePassword(body.id, body.oldPassword, body.newPassword);
+
+		if (!isChange) {
+			event.res.statusCode = 400;
+			return {
+				code: 400,
+				body: { error: "Старый пароль не совпадает" },
+			};
+		}
+
+		const user = await updateUser(parseInt(id), {
+			email: body.email,
+			phone: body.phone,
+			name: body.name,
+		});
 
 		return {
 			code: 200,

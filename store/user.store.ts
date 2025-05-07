@@ -205,6 +205,19 @@ export const useUserStore = defineStore("auth", {
 				this.isAuthInitialized = true;
 			}
 		},
+		async updateUser(user: any) {
+			try {
+				const response = await $fetch<any>(`api/admin/user/${user.id}`, {
+					method: "PUT",
+					body: user,
+				});
+				this.$patch({ user: response.body.user });
+				return response;
+			} catch (error: any) {
+				handleApiError(error);
+
+			}
+		},
 		async getUserByRole(role: string) {
 			try {
 				const response = await $fetch<UserResponse>(`/api/user/role/${role}`);

@@ -6,6 +6,9 @@
 			<DropdownMenuItem class="text-yellow-700" @select="handleSelect">
 				<DocumentEditDialogWindow :invoice="invoice" />
 			</DropdownMenuItem>
+			<DropdownMenuItem @select="handleSelectSign">
+				<DocumentSignDialogWindow />
+			</DropdownMenuItem>
 			<DropdownMenuItem class="text-blue-600" @click="redirectToESign()">Перейти на подпись</DropdownMenuItem>
 			<DropdownMenuItem class="text-red-600" @click="deleteDocument(invoice)">Удалить</DropdownMenuItem>
 		</DropdownMenuContent>
@@ -38,6 +41,10 @@ const openDocument = (event: Event) => {
 };
 
 const handleSelect = (event: Event) => {
+	event.preventDefault();
+};
+
+const handleSelectSign = (event: Event) => {
 	event.preventDefault();
 };
 
