@@ -3,7 +3,7 @@
     <DialogTrigger>
       Подписать документ
     </DialogTrigger>
-    <DialogContent>
+    <DialogContent class="w-[80vw] h-[80vh]">
       <DialogHeader>
         <DialogTitle>Электронная подпись</DialogTitle>
         <DialogDescription>Выберите тип подписи и подпишите документ</DialogDescription>
@@ -43,10 +43,9 @@ watch(isDialogOpen, async (newVal) => {
       const euSign = new EndUser(
         "sign-widget-parent",
         "sign-widget",
-        "https://id.gov.ua/sign-widget/test/v20220527/",
+        "https://test.id.gov.ua/sign-widget/v2022testnew/",
         EndUser.FormType.SignFile
       );
-      // Можно сохранить euSign в ref, если он понадобится позже
     } else {
       console.error("EndUser не загружен");
     }
