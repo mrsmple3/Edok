@@ -3,7 +3,7 @@
     <DialogTrigger>
       Подписать документ
     </DialogTrigger>
-    <DialogContent class="w-[80vw] h-[80vh]">
+    <DialogContent class="!max-w-[80vw] !w-[80vw] h-[80vh]">
       <DialogHeader>
         <DialogTitle>Электронная подпись</DialogTitle>
         <DialogDescription>Выберите тип подписи и подпишите документ</DialogDescription>
@@ -12,7 +12,7 @@
         <div id="sign-widget-parent">
         </div>
       </div>
-      <DialogFooter>
+      <DialogFooter class="mt-auto">
         <Button @click="signDocument">Подписать</Button>
         <Button variant="outline" @click="isDialogOpen = false">Отмена</Button>
       </DialogFooter>
