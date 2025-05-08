@@ -43,7 +43,7 @@ watch(isDialogOpen, async (newVal) => {
       const euSign = new EndUser(
         "sign-widget-parent",
         "sign-widget",
-        "https://id.gov.ua/sign-widget/v20220527/",
+        "https://id.gov.ua/sign-widget/test/v20220527/",
         EndUser.FormType.SignFile
       );
       // Можно сохранить euSign в ref, если он понадобится позже
