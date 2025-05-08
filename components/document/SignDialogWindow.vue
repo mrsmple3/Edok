@@ -8,9 +8,7 @@
         <DialogTitle>Электронная подпись</DialogTitle>
         <DialogDescription>Выберите тип подписи и подпишите документ</DialogDescription>
       </DialogHeader>
-      <div class="">
-        <div id="sign-widget-parent">
-        </div>
+      <div id="sign-widget-parent" class="w-full h-full">
       </div>
       <DialogFooter class="mt-auto">
         <Button @click="signDocument">Подписать</Button>
