@@ -9,7 +9,7 @@
 			<DropdownMenuItem @select="handleSelectSign">
 				<DocumentSignDialogWindow />
 			</DropdownMenuItem>
-			<DropdownMenuItem class="text-blue-600" @click="redirectToESign()">Перейти на подпись</DropdownMenuItem>
+			<!-- <DropdownMenuItem class="text-blue-600" @click="redirectToESign()">Перейти на подпись</DropdownMenuItem> -->
 			<DropdownMenuItem class="text-red-600" @click="deleteDocument(invoice)">Удалить</DropdownMenuItem>
 		</DropdownMenuContent>
 	</DropdownMenu>
@@ -48,19 +48,18 @@ const handleSelectSign = (event: Event) => {
 	event.preventDefault();
 };
 
-
-const redirectToESign = () => {
-	const state = crypto.randomUUID();
-	const params = new URLSearchParams({
-		response_type: 'code',
-		client_id: '44e1a3fc703ac7ed0a40954b4d93646c',
-		auth_type: 'dig_sign',
-		state,
-		redirect_uri: 'https://agroedoc.com'
-	})
-	console.log(params);
-	window.location.href = `https://id.gov.ua/?${params.toString()}`
-}
+// const redirectToESign = () => {
+// 	const state = crypto.randomUUID();
+// 	const params = new URLSearchParams({
+// 		response_type: 'code',
+// 		client_id: '44e1a3fc703ac7ed0a40954b4d93646c',
+// 		auth_type: 'dig_sign',
+// 		state,
+// 		redirect_uri: 'https://agroedoc.com'
+// 	})
+// 	console.log(params);
+// 	window.location.href = `https://id.gov.ua/?${params.toString()}`
+// }
 
 const deleteDocument = async (invoice: any) => {
 	try {
