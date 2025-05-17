@@ -94,9 +94,9 @@ const isDialogOpen = ref(false);
 const formSchema = ref(
   toTypedSchema(
     z.object({
-      name: z.string().min(2).max(120).default(userStore.$state.user.name),
-      email: z.string().min(2).max(120).default(userStore.$state.user.email),
-      phone: z.string().min(1).max(50).default(userStore.$state.user.phone),
+      name: z.string().min(2).max(120),
+      email: z.string().min(2).max(120),
+      phone: z.string().min(1).max(50),
       oldPassword: z.string().min(6).max(50),
       newPassword: z.string().min(6).max(50),
     })
@@ -142,16 +142,13 @@ const updateUser = form.handleSubmit(async (values) => {
 
 watch(isDialogOpen, async (newVal) => {
   if (newVal) {
-    await userStore.getUser().then(() => {
-      formSchema.value = toTypedSchema(        z.object({
-          name: z.string().min(2).max(120).default(userStore.$state.user.name),
-          email: z.string().min(2).max(120).default(userStore.$state.user.email),
-          phone: z.string().min(1).max(50).default(userStore.$state.user.phone),
-          oldPassword: z.string().min(6).max(50),
-          newPassword: z.string().min(6).max(50),
-        })
-      );
-    })
+    form.setValues({
+      name: userStore.$state.user.name || '',
+      email: userStore.$state.user.email || '',
+      phone: userStore.$state.user.phone || '',
+      oldPassword: '',
+      newPassword: '',
+    });
   }
 });
 </script>
