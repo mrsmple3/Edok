@@ -47,6 +47,19 @@ watch(isDialogOpen, async (newVal) => {
     } else {
       console.error("EndUser не загружен");
     }
+
+    window.addEventListener("message", (event) => {
+      // проверка источника
+      if (event.origin !== "https://id.gov.ua") return;
+
+      const data = event.data;
+      console.log("Сообщение от iframe:", data);
+
+      if (data?.type === "sign-complete") {
+        // примерное значение type, может отличаться — нужно проверить в реальном сообщении
+        console.log("Подпись завершена");
+      }
+    });
   }
 });
 
