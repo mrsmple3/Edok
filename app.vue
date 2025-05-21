@@ -9,11 +9,13 @@
 
 <script lang="ts" setup>
 import { useUserStore } from "~/store/user.store";
+import { useToast } from "~/components/ui/toast";
 
 const userStore = useUserStore();
 
 const router = useRouter();
 const route = useRoute();
+const { toast } = useToast();
 
 onBeforeMount(() => {
 	callOnce(async () => {

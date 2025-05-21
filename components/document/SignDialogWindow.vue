@@ -25,13 +25,14 @@ import { useToast } from "~/components/ui/toast";
 const isDialogOpen = ref(false);
 const signatureType = ref("file");
 const selectedFile = ref<File | null>(null);
-
+const { toast } = useToast();
 
 watch(isDialogOpen, async (newVal) => {
   if (newVal) {
     await nextTick(); // дождаться отрисовки DOM внутри диалога
 
     const parent = document.getElementById("sign-widget-parent");
+
     if (!parent) {
       console.error("sign-widget-parent не найден");
       return;
@@ -47,24 +48,10 @@ watch(isDialogOpen, async (newVal) => {
     } else {
       console.error("EndUser не загружен");
     }
-
-    window.addEventListener("message", (event) => {
-      // проверка источника
-      if (event.origin !== "https://id.gov.ua") return;
-
-      const data = event.data;
-      console.log("Сообщение от iframe:", data);
-
-      if (data?.type === "sign-complete") {
-        // примерное значение type, может отличаться — нужно проверить в реальном сообщении
-        console.log("Подпись завершена");
-      }
-    });
   }
 });
 
 const signDocument = async () => {
-  const { toast } = useToast();
 
   try {
     if (!selectedFile.value) {

@@ -273,6 +273,6 @@ export const useUserStore = defineStore("auth", {
 			} catch (error: any) {
 				handleApiError(error);
 			}
-		}
+		},
 	},
 });
