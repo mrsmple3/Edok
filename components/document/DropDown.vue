@@ -46,6 +46,7 @@ const handleSelect = (event: Event) => {
 
 const handleSelectSign = (event: Event) => {
 	event.preventDefault();
+	router.push({ query: { documentSign: props.invoice.id } });
 };
 
 // const redirectToESign = () => {

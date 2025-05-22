@@ -3,10 +3,7 @@ export default defineNuxtConfig({
   app: {
     head: {
       script: [
-        {
-          src: "/js/eusign.js",
-          type: "text/javascript",
-        },
+        { src: "/js/eusign.js", type: "text/javascript", },
       ],
       link: [
         { rel: 'icon', type: 'image/x-icon', href: '/Edok.svg' }
