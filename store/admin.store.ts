@@ -23,6 +23,15 @@ export const useAdminStore = defineStore("admin", {
 	getters: {
 		leadsGetter: (state): Lead[] => state.leads,
 		documentsGetter: (state): Document[] => state.documents,
+		getDocumentById: (state) => {
+			return (id: number) => {
+				if (state.unsignedDocuments.length !== 0) {
+					return state.unsignedDocuments.find((document) => document.id === id);
+				} else {
+					return state.documents.find((document) => document.id === id);
+				}
+			};
+		},
 		insigneDocumentsGetter: (state): Document[] => state.unsignedDocuments,
 		getterUserById: (state) => {
 			return (id: number) => {

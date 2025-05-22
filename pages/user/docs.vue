@@ -45,9 +45,9 @@
       </div>
 
       <div class="flex-center gap-[15px]">
-        <Badge class="w-12 h-12 bg-[#2d9cdb]/20 rounded-[15px] hover:bg-[#2d9cdb]/30">
+        <!-- <Badge class="w-12 h-12 bg-[#2d9cdb]/20 rounded-[15px] hover:bg-[#2d9cdb]/30">
           <img alt="filter" src="/icons/filter.svg" />
-        </Badge>
+        </Badge> -->
         <RefreshData :refreshFunction="async () => await adminStore.getDocumentsByUserId(route.query.id)" />
       </div>
     </div>
@@ -110,7 +110,9 @@ onBeforeMount(async () => {
   watch(() => [userStore.isAuthInitialized, route.fullPath],
     async (newVal, routeFull) => {
       if (newVal) {
-        await adminStore.getDocumentsByUserId(route.query.id)
+        await adminStore.getDocumentsByUserId(route.query.id).then(() => {
+          adminStore.$state.filteredDocuments = adminStore.$state.documents;
+        })
       }
     },
     {
@@ -140,6 +142,7 @@ const uploadDocument = async (file: File, documentType: string) => {
         counterpartyId: Number(route.query.id),
         type: documentType,
         content: "Информационный",
+        status: 'В ожидании'
       },
       file
     );

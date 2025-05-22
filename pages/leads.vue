@@ -18,7 +18,7 @@
 				<Badge class="w-12 h-12 bg-[#2d9cdb]/20 rounded-[15px] hover:bg-[#2d9cdb]/30">
 					<img alt="filter" src="/icons/filter.svg" />
 				</Badge>
-				<RefreshData :refreshFunction="async () => await adminStore.getLeadByUserId(userStore.userGetter.id)" />
+				<RefreshData :refreshFunction="async () => await getLead()" />
 			</div>
 		</div>
 		<div class="flex-center gap-[5px] mb-[26px]">

@@ -43,7 +43,7 @@
 
 			<div class="flex-center gap-[15px]">
 				<DocumentFilter :counterparties="counterparties" />
-				<RefreshData :refreshFunction="async () => await adminStore.getDocumentsByLeadId(route.query.id)" />
+				<RefreshData :refreshFunction="async () => await getDocument()" />
 			</div>
 		</div>
 		<div class="flex-center gap-[5px] mb-[26px]">
@@ -102,6 +102,7 @@ const getDocument = async () => {
 	} else {
 		await adminStore.getDocumentsByUserId(userStore.userGetter.id);
 	}
+	adminStore.$state.filteredDocuments = adminStore.$state.documents;
 }
 
 const currentPage = ref(1); // Текущая страница
@@ -125,7 +126,6 @@ onBeforeMount(async () => {
 		async (newVal, routeFull) => {
 			if (newVal) {
 				await getDocument();
-				adminStore.$state.filteredDocuments = adminStore.$state.documents;
 				await userStore.getCounterparties().then(() => {
 					counterparties.value = userStore.$state.counterparties.map((counterparty) => ({
 						value: counterparty.id,
@@ -159,6 +159,7 @@ const uploadDocument = async (file: File, documentType: string) => {
 				counterpartyId: userStore.userGetter ? userStore.userGetter.id : null,
 				type: documentType,
 				content: "Информационный",
+				status: 'В ожидании'
 			},
 			file
 		);

@@ -8,19 +8,22 @@
         <DialogTitle>Электронная подпись</DialogTitle>
         <DialogDescription>Выберите тип подписи и подпишите документ</DialogDescription>
       </DialogHeader>
-      <div id="sign-widget-parent" class="w-full h-[600px]">
+      <div id="sign-widget-parent" class="w-full h-[500px]">
       </div>
       <div class="upload-signed-document">
         <div
           class="upload-signed-document border border-dashed border-gray-400 rounded p-4 flex flex-col items-center justify-center cursor-pointer"
           @dragover.prevent @drop.prevent="handleDrop" @click="fileInputRef.click()">
           <input type="file" ref="fileInputRef" class="hidden" @change="handleFileChange" accept=".pdf,.sig" />
-          <span class="text-gray-500">Перетащите файл сюда или кликните для выбора</span>
+          <span class="text-gray-500" v-if="selectedFile === null">Перетащите подписанный файл сюда или кликните для
+            выбора</span>
+          <span class="text-gray-500" v-else>{{ selectedFile.name }}</span>
         </div>
       </div>
       <DialogFooter class="mt-auto">
-        <Button @click="signDocument">Подписать</Button>
         <Button variant="outline" @click="isDialogOpen = false">Отмена</Button>
+        <Button @click="signDocument"
+          :class="{ 'pointer-events-none opacity-70': selectedFile === null }">Подписать</Button>
       </DialogFooter>
     </DialogContent>
   </Dialog>
@@ -29,28 +32,30 @@
 <script setup lang="ts">
 import { ref } from "vue";
 import { useToast } from "~/components/ui/toast";
+import { useAdminStore } from "~/store/admin.store";
 import { useUserStore } from "~/store/user.store";
 
+const adminStore = useAdminStore();
 const isDialogOpen = ref(false);
 const { toast } = useToast();
 const route = useRoute();
+const router = useRouter();
 const userStore = useUserStore();
 
-const fileInputRef = ref<HTMLInputElement | null>(null);
+const selectedFile = ref<File | null>(null);
+const fileInputRef = ref<HTMLInputElement>();
 
 function handleDrop(event: DragEvent) {
   const files = event.dataTransfer?.files;
   if (files && files.length > 0) {
-    // обработка файла
-    // emit или set file
+    selectedFile.value = files[0];
   }
 }
 
 function handleFileChange(event: Event) {
   const files = (event.target as HTMLInputElement).files;
   if (files && files.length > 0) {
-    // обработка файла
-    // emit или set file
+    selectedFile.value = files[0];
   }
 }
 
@@ -92,7 +97,30 @@ watch(isDialogOpen, async (newVal) => {
 
 async function signDocument() {
   try {
-    // TODO: Можно сделать так чтобы загружать тот документ который подписан уже и вот тогда только можно будет нажать на кнопку подписать
+    const currentDocument = adminStore.getDocumentById(Number(route.query.documentSign))
+    if (selectedFile === null) {
+      toast({ title: "Ошибка", description: "Не был загружен подписанный файл", variant: "destructive" });
+      return;
+    }
+
+    await adminStore
+      .updateDocument({
+        id: currentDocument.id,
+        status: 'Подписан',
+      })
+
+    const document = await adminStore.createDocument(
+      {
+        title: selectedFile.value.name,
+        userId: userStore.userGetter.id,
+        counterpartyId: adminStore.getDocumentById(Number(route.query.documentSign)).counterpartyId,
+        type: 'Подписанный',
+        content: adminStore.getDocumentById(Number(route.query.documentSign)).content,
+        status: 'Подписан',
+      },
+      selectedFile.value
+    );
+
     isDialogOpen.value = false;
 
   } catch (error: any) {

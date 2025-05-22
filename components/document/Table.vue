@@ -1,6 +1,9 @@
 <template>
   <TableRow class="relative hover:bg-[#2d9cdb]/20"
-    :class="{ 'opacity-50 pointer-events-none': invoice.deleteSignCount !== 0 && invoice.deleteSigns.find(sign => sign.userId === userStore.userGetter.id) }">
+    :class="{ 'opacity-50 pointer-events-none': invoice.deleteSignCount !== 0 && invoice.deleteSigns.find(sign => sign.userId === userStore.userGetter.id), 'bg-[#d3d3d3]': invoice.type === 'Подписанный' }">
+    <div class="status" v-if="invoice.status === 'Подписан'">
+      {{ invoice.status }}
+    </div>
     <TableCell class="w-max flex-center gap-[20px]">
       <img alt="doc" class="w-[33px] h-[45px]" src="/icons/lead-doc.svg" />
       <div class="w-max flex flex-col items-start">
@@ -51,4 +54,16 @@ const getInfoCounterparty = (invoice: any) => {
 }
 </script>
 
-<style scoped lang="scss"></style>
+<style scoped lang="scss">
+.status {
+  position: absolute;
+  padding: 1px 5px;
+  background: #5a5a5a;
+  border-radius: 10px;
+  top: -3px;
+  right: 0;
+  z-index: 10;
+  font-size: 9px;
+  color: white;
+}
+</style>

@@ -15,8 +15,9 @@ export default defineEventHandler(async (event) => {
 			};
 		}
 
+		console.log(user);
 		const documents = await getDocumentByUserRole(user.id, user.role);
-		console.log(documents);
+		// console.log(documents);
 
 
 		return {

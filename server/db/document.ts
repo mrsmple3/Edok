@@ -317,7 +317,7 @@ export const getUnsignedDocuments = () => {
 	return prisma.document.findMany({
 		where: {
 			status: {
-				not: "signed",
+				not: "Подписан",
 			},
 		},
 		include: {
