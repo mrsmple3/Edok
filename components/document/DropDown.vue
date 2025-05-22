@@ -6,7 +6,8 @@
 			<DropdownMenuItem class="text-yellow-700" @select="handleSelect">
 				<DocumentEditDialogWindow :invoice="invoice" />
 			</DropdownMenuItem>
-			<DropdownMenuItem @select="handleSelectSign" v-if="invoice.type !== 'Подписанный'">
+			<DropdownMenuItem @select="handleSelectSign"
+				v-if="invoice.type !== 'Подписанный' || invoice.status !== 'Подписан'">
 				<DocumentSignDialogWindow />
 			</DropdownMenuItem>
 			<!-- <DropdownMenuItem class="text-blue-600" @click="redirectToESign()">Перейти на подпись</DropdownMenuItem> -->

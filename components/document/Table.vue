@@ -1,7 +1,7 @@
 <template>
   <TableRow class="relative hover:bg-[#2d9cdb]/20"
     :class="{ 'opacity-50 pointer-events-none': invoice.deleteSignCount !== 0 && invoice.deleteSigns.find(sign => sign.userId === userStore.userGetter.id), 'bg-[#d3d3d3]': invoice.type === 'Подписанный' }">
-    <div class="status" v-if="invoice.status === 'Подписан'">
+    <div class="status" v-if="invoice.status === 'Подписан' && invoice.type !== 'Подписанный'">
       {{ invoice.status }}
     </div>
     <TableCell class="w-max flex-center gap-[20px]">
