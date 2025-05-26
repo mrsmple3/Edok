@@ -66,6 +66,7 @@ import { useUserStore } from "~/store/user.store";
 import { useToast } from "~/components/ui/toast";
 import type { Document } from "~/store/user.store";
 import { useAdminStore } from "~/store/admin.store";
+import Id from '~/pages/document/[id].vue';
 
 const props = defineProps({
 	documents: {
@@ -84,6 +85,8 @@ const props = defineProps({
 
 const adminStore = useAdminStore();
 const userStore = useUserStore();
+
+const documentsToLeads = useState('documentsToLeads');
 
 const typeOfLead = ref("Двухстороннее соглашение");
 const isDialogOpen = ref(false);
@@ -109,7 +112,7 @@ const createLead = form.handleSubmit(async (values) => {
 			authorId: userStore.userGetter.id,
 			counterpartyId: props.counterpartyId,
 			moderatorsId: values.moderator,
-			documents: props.documents,
+			documents: documentsToLeads.value.map(doc => doc.id),
 		});
 		props.getFunction();
 		isDialogOpen.value = false;
@@ -135,6 +138,16 @@ const createLead = form.handleSubmit(async (values) => {
 
 watch(isDialogOpen, async (newVal) => {
 	if (newVal) {
+		if (documentsToLeads.value.length === 0) {
+			const { toast } = useToast();
+			toast({
+				title: "Ошибка",
+				description: "Необходимо выбрать хотя бы один документ",
+				variant: "destructive",
+			});
+			isDialogOpen.value = false;
+			return;
+		}
 		await userStore.getModerators();
 	}
 });

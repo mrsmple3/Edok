@@ -10,12 +10,14 @@ const defaultValue: {
 	users: User[];
 	filteredDocuments: Document[];
 	unsignedDocuments: Document[];
+	signedDocuments: Document[];
 } = {
 	leads: [],
 	documents: [],
 	users: [],
 	filteredDocuments: [],
 	unsignedDocuments: [],
+	signedDocuments: [],
 };
 
 export const useAdminStore = defineStore("admin", {
@@ -139,6 +141,24 @@ export const useAdminStore = defineStore("admin", {
 			try {
 				const response: any = await useFetchApi("/api/admin/document/unsigned");
 				this.$patch({ unsignedDocuments: response.body.documents });
+				return response.body.documents;
+			} catch (error) {
+				handleApiError(error);
+			}
+		},
+		async getAllSignedDocuments() {
+			try {
+				const response: Document[] = await useFetchApi("/api/admin/document/archive");
+				this.$patch({ signedDocuments: response.body.documents });
+				return response.body.documents;
+			} catch (error) {
+				handleApiError(error);
+			}
+		},
+		async getSignedDocumentsByUserId(userId: number) {
+			try {
+				const response: Document[] = await useFetchApi(`/api/admin/document/archive/${userId}`);
+				this.$patch({ signedDocuments: response.body.documents });
 				return response.body.documents;
 			} catch (error) {
 				handleApiError(error);

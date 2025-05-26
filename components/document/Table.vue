@@ -1,10 +1,14 @@
 <template>
   <TableRow class="relative hover:bg-[#2d9cdb]/20"
     :class="{ 'opacity-50 pointer-events-none': invoice.deleteSignCount !== 0 && invoice.deleteSigns.find(sign => sign.userId === userStore.userGetter.id), 'bg-[#d3d3d3]': invoice.type === 'Подписанный' }">
+    <div class="doc-select" v-if="!invoice.leadId">
+      <Checkbox :checked="checkBox" class="bg-[#FFFFFF] border-[#939393] absolute top-1/2 -translate-y-1/2 z-[10]"
+        @update:checked="updateCheckbox" />
+    </div>
     <div class="status" v-if="invoice.status === 'Подписан' && invoice.type !== 'Подписанный'">
       {{ invoice.status }}
     </div>
-    <TableCell class="w-max flex-center gap-[20px]">
+    <TableCell class="w-max flex-center gap-[20px] pl-5">
       <img alt="doc" class="w-[33px] h-[45px]" src="/icons/lead-doc.svg" />
       <div class="w-max flex flex-col items-start">
         <span class="text-[#494949] text-[15px] font-medium font-['Barlow']">{{ invoice.title.length > 23 ?
@@ -30,7 +34,7 @@
 <script setup lang="ts">
 import { useUserStore, type Document } from '~/store/user.store';
 
-defineProps({
+const props = defineProps({
   invoice: {
     type: Object as PropType<Document>,
     required: true,
@@ -38,6 +42,25 @@ defineProps({
 });
 
 const userStore = useUserStore();
+
+const checkBox = ref(false);
+
+const documentsToLeads = useState('documentsToLeads', () => []);
+
+const updateCheckbox = () => {
+  const idx = documentsToLeads.value.findIndex(doc => doc.id === props.invoice.id);
+  if (idx === -1) {
+    checkBox.value = true;
+    documentsToLeads.value.push({
+      id: props.invoice.id
+    });
+  } else {
+    checkBox.value = false;
+    documentsToLeads.value.splice(idx, 1);
+  }
+};
+
+
 
 const getInfoCounterparty = (invoice: any) => {
   if (invoice.counterparty) {
@@ -65,5 +88,13 @@ const getInfoCounterparty = (invoice: any) => {
   z-index: 10;
   font-size: 9px;
   color: white;
+}
+
+.doc-select {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  transform: translateY(-50%);
+  z-index: 10;
 }
 </style>
