@@ -48,6 +48,16 @@ const handleSelect = (event: Event) => {
 const handleSelectSign = (event: Event) => {
 	event.preventDefault();
 	router.push({ query: { documentSign: props.invoice.id } });
+
+	const filePath = props.invoice.filePath;
+	if (!filePath) return;
+
+	const link = document.createElement('a');
+	link.href = filePath;
+	link.download = filePath.split('/').pop() || 'document.pdf';
+	document.body.appendChild(link);
+	link.click();
+	document.body.removeChild(link);
 };
 
 // const redirectToESign = () => {
