@@ -245,7 +245,7 @@ export const useAdminStore = defineStore("admin", {
 		},
 		async createUser(user: any) {
 			try {
-				const response: any = await useFetchApi("/api/admin/user", {
+				const response: any = await useFetchApi("/api/admin/user/new", {
 					method: "POST",
 					body: user,
 				});

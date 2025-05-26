@@ -56,6 +56,7 @@ export default defineEventHandler(async (event) => {
 			email: body.email,
 			phone: body.phone,
 			name: body.name,
+			isActive: body.isActive,
 		});
 
 		return {

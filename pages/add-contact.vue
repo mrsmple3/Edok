@@ -38,11 +38,11 @@
             value="account">
             Данные контакта
           </TabsTrigger>
-          <TabsTrigger
+          <!-- <TabsTrigger
             class="!w-max data-[state=active]:!bg-[#00b074]/20 rounded-lg !text-center !text-[#464154] data-[state=active]:!text-[#00b074] !text-lg !font-bold py-[15px] px-[30px]"
             value="password">
             Соглашения
-          </TabsTrigger>
+          </TabsTrigger> -->
         </TabsList>
         <TabsContent value="account">
           <ContactsAddCounterparty v-if="route.query.role === 'counterparty'" />

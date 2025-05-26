@@ -1,7 +1,7 @@
 <template>
   <TableRow class="relative hover:bg-[#2d9cdb]/20"
     :class="{ 'opacity-50 pointer-events-none': invoice.deleteSignCount !== 0 && invoice.deleteSigns.find(sign => sign.userId === userStore.userGetter.id), 'bg-[#d3d3d3]': invoice.type === 'Подписанный' }">
-    <div class="doc-select" v-if="!invoice.leadId">
+    <div class="doc-select" v-if="!invoice.leadId && route.name === 'user-docs'">
       <Checkbox :checked="checkBox" class="bg-[#FFFFFF] border-[#939393] absolute top-1/2 -translate-y-1/2 z-[10]"
         @update:checked="updateCheckbox" />
     </div>
@@ -42,8 +42,9 @@ const props = defineProps({
 });
 
 const userStore = useUserStore();
-
 const checkBox = ref(false);
+
+const route = useRoute();
 
 const documentsToLeads = useState('documentsToLeads', () => []);
 
