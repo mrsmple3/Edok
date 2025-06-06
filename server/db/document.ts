@@ -329,6 +329,24 @@ export const getUnsignedDocuments = () => {
 	});
 }
 
+export const getUnsignedDocumentsByUserId = (id: number) => {
+	return prisma.document.findMany({
+		where: {
+			userId: id,
+			status: {
+				not: "Подписан",
+			},
+		},
+		include: {
+			user: true,
+			counterparty: true,
+			lead: true,
+			deleteSigns: true,
+			Signature: true,
+		},
+	});
+}
+
 export const getSignedDocuments = () => {
 	return prisma.document.findMany({
 		where: {

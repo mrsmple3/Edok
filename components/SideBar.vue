@@ -9,9 +9,9 @@
       <button class="relative w-12 h-12 bg-[#2d9cdb]/20 flex items-center justify-center rounded-[15px]"
         @click="openChat">
         <img alt="sms" class="w-7 h-7" src="/icons/sms-blue.svg">
-        <div class="chip">
+        <!-- <div class="chip">
           53
-        </div>
+        </div> -->
       </button>
       <button class="relative w-12 h-12 bg-[#ff5b5b]/20 flex items-center justify-center rounded-[15px]">
         <img alt="sms" class="w-7 h-7" src="/icons/setting-red-light.svg">

@@ -146,6 +146,15 @@ export const useAdminStore = defineStore("admin", {
 				handleApiError(error);
 			}
 		},
+		async getUnsignedDocumentsByUserId(userId: number) {
+			try {
+				const response: Document[] = await useFetchApi(`/api/admin/document/unsigned/${userId}`);
+				this.$patch({ unsignedDocuments: response.body.documents });
+				return response.body.documents;
+			} catch (error) {
+				handleApiError(error);
+			}
+		},
 		async getAllSignedDocuments() {
 			try {
 				const response: Document[] = await useFetchApi("/api/admin/document/archive");

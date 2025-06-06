@@ -12,32 +12,32 @@
 </template>
 
 <script setup lang="ts">
-	import type { Lead } from "@prisma/client";
-	import { useAdminStore } from "~/store/admin.store";
+import type { Lead } from "@prisma/client";
+import { useAdminStore } from "~/store/admin.store";
 
-	defineProps({
-		invoice: {
-			type: Object as PropType<Lead>,
-			required: true,
-		},
+defineProps({
+	invoice: {
+		type: Object as PropType<Lead>,
+		required: true,
+	},
+});
+
+const router = useRouter();
+const adminStore = useAdminStore();
+
+const openDocument = async (invoice: any) => {
+	await router.push({ path: "/leads/docs/", query: { id: invoice.id } }).then(async () => {
+		await adminStore.getDocumentsByLeadId(invoice.id);
 	});
+};
 
-	const router = useRouter();
-	const adminStore = useAdminStore();
+const handleSelect = (event: Event) => {
+	event.preventDefault();
+};
 
-	const openDocument = async (invoice: any) => {
-		await router.push({ path: "/docs/", query: { id: invoice.id } }).then(async () => {
-			await adminStore.getDocumentsByLeadId(invoice.id);
-		});
-	};
-
-	const handleSelect = (event: Event) => {
-		event.preventDefault();
-	};
-
-	const deleteLead = async (invoice: any) => {
-		await adminStore.deleteLead(parseInt(invoice.id));
-	};
+const deleteLead = async (invoice: any) => {
+	await adminStore.deleteLead(parseInt(invoice.id));
+};
 </script>
 
 <style scoped></style>

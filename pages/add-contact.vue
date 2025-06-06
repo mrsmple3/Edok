@@ -16,19 +16,10 @@
           </div>
         </button> -->
       </div>
-
-      <div class="flex-center gap-[15px]">
-        <Badge class="w-12 h-12  bg-[#2d9cdb]/20 rounded-[15px]  hover:bg-[#2d9cdb]/30">
-          <img alt="filter" src="/icons/filter.svg">
-        </Badge>
-        <Badge class="w-12 h-12  bg-[#2d9cdb]/20 rounded-[15px]  hover:bg-[#2d9cdb]/30">
-          <img alt="filter" src="/icons/restar.svg">
-        </Badge>
-      </div>
     </div>
     <div class="flex-center gap-[5px] mb-[26px]">
-      <NuxtLink class="breadcrumbs" to="">Контакты</NuxtLink>
-      <NuxtLink class="breadcrumbs" to="">ТОВ "АТ Каргілл"</NuxtLink>
+      <NuxtLink class="breadcrumbs" to="/contacts">Контакты</NuxtLink>
+      <NuxtLink class="breadcrumbs" to="">ТОВ «ХЮРРЕМ»</NuxtLink>
     </div>
     <div class="page__block flex-center justify-center py-[50px] px-[42px]">
       <Tabs class="form__container" default-value="account">
@@ -36,7 +27,7 @@
           <TabsTrigger
             class="!w-max data-[state=active]:!bg-[#00b074]/20 rounded-lg !text-center !text-[#464154] data-[state=active]:!text-[#00b074] !text-lg !font-bold py-[15px] px-[30px]"
             value="account">
-            Данные контакта
+            Введіть дані контакту
           </TabsTrigger>
           <!-- <TabsTrigger
             class="!w-max data-[state=active]:!bg-[#00b074]/20 rounded-lg !text-center !text-[#464154] data-[state=active]:!text-[#00b074] !text-lg !font-bold py-[15px] px-[30px]"
@@ -48,7 +39,7 @@
           <ContactsAddCounterparty v-if="route.query.role === 'counterparty'" />
           <ContactsAddModerator v-else />
         </TabsContent>
-        <TabsContent value="password">
+        <!-- <TabsContent value="password">
           <Card>
             <CardHeader>
               <CardTitle>Password</CardTitle>
@@ -70,7 +61,7 @@
               <Button>Save password</Button>
             </CardFooter>
           </Card>
-        </TabsContent>
+        </TabsContent> -->
       </Tabs>
     </div>
   </div>

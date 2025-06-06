@@ -4,7 +4,7 @@
       <FormField v-slot="{ componentField }" name="company">
         <FormItem>
           <FormControl>
-            <Input class="form__input" placeholder="Название компании" type="text" v-bind="componentField" />
+            <Input class="form__input" placeholder="Назва компанії" type="text" v-bind="componentField" />
           </FormControl>
           <FormMessage />
         </FormItem>
@@ -37,10 +37,10 @@
     </div>
     <div class="flex-center gap-[30px]">
       <Button class="form__submit-btn outline" @click="router.push({ path: '/contacts' })">
-        Отменить
+        Скасувати
       </Button>
       <Button class="form__submit-btn" type="submit">
-        Сохранить
+        Створити
       </Button>
     </div>
   </form>

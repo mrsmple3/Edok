@@ -44,6 +44,7 @@
 <script lang="ts" setup>
 import { useAdminStore } from '~/store/admin.store';
 import { useUserStore } from '~/store/user.store';
+import { getUnsignedDocuments } from '../server/db/document';
 
 definePageMeta({
   layout: 'page',
@@ -67,7 +68,7 @@ onBeforeMount(async () => {
   watch(() => [userStore.isAuthInitialized, route.fullPath],
     async (newVal, routeFull) => {
       if (newVal) {
-        await adminStore.getAllUnsignedDocuments()
+        await getUnsignedDocuments()
       }
     },
     {
@@ -75,6 +76,14 @@ onBeforeMount(async () => {
     }
   )
 })
+
+const getUnsignedDocuments = async () => {
+  if (userStore.userRole === 'counterparty') {
+    await adminStore.getUnsignedDocumentsByUserId(userStore.userGetter.id);
+  } else {
+    await adminStore.getAllUnsignedDocuments()
+  }
+}
 
 </script>
 
