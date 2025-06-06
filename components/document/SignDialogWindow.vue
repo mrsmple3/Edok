@@ -116,6 +116,7 @@ async function signDocument() {
         counterpartyId: adminStore.getDocumentById(Number(route.query.documentSign)).counterpartyId,
         type: 'Подписанный',
         content: adminStore.getDocumentById(Number(route.query.documentSign)).content,
+        leadId: adminStore.getDocumentById(Number(route.query.documentSign)).leadId,
         status: 'Подписан',
       },
       selectedFile.value
