@@ -118,6 +118,7 @@ model Signature {
   id         Int      @id @default(autoincrement())
   signature  String
   documentId Int
+  info       String   @db.Text
   document   Document @relation(fields: [documentId], references: [id])
   userId     Int
   user       User     @relation(fields: [userId], references: [id])

@@ -6,9 +6,11 @@
 			<DropdownMenuItem class="text-yellow-700" @select="handleSelect">
 				<DocumentEditDialogWindow :invoice="invoice" />
 			</DropdownMenuItem>
-			<DropdownMenuItem @select="handleSelectSign"
-				v-if="invoice.type !== 'Подписанный' || invoice.status !== 'Подписан'">
+			<DropdownMenuItem @select="handleSelectSign" v-if="invoice.status !== 'Підписано'">
 				<DocumentSignDialogWindow />
+			</DropdownMenuItem>
+			<DropdownMenuItem @select="handleSelectSign">
+				<DocumentDownload :invoice="invoice" />
 			</DropdownMenuItem>
 			<!-- <DropdownMenuItem class="text-blue-600" @click="redirectToESign()">Перейти на подпись</DropdownMenuItem> -->
 			<DropdownMenuItem class="text-red-600" @click="deleteDocument(invoice)">Удалить</DropdownMenuItem>
@@ -47,31 +49,24 @@ const handleSelect = (event: Event) => {
 
 const handleSelectSign = (event: Event) => {
 	event.preventDefault();
-	router.push({ query: { documentSign: props.invoice.id } });
+	const currentQuery = { ...router.currentRoute.value.query };
+	router.push({
+		query: {
+			...currentQuery,
+			documentSign: props.invoice.id
+		}
+	});
 
-	const filePath = props.invoice.filePath;
-	if (!filePath) return;
+	// const filePath = props.invoice.filePath;
+	// if (!filePath) return;
 
-	const link = document.createElement('a');
-	link.href = filePath;
-	link.download = filePath.split('/').pop() || 'document.pdf';
-	document.body.appendChild(link);
-	link.click();
-	document.body.removeChild(link);
+	// const link = document.createElement('a');
+	// link.href = filePath;
+	// link.download = filePath.split('/').pop() || 'document.pdf';
+	// document.body.appendChild(link);
+	// link.click();
+	// document.body.removeChild(link);
 };
-
-// const redirectToESign = () => {
-// 	const state = crypto.randomUUID();
-// 	const params = new URLSearchParams({
-// 		response_type: 'code',
-// 		client_id: '44e1a3fc703ac7ed0a40954b4d93646c',
-// 		auth_type: 'dig_sign',
-// 		state,
-// 		redirect_uri: 'https://agroedoc.com'
-// 	})
-// 	console.log(params);
-// 	window.location.href = `https://id.gov.ua/?${params.toString()}`
-// }
 
 const deleteDocument = async (invoice: any) => {
 	try {

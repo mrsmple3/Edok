@@ -211,6 +211,7 @@ export const createFile = async (
 
 	const allowedMimeTypes = [
 		"application/pdf",
+		"application/pkcs7-signature",
 	];
 
 	if (!allowedMimeTypes.includes(file.type)) {
@@ -317,7 +318,7 @@ export const getUnsignedDocuments = () => {
 	return prisma.document.findMany({
 		where: {
 			status: {
-				not: "Подписан",
+				not: "Підписано",
 			},
 		},
 		include: {
@@ -325,6 +326,7 @@ export const getUnsignedDocuments = () => {
 			counterparty: true,
 			lead: true,
 			deleteSigns: true,
+			Signature: true,
 		},
 	});
 }
@@ -334,7 +336,7 @@ export const getUnsignedDocumentsByUserId = (id: number) => {
 		where: {
 			userId: id,
 			status: {
-				not: "Подписан",
+				not: "Підписано",
 			},
 		},
 		include: {
@@ -351,7 +353,7 @@ export const getSignedDocuments = () => {
 	return prisma.document.findMany({
 		where: {
 			status: {
-				equals: "Подписан",
+				equals: "Підписано",
 			},
 		},
 		include: {
@@ -359,6 +361,7 @@ export const getSignedDocuments = () => {
 			counterparty: true,
 			lead: true,
 			deleteSigns: true,
+			Signature: true,
 		},
 	});
 }
@@ -367,7 +370,7 @@ export const getSignedDocumentsByUserId = (id: number) => {
 	return prisma.document.findMany({
 		where: {
 			userId: id,
-			status: "Подписан",
+			status: "Підписано",
 		},
 		include: {
 			user: true,
@@ -405,6 +408,7 @@ export const getDocumentByUserRole = (userId: number, role: string) => {
 			counterparty: true,
 			lead: true,
 			deleteSigns: true,
+			Signature: true,
 		},
 	});
 };

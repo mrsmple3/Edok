@@ -16,10 +16,6 @@ export default defineEventHandler(async (event) => {
 
 		const fileUrl = await createFile(event, file);
 
-		if (fileUrl.status !== 200) {
-			return fileUrl;
-		}
-
 		const user = getUserById(parseInt(userId));
 
 		if (!user) {

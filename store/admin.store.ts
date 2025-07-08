@@ -34,7 +34,7 @@ export const useAdminStore = defineStore("admin", {
 				}
 			};
 		},
-		insigneDocumentsGetter: (state): Document[] => state.unsignedDocuments,
+		insignedDocumentsGetter: (state): Document[] => state.unsignedDocuments,
 		getterUserById: (state) => {
 			return (id: number) => {
 				return state.users.find((user) => user.id === id);
@@ -197,6 +197,22 @@ export const useAdminStore = defineStore("admin", {
 					this.$patch({ documents: this.documentsGetter.filter((d) => d.id !== id) });
 
 				return response.body.message;
+			} catch (error) {
+				handleApiError(error);
+			}
+		},
+		async createSign(documentId: number, userId: number, signature: File) {
+			try {
+				const formData = new FormData();
+				formData.append("documentId", documentId.toString());
+				formData.append("userId", userId.toString());
+				formData.append("signature", signature);
+
+				const response: any = await useFetchApi("/api/sign", {
+					method: "POST",
+					body: formData,
+				});
+				return response.body.sign;
 			} catch (error) {
 				handleApiError(error);
 			}

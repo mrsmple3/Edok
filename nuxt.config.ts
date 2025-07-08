@@ -3,6 +3,19 @@ export default defineNuxtConfig({
   app: {
     head: {
       script: [
+        // {
+        //   src: "/js/euscpt.js",
+        //   type: "text/Javascript",
+        // },
+        // {
+        //   src: "/js/euscpm.js",
+        //   type: "text/Javascript",
+        // },
+        // {
+        //   async: true,
+        //   src: "/js/euscp.js",
+        //   type: "text/javascript",
+        // },
         { src: "/js/eusign.js", type: "text/javascript", },
       ],
       link: [
