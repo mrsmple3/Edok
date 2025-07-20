@@ -13,14 +13,16 @@ export default defineEventHandler(async (event) => {
 			event.res.statusCode = 404;
 			return {
 				code: 404,
-				body: { error: "Пользователь не найден" },
+				body: { error: "Користувач не знайдено" },
 			};
 		}
 
 		if (body.role && !checkRoleUser(body.role)) {
 			return {
 				code: 400,
-				body: { error: "Такой роли не существует" },
+				body: {
+					error: "Такої ролі не існує"
+				},
 			};
 		} else if (body.email && existUser.email !== body.email) {
 			const existEmail = await getUserByEmail(body.email);
@@ -28,7 +30,9 @@ export default defineEventHandler(async (event) => {
 			if (existEmail) {
 				return {
 					code: 400,
-					body: { error: "Пользователь с таким email уже существует" },
+					body: {
+						error: "Користувач із таким email вже існує"
+					},
 				};
 			}
 		} else if (body.phone && existUser.phone !== body.phone) {
@@ -37,7 +41,9 @@ export default defineEventHandler(async (event) => {
 			if (existPhone) {
 				return {
 					code: 400,
-					body: { error: "Пользователь с таким телефоном уже существует" },
+					body: {
+						error: "Користувач із таким телефоном вже існує"
+					},
 				};
 			}
 		}
@@ -48,7 +54,9 @@ export default defineEventHandler(async (event) => {
 			event.res.statusCode = 400;
 			return {
 				code: 400,
-				body: { error: "Старый пароль не совпадает" },
+				body: {
+					error: "Старий пароль не збігається"
+				},
 			};
 		}
 
@@ -68,7 +76,9 @@ export default defineEventHandler(async (event) => {
 		event.res.statusCode = 500;
 		return {
 			code: 500,
-			body: { error: "Ошибка при обновлении роли пользователя " + error },
+			body: {
+				error: "Помилка під час оновлення ролі користувача " + error
+			},
 		};
 	}
 });

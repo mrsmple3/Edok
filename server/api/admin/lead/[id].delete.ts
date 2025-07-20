@@ -19,7 +19,9 @@ export default defineEventHandler(async (event) => {
         event.res.statusCode = 500;
         return {
             code: 500,
-            body: { error: "Ошибка при удалении лида " + error }
+            body: {
+                error: "Помилка при видаленні договору " + error
+            }
         };
     }
 });

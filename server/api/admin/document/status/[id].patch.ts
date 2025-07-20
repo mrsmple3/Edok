@@ -11,7 +11,7 @@ export default defineEventHandler(async (event) => {
 			event.res.statusCode = 404;
 			return {
 				code: 404,
-				body: { error: "Документ не найден" },
+				body: { error: "Документ не знайдено" },
 			};
 		}
 
@@ -28,7 +28,7 @@ export default defineEventHandler(async (event) => {
 		event.res.statusCode = 500;
 		return {
 			code: 500,
-			body: { error: "Ошибка при обновлении статуса документа " + error },
+			body: { error: "Помилка під час оновлення статусу документа " + error },
 		};
 	}
 });

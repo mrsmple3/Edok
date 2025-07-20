@@ -2,11 +2,11 @@
 	<DropdownMenu>
 		<DropdownMenuTrigger class="absolute inset-0 w-full h-full"></DropdownMenuTrigger>
 		<DropdownMenuContent align="end">
-			<DropdownMenuItem @click="openDocument(invoice)">Показать документы</DropdownMenuItem>
+			<DropdownMenuItem @click="openDocument(invoice)">Показати документи</DropdownMenuItem>
 			<DropdownMenuItem class="text-yellow-700" @select="handleSelect">
 				<LeadsEditDialogWindow :invoice="invoice" />
 			</DropdownMenuItem>
-			<DropdownMenuItem class="text-red-600" @click="deleteLead(invoice)">Удалить</DropdownMenuItem>
+			<DropdownMenuItem class="text-red-600" @click="deleteLead(invoice)">Видалити</DropdownMenuItem>
 		</DropdownMenuContent>
 	</DropdownMenu>
 </template>

@@ -13,7 +13,7 @@ export default defineEventHandler(async (event) => {
 				event.res.statusCode = 404;
 				return {
 					code: 404,
-					body: { error: "Модератор не найден" },
+					body: { error: "Модератора не знайдено" },
 				};
 			}
 		} else if (body.counterpartyId) {
@@ -22,7 +22,7 @@ export default defineEventHandler(async (event) => {
 				event.res.statusCode = 404;
 				return {
 					code: 404,
-					body: { error: "Контрагент не найден" },
+					body: { error: "Контрагент не знайдено" },
 				};
 			}
 		}
@@ -33,7 +33,7 @@ export default defineEventHandler(async (event) => {
 			event.res.statusCode = 404;
 			return {
 				code: 404,
-				body: { error: "Лид не найден" },
+				body: { error: "Договір не знайдено" },
 			};
 		}
 
@@ -50,7 +50,7 @@ export default defineEventHandler(async (event) => {
 		event.res.statusCode = 500;
 		return {
 			code: 500,
-			body: { error: "Ошибка при обновлении лида " + error },
+			body: { error: "Помилка під час оновлення договору " + error },
 		};
 	}
 });

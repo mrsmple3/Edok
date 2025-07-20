@@ -2,7 +2,7 @@
 	<DropdownMenu>
 		<DropdownMenuTrigger class="absolute inset-0 w-full h-full"></DropdownMenuTrigger>
 		<DropdownMenuContent align="end">
-			<DropdownMenuItem @select="openDocument">Показать документы</DropdownMenuItem>
+			<DropdownMenuItem @select="openDocument">Показати документи</DropdownMenuItem>
 			<DropdownMenuItem class="text-yellow-700" @select="handleSelect">
 				<DocumentEditDialogWindow :invoice="invoice" />
 			</DropdownMenuItem>
@@ -13,7 +13,7 @@
 				<DocumentDownload :invoice="invoice" />
 			</DropdownMenuItem>
 			<!-- <DropdownMenuItem class="text-blue-600" @click="redirectToESign()">Перейти на подпись</DropdownMenuItem> -->
-			<DropdownMenuItem class="text-red-600" @click="deleteDocument(invoice)">Удалить</DropdownMenuItem>
+			<DropdownMenuItem class="text-red-600" @click="deleteDocument(invoice)">Видалити</DropdownMenuItem>
 		</DropdownMenuContent>
 	</DropdownMenu>
 </template>
@@ -39,7 +39,11 @@ const { toast } = useToast();
 const documentView = useState("isDocumentView");
 const documentUrl = useState("documentUrl");
 const openDocument = (event: Event) => {
-	documentUrl.value = props.invoice.filePath;
+	if (props.invoice.status === "Підписано") {
+		documentUrl.value = props.invoice.Signature[0].stampedFile;
+	} else {
+		documentUrl.value = props.invoice.filePath;
+	}
 	documentView.value = true;
 };
 
@@ -56,16 +60,6 @@ const handleSelectSign = (event: Event) => {
 			documentSign: props.invoice.id
 		}
 	});
-
-	// const filePath = props.invoice.filePath;
-	// if (!filePath) return;
-
-	// const link = document.createElement('a');
-	// link.href = filePath;
-	// link.download = filePath.split('/').pop() || 'document.pdf';
-	// document.body.appendChild(link);
-	// link.click();
-	// document.body.removeChild(link);
 };
 
 const deleteDocument = async (invoice: any) => {
@@ -82,14 +76,14 @@ const deleteDocument = async (invoice: any) => {
 
 		if (error.message) {
 			toast({
-				title: "Ошибка",
+				title: "Помилка",
 				description: error.message,
 				variant: "destructive",
 			});
 		} else {
 			toast({
-				title: "Неизвестная ошибка",
-				description: "Попробуйте позже",
+				title: "Невідома помилка",
+				description: "Спробуйте пізніше",
 				variant: "destructive",
 			});
 		}

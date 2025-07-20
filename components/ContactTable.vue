@@ -96,14 +96,14 @@ const activateUsers = async () => {
 
 		if (error.message) {
 			toast({
-				title: "Ошибка",
+				title: "Помилка",
 				description: error.message,
 				variant: "destructive",
 			});
 		} else {
 			toast({
-				title: "Неизвестная ошибка",
-				description: "Попробуйте позже",
+				title: "Невідома помилка",
+				description: "Спробуйте пізніше",
 				variant: "destructive",
 			});
 		}
@@ -125,14 +125,14 @@ const deleteUsers = async () => {
 
 		if (error.message) {
 			toast({
-				title: "Ошибка",
+				title: "Помилка",
 				description: error.message,
 				variant: "destructive",
 			});
 		} else {
 			toast({
-				title: "Неизвестная ошибка",
-				description: "Попробуйте позже",
+				title: "Невідома помилка",
+				description: "Спробуйте пізніше",
 				variant: "destructive",
 			});
 		}

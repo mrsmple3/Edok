@@ -15,7 +15,7 @@ export default defineEventHandler(async (event) => {
 			return {
 				code: 400,
 				body: {
-					error: "Необходимо указать email или те��ефон и роль",
+					error: "Необхідно вказати email або телефон та роль",
 				},
 			};
 		}
@@ -25,7 +25,7 @@ export default defineEventHandler(async (event) => {
 			return {
 				code: 400,
 				body: {
-					error: "Такой роли не существует",
+					error: "Такої ролі не існує",
 				},
 			};
 		}
@@ -42,7 +42,7 @@ export default defineEventHandler(async (event) => {
 			return {
 				code: 400,
 				body: {
-					error: "Пользователь с таким email или телефоном уже существует",
+					error: "Користувач із таким email або телефоном вже існує",
 				},
 			};
 		}
@@ -71,7 +71,7 @@ export default defineEventHandler(async (event) => {
 		event.res.statusCode = 500;
 		return {
 			code: 500,
-			error: "Ошибка регистрации: " + error,
+			error: "Помилка реєстрації: " + error,
 		};
 	}
 });

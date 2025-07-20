@@ -2,7 +2,7 @@
   <div class="sidebar__width w-full h-[100vh] flex-col-start bg-white pt-[30px] pr-[40px]">
     <div class="flex-col-start px-[50px]">
       <LoGo class=" mb-[5px]" />
-      <p class=" text-[#b9babd] text-xs font-normal mb-[56px]">Сервис электронного <br> документаоборота</p>
+      <p class=" text-[#b9babd] text-xs font-normal mb-[56px]">Сервіс електронного <br> документообігу</p>
     </div>
     <ProfileWindow />
     <div class="flex-stretch self-center justify-self-center gap-[20px] mb-[32px]">
@@ -132,10 +132,6 @@ onBeforeMount(async () => {
 </script>
 
 <style lang="scss" scoped>
-//.sidebar__width {
-//  width: size(350px);
-//}
-
 .chip {
   position: absolute;
   top: -20%;

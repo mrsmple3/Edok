@@ -2,10 +2,10 @@
 	<DropdownMenu>
 		<DropdownMenuTrigger class="absolute inset-0 w-full h-full"></DropdownMenuTrigger>
 		<DropdownMenuContent align="end">
-			<DropdownMenuItem @click="openDocument(invoice)">Показать документы</DropdownMenuItem>
-			<DropdownMenuItem @click="openLead(invoice)">Показать угоды</DropdownMenuItem>
+			<DropdownMenuItem @click="openDocument(invoice)">Показати документи</DropdownMenuItem>
+			<DropdownMenuItem @click="openLead(invoice)">Показати угоди</DropdownMenuItem>
 			<DropdownMenuItem @click="openChat(invoice)">Чат</DropdownMenuItem>
-			<DropdownMenuItem class="text-red-600" @click="deleteContact(invoice)">Удалить</DropdownMenuItem>
+			<DropdownMenuItem class="text-red-600" @click="deleteContact(invoice)">Видалити</DropdownMenuItem>
 		</DropdownMenuContent>
 	</DropdownMenu>
 </template>

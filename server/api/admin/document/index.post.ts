@@ -23,7 +23,7 @@ export default defineEventHandler(async (event) => {
 			return {
 				code: 404,
 				body: {
-					error: "Пользователь не найден",
+					error: "Користувач не знайдено",
 				},
 			};
 		}
@@ -45,7 +45,9 @@ export default defineEventHandler(async (event) => {
 				event.res.statusCode = 404;
 				return {
 					code: 404,
-					body: { error: "Контрагент не найден" },
+					body: {
+						error: "Контрагент не знайдено"
+					},
 				};
 			}
 			documentData = {

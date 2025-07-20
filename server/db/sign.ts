@@ -26,6 +26,7 @@ export const createSign = (data: any) => {
   return prisma.signature.create({
     data: {
       signature: data.signature,
+      stampedFile: data.stampedFile,
       info: data.certInfo,
       user: {
         connect: { id: data.userId }

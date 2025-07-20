@@ -2,16 +2,16 @@
   <Dialog>
     <DialogTrigger>
       <Badge class="w-12 h-12 bg-[#2d9cdb]/20 rounded-[15px] hover:bg-[#2d9cdb]/30">
-        <img alt="filter" src="/icons/filter.svg" />
+        <img alt="фільтр" src="/icons/filter.svg" />
       </Badge>
     </DialogTrigger>
     <DialogContent class="w-max">
       <DialogHeader>
-        <DialogTitle>Фильтр</DialogTitle>
-        <DialogDescription>Можете фильтровать документы по параметрам</DialogDescription>
+        <DialogTitle>Фільтр</DialogTitle>
+        <DialogDescription>Ви можете фільтрувати документи за параметрами</DialogDescription>
       </DialogHeader>
       <DialogDescription>
-        Дата создания
+        Дата створення
         <RangeCalendar v-model="value" class="w-max	rounded-md border" :maxValue="todayDate" />
       </DialogDescription>
       <DialogDescription>
@@ -20,13 +20,13 @@
           <ComboboxAnchor>
             <div class="relative w-full items-center">
               <ComboboxInput class="pl-9" :display-value="(val) => val?.label ?? ''"
-                placeholder="Введите организацию контрагента..." />
+                placeholder="Введіть організацію контрагента..." />
             </div>
           </ComboboxAnchor>
 
           <ComboboxList>
             <ComboboxEmpty>
-              Нет найденных контрагентов.
+              Не знайдено контрагентів.
             </ComboboxEmpty>
 
             <ComboboxGroup>
@@ -43,10 +43,10 @@
       </DialogDescription>
       <DialogFooter>
         <Button variant="outline" @click="resetFilters" class="flex items-center gap-2">
-          <img alt="reset" src="/icons/restar.svg" class="w-5 h-5" />
-          Сбросить
+          <img alt="скинути" src="/icons/restar.svg" class="w-5 h-5" />
+          Скинути
         </Button>
-        <Button @click="applyFilters">Применить</Button>
+        <Button @click="applyFilters">Застосувати</Button>
       </DialogFooter>
     </DialogContent>
   </Dialog>

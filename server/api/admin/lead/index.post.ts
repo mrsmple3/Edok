@@ -11,7 +11,7 @@ export default defineEventHandler(async (event) => {
 		return {
 			code: 400,
 			body: {
-				error: "Необходимо указать все поля",
+				error: "Необхідно вказати всі поля",
 				missingFields: [!type ? "type" : null, !authorId ? "authorId" : null, !documents ? "documents" : null, !name ? "name" : null].filter(Boolean),
 			},
 		};
@@ -24,7 +24,9 @@ export default defineEventHandler(async (event) => {
 			event.res.statusCode = 404;
 			return {
 				code: 404,
-				body: { error: "Пользователь не найден" },
+				body: {
+					error: "Користувач не знайдено"
+				},
 			};
 		}
 
@@ -34,13 +36,15 @@ export default defineEventHandler(async (event) => {
 				event.res.statusCode = 404;
 				return {
 					code: 404,
-					body: { error: "Модератор не найден" },
+					body: { error: "Модератора не знайдено" },
 				};
 			} else if (moderator.role !== "moderator") {
 				event.res.statusCode = 400;
 				return {
 					code: 400,
-					body: { error: "Модератора с таким id не существует" },
+					body: {
+						error: "Модератора з таким ID не існує"
+					},
 				};
 			}
 		} else if (counterpartyId) {
@@ -49,13 +53,17 @@ export default defineEventHandler(async (event) => {
 				event.res.statusCode = 404;
 				return {
 					code: 404,
-					body: { error: "Контрагент не найден" },
+					body: {
+						error: "Контрагент не знайдено"
+					},
 				};
 			} else if (counterparty.role !== "counterparty") {
 				event.res.statusCode = 400;
 				return {
 					code: 400,
-					body: { error: "Контрагента с таким id не существует" },
+					body: {
+						error: "Контрагента з таким ID не існує"
+					},
 				};
 			}
 		}
@@ -71,7 +79,7 @@ export default defineEventHandler(async (event) => {
 		event.res.statusCode = 500;
 		return {
 			code: 500,
-			body: { error: "Ошибка при создании лида " + error },
+			body: { error: "Помилка під час створення договору " + error },
 		};
 	}
 });

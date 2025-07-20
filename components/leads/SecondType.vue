@@ -2,10 +2,10 @@
 	<Table class="w-full">
 		<TableHeader class="w-full h-[80px]">
 			<TableRow class="border-none">
-				<TableHead class="t-head">Название документа</TableHead>
-				<TableHead class="t-head">Загружено</TableHead>
-				<TableHead class="t-head">Состояние</TableHead>
-				<TableHead class="t-head">Согласующие</TableHead>
+				<TableHead class="t-head">Назва документа</TableHead>
+				<TableHead class="t-head">Завантажено</TableHead>
+				<TableHead class="t-head">Стан</TableHead>
+				<TableHead class="t-head">Погоджуючі</TableHead>
 			</TableRow>
 		</TableHeader>
 		<TableBody class="w-full">
@@ -16,14 +16,14 @@
 						<span v-if="invoice.documents.length > 0" class="text-[#494949] text-[15px] font-medium font-['Barlow']">{{
 							invoice.documents[0].title.length > 23 ? invoice.documents[0].title.substring(0, 33) + "..." : invoice.documents[0].title
 						}}</span>
-						<span class="text-[#898989] text-[15px] font-['Barlow']">Для информации Подтверждающие</span>
-						<span class="text-[#404040] text-[11px] font-['Barlow']">Шевченко Людмила Николаевна</span>
+						<span class="text-[#898989] text-[15px] font-['Barlow']">Для інформації Підтверджуючі</span>
+						<span class="text-[#404040] text-[11px] font-['Barlow']">Шевченко Людмила Миколаївна</span>
 					</div>
 				</TableCell>
 				<TableCell class="t-cell">{{ invoice.createdAt }}</TableCell>
 				<TableCell
 					:class="{
-						'text-[#494949]': invoice.status === 'Информационный',
+						'text-[#494949]': invoice.status === 'Інформаційний',
 						'text-[#00B074]': invoice.status === 'На підписанні контрагентом',
 						'text-[#FF5B5B]': invoice.status === 'Відхилено контрагентом',
 					}"

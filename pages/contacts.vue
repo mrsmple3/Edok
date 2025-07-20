@@ -2,12 +2,12 @@
 	<div class="page-container">
 		<div class="w-full flex-center justify-between mb-[18px]">
 			<div class="flex-center">
-				<h2 class="page__title mr-[32px]">Контакты</h2>
+				<h2 class="page__title mr-[32px]">Контакти</h2>
 
 				<button
 					class="submenu-parent relative flex-center gap-[11px] rounded-[14px] border border-[#2d9cdb] py-2 px-7 text-[#2d9cdb] text-[18px] font-bold font-['Barlow'] mr-[24px] hover:active">
 					<img alt="plus" class="w-[19px] h-[19px] min-h-max min-w-max" src="/icons/plus-blue.svg" />
-					Новый
+					Новий
 					<div class="submenu">
 						<span @click="router.push({ path: '/add-contact', query: { role: 'moderator' } })">Модератор</span>
 						<span @click="router.push({ path: '/add-contact', query: { role: 'counterparty' } })">Контрагент</span>
@@ -18,10 +18,10 @@
 				<button
 					class="submenu-parent relative flex-center gap-[11px] rounded-[14px] border border-[#2d9cdb] py-2 px-7 text-[#2d9cdb] text-[18px] font-bold font-['Barlow'] mr-[24px] hover:active">
 					<img alt="plus" class="w-[19px] h-[19px] min-h-max min-w-max" src="/icons/plus-blue.svg" />
-					Редактировать
+					Редагувати
 					<div class="submenu">
-						<span @click="activate">Активизировать</span>
-						<span @click="deleted">Удалить</span>
+						<span @click="activate">Активізувати</span>
+						<span @click="deleted">Видалити</span>
 					</div>
 				</button>
 			</div>
@@ -34,12 +34,12 @@
 			</div>
 		</div>
 		<div class="flex-center gap-[5px] mb-[26px]">
-			<NuxtLink class="breadcrumbs" to="">Контакты</NuxtLink>
+			<NuxtLink class="breadcrumbs" to="">Контакти</NuxtLink>
 		</div>
 		<div class="page__block relative py-[30px] px-[42px]">
 			<Select defaultValue="counterparty" v-model="selectedRole">
 				<SelectTrigger class="w-[180px] absolute top-1 right-1 z-10">
-					<SelectValue placeholder="Пользователи" />
+					<SelectValue placeholder="Користувачі" />
 				</SelectTrigger>
 				<SelectContent>
 					<SelectGroup>

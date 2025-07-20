@@ -3,13 +3,6 @@ import { deleteAllFilesOfDocuments, deleteDocuments, getAllDocuments } from "~/s
 
 export default defineEventHandler(async (event) => {
 	try {
-		// const deletedFilesOfDocuments = await deleteAllFilesOfDocuments(event);
-
-		// if (deletedFilesOfDocuments.code !== 200) {
-		// 	event.res.statusCode = 400;
-		// 	return deletedFilesOfDocuments;
-		// }
-
 		const deletedDocuments = await deleteDocuments();
 
 		return {
@@ -21,7 +14,7 @@ export default defineEventHandler(async (event) => {
 		event.res.statusCode = 500;
 		return {
 			code: 500,
-			body: { error: "Ошибка при удалении всех документов " + error },
+			body: { error: "Помилка при видаленні всіх документів " + error },
 		};
 	}
 });

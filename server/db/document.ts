@@ -4,23 +4,6 @@ import fs, { mkdir, stat, writeFile } from "fs/promises";
 import path, { join } from "path";
 import mime from "mime";
 
-// async function signDocument(documentId: number, userId: number) {
-//     const document = await prisma.document.findUnique({ where: { id: documentId } });
-//     const user = await prisma.user.findUnique({ where: { id: userId } });
-//
-//     // Генерация подписи
-//     const signature = generateSignature(document.content, user.privateKey);
-//
-//     // Сохранение подписи
-//     await prisma.signature.create({
-//         data: {
-//             documentId,
-//             userId,
-//             signature,
-//         },
-//     });
-// }
-
 export const getAllDocuments = () => {
 	return prisma.document.findMany({
 		include: {
@@ -117,7 +100,7 @@ export const deleteDocumentById = async (event: H3Event<EventHandlerRequest>, id
 		return {
 			code: 404,
 			body: {
-				error: "Документ не найден",
+				error: "Документ не знайдено",
 			},
 		};
 	}
@@ -139,7 +122,7 @@ export const deleteDocumentById = async (event: H3Event<EventHandlerRequest>, id
 		return {
 			code: 500,
 			body: {
-				error: "Ошибка при удалении документа " + error,
+				error: "Помилка при видаленні документа " + error,
 			},
 		};
 	}
@@ -147,7 +130,7 @@ export const deleteDocumentById = async (event: H3Event<EventHandlerRequest>, id
 	return {
 		code: 200,
 		body: {
-			message: "Document deleted successfully",
+			message: "Документ успішно видалено",
 		},
 	};
 };
@@ -160,7 +143,7 @@ export const deleteFileOnDocument = async (event: H3Event<EventHandlerRequest>, 
 		return {
 			status: 200,
 			body: {
-				message: "File deleted successfully",
+				message: "Файл успішно видалено",
 			},
 		};
 	} catch (error) {
@@ -169,7 +152,7 @@ export const deleteFileOnDocument = async (event: H3Event<EventHandlerRequest>, 
 		return {
 			code: 500,
 			body: {
-				error: "Ошибка при удалении файла " + error,
+				error: "Помилка видалення файлу " + error,
 			},
 		};
 	}
@@ -182,7 +165,7 @@ export const deleteAllFilesOfDocuments = async (event: H3Event<EventHandlerReque
 		return {
 			code: 404,
 			body: {
-				error: "Документы не найдены",
+				error: "Документів не знайдено",
 			},
 		};
 	}
@@ -199,7 +182,7 @@ export const deleteAllFilesOfDocuments = async (event: H3Event<EventHandlerReque
 	return {
 		code: 200,
 		body: {
-			message: "All files deleted successfully",
+			message: "Усі файли успішно видалено",
 		},
 	};
 };
@@ -218,7 +201,7 @@ export const createFile = async (
 		event.res.statusCode = 400;
 		return {
 			status: 400,
-			body: { error: "Не поддерживающий тип документа" },
+			body: { error: "Тип документа, що не підтримує" },
 		};
 	}
 
@@ -243,7 +226,7 @@ export const createFile = async (
 			event.res.statusCode = 500;
 			return {
 				status: 500,
-				message: "Something went wrong." + e,
+				message: "Щось пішло не так." + e,
 			};
 		}
 	}
@@ -263,7 +246,8 @@ export const createFile = async (
 		event.res.statusCode = 500;
 		return {
 			status: 500,
-			body: { error: "Something went wrong." + e },
+			body: {
+				error: "Щось пішло не так." + e },
 		};
 	}
 };

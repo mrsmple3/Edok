@@ -1,4 +1,4 @@
-import {updateUserRole} from "~/server/db/users";
+import { updateUserRole } from "~/server/db/users";
 
 export default defineEventHandler(async (event) => {
     const { id } = event.context.params;
@@ -16,7 +16,9 @@ export default defineEventHandler(async (event) => {
         event.res.statusCode = 500;
         return {
             code: 500,
-            body: { error: "Ошибка при обновлении роли пользователя " + error }
+            body: {
+                error: "Помилка під час оновлення ролі користувача " + error
+            }
         };
     }
 });

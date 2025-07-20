@@ -13,7 +13,7 @@ export default defineEventHandler(async (event) => {
             return {
                 code: 404,
                 body: {
-                    error: "Пользователь не найден "
+                    error: "Користувач не знайдено "
                 }
             }
         }
@@ -58,7 +58,7 @@ export default defineEventHandler(async (event) => {
         return {
             code: 500,
             body: {
-                error: "Ошибка при удалении пользователя " + error
+                error: "Помилка при видаленні користувача " + error
             }
         }
     }

@@ -17,9 +17,9 @@
         <span class="text-[#404040] text-[11px] font-['Barlow']">{{ invoice.user.name }}</span>
       </div>
     </TableCell>
-    <TableCell class="t-cell">{{ invoice.lead ? invoice.lead.name : "Еще не создано" }}</TableCell>
+    <TableCell class="t-cell">{{ invoice.lead ? invoice.lead.name : "Ще не створено" }}</TableCell>
     <TableCell class="t-cell">{{ getInfoCounterparty(invoice) }}</TableCell>
-    <TableCell class="t-cell">{{ new Date(invoice.createdAt).toLocaleDateString("ru-RU") }}</TableCell>
+    <TableCell class="t-cell">{{ new Date(invoice.createdAt).toLocaleDateString("uk-UA") }}</TableCell>
     <TableCell class="t-cell">{{ invoice.user.email || invoice.user.organization_name }}</TableCell>
     <TableCell class="t-cell">
       <div

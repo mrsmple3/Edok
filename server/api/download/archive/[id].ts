@@ -12,7 +12,7 @@ export default defineEventHandler(async (event) => {
 
   if (!doc || !doc.filePath || !doc.Signature?.[0]?.signature) {
     event.res.statusCode = 404;
-    return "Документ или подпись не найдены";
+    return "Документ або підпис не знайдено";
   }
 
   const archive = archiver("zip", { zlib: { level: 9 } });
@@ -21,12 +21,14 @@ export default defineEventHandler(async (event) => {
 
   const filePath = path.resolve("public", doc.filePath.replace(/^\\?\\?\//, ""));
   const signaturePath = path.resolve("public", doc.Signature[0].signature.replace(/^\\?\\?\//, ""));
+  const stampFilePath = path.resolve("public", doc.Signature[0].stampedFile.replace(/^\\?\\?\//, ""));
 
   archive.append(fs.createReadStream(filePath), { name: "document.pdf" });
-  archive.append(fs.createReadStream(signaturePath), { name: "signature.p7s" });
 
-  if (doc.Signature[0].info) {
+  if (doc.Signature.length > 0) {
+    archive.append(fs.createReadStream(signaturePath), { name: "signature.p7s" });
     archive.append(doc.Signature[0].info.replace(/\\n/g, "\n"), { name: "info.txt" });
+    archive.append(doc.Signature[0].stampedFile.replace(/\\n/g, "\n"), { name: "stampPdfFile.txt" });
   }
 
   archive.finalize();

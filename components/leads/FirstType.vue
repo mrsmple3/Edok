@@ -2,12 +2,12 @@
 	<Table class="w-full">
 		<TableHeader class="w-full h-[80px]">
 			<TableRow class="border-none">
-				<TableHead class="t-head"> Название документа </TableHead>
-				<TableHead class="t-head">Тип сделки </TableHead>
-				<TableHead class="t-head">Документов </TableHead>
-				<TableHead class="t-head">Модераторы </TableHead>
-				<TableHead class="t-head">Дата создания </TableHead>
-				<TableHead class="t-head">Контрагенты </TableHead>
+				<TableHead class="t-head"> Назва документа </TableHead>
+				<TableHead class="t-head">Тип угоди </TableHead>
+				<TableHead class="t-head">Документів </TableHead>
+				<TableHead class="t-head">Модератори </TableHead>
+				<TableHead class="t-head">Дата створення </TableHead>
+				<TableHead class="t-head">Контрагенти </TableHead>
 				<TableHead class="t-head">Автор</TableHead>
 			</TableRow>
 		</TableHeader>

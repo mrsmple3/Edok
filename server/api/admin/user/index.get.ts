@@ -15,7 +15,9 @@ export default defineEventHandler(async (event) => {
 		event.res.statusCode = 500;
 		return {
 			code: 500,
-			body: { error: "Ошибка при получения пользователей " + error },
+			body: {
+				error: "Помилка при отриманні користувачів " + error
+			},
 		};
 	}
 });

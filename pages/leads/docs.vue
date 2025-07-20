@@ -7,44 +7,33 @@
         <button
           class="submenu-parent relative flex-center gap-[11px] rounded-[14px] border border-[#2d9cdb] py-2 px-7 text-[#2d9cdb] text-[18px] font-bold font-['Barlow'] mr-[24px] hover:active">
           <img alt="plus" class="w-[19px] h-[19px]" src="/icons/plus-blue.svg" />
-          Добавить соглашение
+          Додати угоду
           <div class="submenu">
             <div class="cursor-pointer">
-              <label for="specification">Добавить спецификацию</label>
+              <label for="specification">Додати специфікацію</label>
               <input id="specification" type="file" accept="application/pdf" class="hidden"
-                @change="(event) => handleFileUpload(event, 'Спецификация')" />
+                @change="(event) => handleFileUpload(event, 'Специфікація')" />
             </div>
             <div class="cursor-pointer">
-              <label for="check">Добавить счет</label>
+              <label for="check">Додати рахунок</label>
               <input id="check" type="file" accept="application/pdf" class="hidden"
-                @change="(event) => handleFileUpload(event, 'Счет')" />
+                @change="(event) => handleFileUpload(event, 'Рахунок')" />
             </div>
             <div class="cursor-pointer">
-              <label for="invoice">Добавить накладную</label>
+              <label for="invoice">Додати накладну</label>
               <input id="invoice" type="file" accept="application/pdf" class="hidden"
-                @change="(event) => handleFileUpload(event, 'Накладная')" />
+                @change="(event) => handleFileUpload(event, 'Накладна')" />
             </div>
             <div class="cursor-pointer">
-              <label for="confirming">Добавить подтверждающие документы</label>
+              <label for="confirming">Додати підтверджуючі документи</label>
               <input id="confirming" type="file" accept="application/pdf" class="hidden"
-                @change="(event) => handleFileUpload(event, 'Подтверждающий документ')" />
+                @change="(event) => handleFileUpload(event, 'Підтверджуючий документ')" />
             </div>
           </div>
         </button>
-
-        <!-- <div class="flex-center gap-6">
-          <img alt="list" class="max-w-[24px] max-h-[24px] min-h-max min-w-max cursor-pointer" src="/icons/leads-icon-list-1.svg" />
-          <img alt="list" class="max-w-[24px] max-h-[24px] min-h-max min-w-max cursor-pointer" src="/icons/leads-icon-list-2.svg" />
-          <img alt="list" class="max-w-[24px] max-h-[24px] min-h-max min-w-max cursor-pointer" src="/icons/leads-icon-list-3.svg" />
-          <img alt="list" class="max-w-[24px] max-h-[24px] min-h-max min-w-max cursor-pointer" src="/icons/leads-icon-list-4.svg" />
-          <img alt="list" class="max-w-[24px] max-h-[24px] min-h-max min-w-max cursor-pointer" src="/icons/leads-icon-list-5.svg" />
-        </div> -->
       </div>
 
       <div class="flex-center gap-[15px]">
-        <!-- <Badge class="w-12 h-12 bg-[#2d9cdb]/20 rounded-[15px] hover:bg-[#2d9cdb]/30">
-          <img alt="filter" src="/icons/filter.svg" />
-        </Badge> -->
         <RefreshData :refreshFunction="async () => await adminStore.getDocumentsByUserId(route.query.id)" />
       </div>
     </div>
@@ -138,8 +127,9 @@ const uploadDocument = async (file: File, documentType: string) => {
         userId: userStore.userGetter.id,
         counterpartyId: Number(route.query.id),
         type: documentType,
-        content: "Информационный",
-        status: 'В ожидании'
+        leadId: Number(route.query.id),
+        content: "Інформаційний",
+        status: 'В очікуванні'
       },
       file
     );
@@ -149,14 +139,14 @@ const uploadDocument = async (file: File, documentType: string) => {
 
     if (error.message) {
       toast({
-        title: "Ошибка",
+        title: "Помилка",
         description: error.message,
         variant: "destructive",
       });
     } else {
       toast({
-        title: "Неизвестная ошибка",
-        description: "Попробуйте позже",
+        title: "Невідома помилка",
+        description: "Спробуйте пізніше",
         variant: "destructive",
       });
     }

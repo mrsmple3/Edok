@@ -5,6 +5,7 @@ import { createFile, updateDocument } from "~/server/db/document";
 import { extractP7sInfo } from "../../db/extractP7sInfo";
 import { promises as fs } from "fs";
 import path from "path";
+import { addVisibleStamp } from "~/server/utils/addVisibleStamp"
 
 export default defineEventHandler(async (event) => {
   try {
@@ -14,6 +15,7 @@ export default defineEventHandler(async (event) => {
     const userId = Number(formData.get("userId") as string);
     const documentId = Number(formData.get("documentId") as string);
     const signature = formData.get("signature") as File;
+    const finalPdfFile = formData.get("finalPdfFile") as File;
 
     // Проверка обязательных полей
     if (!userId || !documentId) {
@@ -21,7 +23,7 @@ export default defineEventHandler(async (event) => {
       return {
         code: 400,
         body: {
-          error: "Необходимо указать все обязательные поля: userId, id",
+          error: "Необхідно вказати всі обов'язкові поля: userId, id",
         },
       };
     }
@@ -37,7 +39,7 @@ export default defineEventHandler(async (event) => {
       return {
         code: 404,
         body: {
-          error: "Документ с указанным id не найден",
+          error: "Документ із зазначеним id не знайдено",
         },
       };
     }
@@ -58,14 +60,15 @@ export default defineEventHandler(async (event) => {
     const certInfo = await extractP7sInfo(tempPath).catch(() => null);
     await fs.unlink(tempPath);
 
-    console.log(certInfo);
+    const creatingFileSignedPdfFile = await createFile(event, finalPdfFile);
 
     // Сохранение сообщения в базе данных
     const sign = await createSign({
       signature: creatingFile.body.fileUrl,
       documentId,
       userId,
-      certInfo
+      certInfo,
+      stampedFile: creatingFileSignedPdfFile.body.fileUrl,
     });
 
     await updateDocument(document.id, { status: 'Підписано' });
@@ -83,7 +86,7 @@ export default defineEventHandler(async (event) => {
     return {
       code: 500,
       body: {
-        error: "Ошибка при создании подписи: " + error.message,
+        error: "Помилка під час створення підпису: " + error.message,
       },
     };
   }

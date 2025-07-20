@@ -15,7 +15,7 @@ export default defineEventHandler(async (event) => {
       return {
         code: 400,
         body: {
-          error: "Необходимо указать все обязательные поля: content, senderId, room",
+          error: "Необхідно вказати всі обов'язкові поля: content, senderId, room",
         },
       };
     }
@@ -30,7 +30,7 @@ export default defineEventHandler(async (event) => {
       return {
         code: 404,
         body: {
-          error: "Пользователь с указанным senderId не найден",
+          error: "Користувач із зазначеним senderId не знайдено",
         },
       };
     }
@@ -54,7 +54,7 @@ export default defineEventHandler(async (event) => {
     return {
       code: 500,
       body: {
-        error: "Ошибка при создании сообщения: " + error.message,
+        error: "Помилка під час створення повідомлення: " + error.message,
       },
     };
   }

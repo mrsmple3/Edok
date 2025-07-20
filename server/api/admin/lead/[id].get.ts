@@ -1,4 +1,4 @@
-import {getLeadById} from "~/server/db/leads";
+import { getLeadById } from "~/server/db/leads";
 
 export default defineEventHandler(async (event) => {
     const { id } = event.context.params;
@@ -12,12 +12,12 @@ export default defineEventHandler(async (event) => {
                 lead
             }
         }
-    } catch(error) {
+    } catch (error) {
         console.error("Error getting lead:", error);
         event.res.statusCode = 500;
         return {
             code: 500,
-            body: { error: "Ошибка при получения лида " + error }
+            body: { error: "Помилка під час отримання договору " + error }
         };
     }
 });

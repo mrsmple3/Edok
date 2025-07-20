@@ -1,16 +1,16 @@
 <template>
 	<Dialog v-model:open="isDialogOpen">
-		<DialogTrigger> Изменить </DialogTrigger>
+		<DialogTrigger> Змінити </DialogTrigger>
 		<DialogContent>
 			<DialogHeader>
-				<DialogTitle>Изменить договор</DialogTitle>
-				<DialogDescription> Заполните поля сделки </DialogDescription>
+				<DialogTitle>Змінити договір</DialogTitle>
+				<DialogDescription> Заповніть поля угоди </DialogDescription>
 			</DialogHeader>
 			<div class="grid gap-4 py-4">
 				<FormField name="name" v-slot="{ componentField }">
 					<FormItem class="grid grid-cols-4 items-center gap-4">
 						<FormControl>
-							<Label for="name" class="text-[12px] text-start"> Название </Label>
+							<Label for="name" class="text-[12px] text-start"> Назва </Label>
 							<div class="col-span-3 flex flex-col gap-2">
 								<Input id="name" type="text" v-bind="componentField" />
 								<FormMessage />
@@ -34,12 +34,12 @@
 						<Select v-bind="componentField">
 							<FormControl>
 								<SelectTrigger>
-									<SelectValue placeholder="Выберите модератора" />
+									<SelectValue placeholder="Оберіть модератора" />
 								</SelectTrigger>
 							</FormControl>
 							<SelectContent>
 								<SelectGroup>
-									<SelectLabel>Модераторы</SelectLabel>
+									<SelectLabel>Модератори</SelectLabel>
 									<SelectItem v-for="moderator in userStore.moderatorsGetter" :key="moderator.id" :value="moderator.id"> {{ moderator.name }} </SelectItem>
 								</SelectGroup>
 							</SelectContent>
@@ -48,7 +48,7 @@
 					</FormItem>
 				</FormField>
 			</div>
-			<DialogFooter> <Button @click="updateLead">Изменить</Button> </DialogFooter>
+			<DialogFooter> <Button @click="updateLead">Змінити</Button> </DialogFooter>
 		</DialogContent>
 	</Dialog>
 </template>

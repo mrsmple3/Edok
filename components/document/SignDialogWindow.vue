@@ -1,33 +1,22 @@
 <template>
   <Dialog v-model:open="isDialogOpen">
     <DialogTrigger>
-      Подписать документ
+      Підписати документ
     </DialogTrigger>
-    <DialogContent class="!max-w-[80vw] !w-[80vw] h-[75vh]">
-      <DialogHeader>
-        <DialogTitle>Электронная подпись</DialogTitle>
+    <DialogContent class="!max-w-[98vw] !w-[98vw] h-[98vh]">
+      <DialogHeader class="h-max">
+        <DialogTitle>Електронний підпис</DialogTitle>
         <DialogDescription>
-          Загрузите ключ, введите пароль и выберите файл для подписи
+          Завантажте ключ, введіть пароль та виберіть файл для підпису
         </DialogDescription>
       </DialogHeader>
 
-      <div id="sign-widget-parent" class="w-full h-[450px]">
+      <div id="sign-widget-parent" class="w-full h-[800px]">
       </div>
 
-      <!-- <div class="upload-signed-document">
-        <div
-          class="upload-signed-document border border-dashed border-gray-400 rounded p-4 flex flex-col items-center justify-center cursor-pointer"
-          @dragover.prevent @drop.prevent="handleDrop" @click="fileInputRef.click()">
-          <input type="file" ref="fileInputRef" class="hidden" @change="handleFileChange" accept=".pdf,.sig" />
-          <span class="text-gray-500" v-if="selectedFile === null">Перетащите подписанный файл сюда или кликните для
-            выбора</span>
-          <span class="text-gray-500" v-else>{{ selectedFile.name }}</span>
-        </div>
-      </div> -->
-
       <DialogFooter class="mt-auto">
-        <Button @click="signDocument">Подписать</Button>
-        <Button variant="outline" @click="isDialogOpen = false">Отмена</Button>
+        <Button @click="signDocument">Підписати</Button>
+        <Button variant="outline" @click="isDialogOpen = false">Скасувати</Button>
       </DialogFooter>
     </DialogContent>
   </Dialog>
@@ -37,6 +26,7 @@
 import { useToast } from "~/components/ui/toast";
 import { useAdminStore } from "~/store/admin.store";
 import { useUserStore } from "~/store/user.store";
+import { addVisibleStamp } from "~/server/utils/addVisibleStamp"
 
 const adminStore = useAdminStore();
 const route = useRoute();
@@ -71,17 +61,11 @@ watch(isDialogOpen, async (newVal) => {
     await nextTick();
 
     if (typeof EndUser !== "undefined") {
-      const formParams = new EndUser.FormParams();
-      formParams.showPKInfo = true;
-      formParams.showSignTip = true;
-      formParams.language = 'ua';
-
       euSign.value = new EndUser(
         "sign-widget-parent",
         "sign-widget",
         "https://id.gov.ua/sign-widget/v20220527/",
-        EndUser.FormType.ReadPKey,
-        formParams
+        EndUser.FormType.ReadPKey
       );
     } else {
       console.error("EndUser не загружен");
@@ -125,44 +109,28 @@ async function signDocument() {
       const signType = EndUser.SignType.CAdES_X_Long_Trusted;
 
 
-      const signPdf = await euSign.value.PAdESSignData(
-        binary,            // Uint8Array PDF файла
-        true,              // asBase64String
+      const signedPdfBase64 = await euSign.value.PAdESSignData(
+        binary,
+        true,  // asBase64String
         EndUser.SignAlgo.DSTU4145WithGOST34311,
-        EndUser.PAdESSignLevel.PAdES_B_T,
-        {
-          // Параметры видимой подписи
-          addVisibleSign: true,
-          signInfo: {
-            reason: "Підпис документа",
-            location: "Україна",
-            contact: "info@agroedoc.com"
-          },
-          // Позиция подписи на странице
-          signPosition: {
-            page: 1,        // Номер страницы (начиная с 1)
-            x: 50,          // X координата
-            y: 50,          // Y координата
-            width: 200,     // Ширина подписи
-            height: 100     // Высота подписи
-          },
-          // Добавление изображения печати
-          signImage: {
-            imageData: "base64_encoded_image_data", // Base64 изображения печати
-            imageType: "PNG" // или "JPEG"
-          }
-        }
+        EndUser.PAdESSignLevel.PAdES_B_T
       );
 
-      console.log(signPdf);
+      // 3. Конвертировать подписанный документ из Base64 в ArrayBuffer
+      const signedPdfBlob = base64ToBlob(signedPdfBase64, "application/pdf");
+      const signedPdfArrayBuffer = await signedPdfBlob.arrayBuffer();
 
-      // Скачать подписанный PDF
-      const pdfBlob = base64ToBlob(signPdf, "application/pdf");
-      const pdfFile = new File([pdfBlob], `${file.name}_signed.pdf`, { type: "application/pdf" });
+      // 4. Добавить видимую печать
+      const stampPath = userStore.userRole !== 'counterparty' ? '/images/stamp.png' : '/images/stamp-c.png'; // Путь к изображению печати
+      const finalPdfBytes = await addVisibleStamp(signedPdfArrayBuffer, stampPath);
+
+      // 5. Создать финальный PDF-файл с печатью
+      const finalPdfBlob = new Blob([finalPdfBytes], { type: "application/pdf" });
+      const finalPdfFile = new File([finalPdfBlob], `${file.name}_signed.pdf`, { type: "application/pdf" });
 
       // Создать ссылку для скачивания
       const downloadLink = document.createElement("a");
-      downloadLink.href = URL.createObjectURL(pdfBlob);
+      downloadLink.href = URL.createObjectURL(finalPdfBlob);
       downloadLink.download = `${file.name}_signed.pdf`;
       downloadLink.click();
       URL.revokeObjectURL(downloadLink.href);
@@ -186,6 +154,7 @@ async function signDocument() {
         parseInt(route.query.documentSign),
         userStore.userGetter.id,
         signedFile,
+        finalPdfFile
       ).then(() => {
         isDialogOpen.value = false;
       });

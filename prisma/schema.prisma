@@ -52,7 +52,7 @@ model Document {
   title           String?
   content         String?
   filePath        String?
-  type            String // Тип: "contract", "invoice", "act"
+  type            String
   status          String
   deleteSignCount Int                  @default(0)
   userId          Int
@@ -87,7 +87,7 @@ model Lead {
   id             Int        @id @default(autoincrement())
   name           String?
   type           String
-  status         String     @default("Информационный")
+  status         String     @default("Інформаційний")
   moderatorsId   Int?
   moderators     User?      @relation("LeadModerator", fields: [moderatorsId], references: [id])
   counterpartyId Int?
@@ -115,14 +115,15 @@ model Message {
 }
 
 model Signature {
-  id         Int      @id @default(autoincrement())
-  signature  String
-  documentId Int
-  info       String   @db.Text
-  document   Document @relation(fields: [documentId], references: [id])
-  userId     Int
-  user       User     @relation(fields: [userId], references: [id])
-  createdAt  DateTime @default(now())
+  id          Int      @id @default(autoincrement())
+  signature   String
+  stampedFile String   @default("")
+  documentId  Int
+  info        String   @db.Text
+  document    Document @relation(fields: [documentId], references: [id])
+  userId      Int
+  user        User     @relation(fields: [userId], references: [id])
+  createdAt   DateTime @default(now())
 
   @@index([documentId])
   @@index([userId])

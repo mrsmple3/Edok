@@ -11,7 +11,7 @@ export default defineEventHandler(async (event) => {
             event.res.statusCode = 404;
             return {
                 code: 404,
-                body: { error: "Document not found" },
+                body: { error: "Документ не знайдено" },
             };
         }
 
@@ -29,7 +29,9 @@ export default defineEventHandler(async (event) => {
             event.res.statusCode = 400;
             return {
                 code: 400,
-                body: { error: "Пользователь уже инициировал удаление документа" },
+                body: {
+                    error: "Користувач уже ініціював видалення документа"
+                },
             };
         }
 
@@ -54,14 +56,18 @@ export default defineEventHandler(async (event) => {
 
         return {
             code: 200,
-            body: { message: "Удаление подтверждено. Ожидается подтверждение второго пользователя." },
+            body: {
+                message: "Видалення підтверджено. Очікується підтвердження другого користувача."
+            },
         };
     } catch (error) {
         console.error("Error deleting document:", error);
         event.res.statusCode = 500;
         return {
             code: 500,
-            body: { error: "Ошибка при удалении документа " + error },
+            body: {
+                error: "Помилка при видаленні документа " + error
+            },
         };
     }
 });

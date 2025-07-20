@@ -19,7 +19,7 @@
       </div>
     </div>
     <Pagination class="pagination-class" v-slot="{ page }" :items-per-page="itemsPerPage"
-      :total="adminStore.$state.documents.length" :sibling-count="1" show-edges :default-page="1"
+      :total="adminStore.$state.unsignedDocuments.length" :sibling-count="1" show-edges :default-page="1"
       @update:page="(newPage) => (currentPage = newPage)">
       <PaginationList v-slot="{ items }" class="flex items-center gap-1">
         <PaginationFirst />

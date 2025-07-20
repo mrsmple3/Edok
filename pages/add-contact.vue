@@ -2,24 +2,11 @@
   <div class="page-container">
     <div class="w-full flex-center justify-between mb-[18px]">
       <div class="flex-center">
-        <h2 class="page__title mr-[32px]">Контакты</h2>
-
-        <!-- <button
-            class="submenu-parent relative flex-center gap-[11px] rounded-[14px] border border-[#2d9cdb] py-2 px-7 text-[#2d9cdb] text-[18px] font-bold font-['Barlow'] mr-[24px] hover:active">
-          <img alt="plus" class="w-[19px] h-[19px] min-h-max min-w-max" src="/icons/plus-blue.svg">
-          Створити нову угоду
-          <div class="submenu">
-            <span>Добавить спецификацию</span>
-            <span>Добавить счет</span>
-            <span>Добавить накладную</span>
-            <span>Добавить подтверждающие документы</span>
-          </div>
-        </button> -->
+        <h2 class="page__title mr-[32px]">Контакти</h2>
       </div>
     </div>
     <div class="flex-center gap-[5px] mb-[26px]">
-      <NuxtLink class="breadcrumbs" to="/contacts">Контакты</NuxtLink>
-      <NuxtLink class="breadcrumbs" to="">ТОВ «ХЮРРЕМ»</NuxtLink>
+      <NuxtLink class="breadcrumbs" to="/contacts">Контакти</NuxtLink>
     </div>
     <div class="page__block flex-center justify-center py-[50px] px-[42px]">
       <Tabs class="form__container" default-value="account">
@@ -29,39 +16,11 @@
             value="account">
             Введіть дані контакту
           </TabsTrigger>
-          <!-- <TabsTrigger
-            class="!w-max data-[state=active]:!bg-[#00b074]/20 rounded-lg !text-center !text-[#464154] data-[state=active]:!text-[#00b074] !text-lg !font-bold py-[15px] px-[30px]"
-            value="password">
-            Соглашения
-          </TabsTrigger> -->
         </TabsList>
         <TabsContent value="account">
           <ContactsAddCounterparty v-if="route.query.role === 'counterparty'" />
           <ContactsAddModerator v-else />
         </TabsContent>
-        <!-- <TabsContent value="password">
-          <Card>
-            <CardHeader>
-              <CardTitle>Password</CardTitle>
-              <CardDescription>
-                Change your password here. After saving, you'll be logged out.
-              </CardDescription>
-            </CardHeader>
-            <CardContent class="space-y-2">
-              <div class="space-y-1">
-                <Label for="current">Current password</Label>
-                <Input id="current" type="password" />
-              </div>
-              <div class="space-y-1">
-                <Label for="new">New password</Label>
-                <Input id="new" type="password" />
-              </div>
-            </CardContent>
-            <CardFooter>
-              <Button>Save password</Button>
-            </CardFooter>
-          </Card>
-        </TabsContent> -->
       </Tabs>
     </div>
   </div>

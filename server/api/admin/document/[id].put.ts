@@ -15,7 +15,7 @@ export default defineEventHandler(async (event) => {
 				return {
 					code: 404,
 					body: {
-						error: "Пользователь не найден",
+						error: "Користувач не знайдено",
 					},
 				};
 			}
@@ -26,7 +26,7 @@ export default defineEventHandler(async (event) => {
 				return {
 					code: 404,
 					body: {
-						error: "Контрагент не найден",
+						error: "Контрагент не знайдено",
 					},
 				};
 			}
@@ -37,7 +37,7 @@ export default defineEventHandler(async (event) => {
 			return {
 				code: 404,
 				body: {
-					error: "Документ не найден",
+					error: "Документ не знайдено",
 				},
 			};
 		}
@@ -55,7 +55,9 @@ export default defineEventHandler(async (event) => {
 		event.res.statusCode = 500;
 		return {
 			code: 500,
-			body: { error: "Ошибка при обновлении документа " + error },
+			body: {
+				error: "Помилка під час оновлення документа " + error
+			},
 		};
 	}
 });

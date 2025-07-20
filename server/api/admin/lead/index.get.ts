@@ -1,4 +1,4 @@
-import {getAllLeads} from "~/server/db/leads";
+import { getAllLeads } from "~/server/db/leads";
 
 export default defineEventHandler(async (event) => {
     try {
@@ -10,12 +10,12 @@ export default defineEventHandler(async (event) => {
                 leads
             }
         }
-    } catch(error) {
+    } catch (error) {
         console.error("Error getting leads:", error);
         event.res.statusCode = 500;
         return {
             code: 500,
-            body: { error: "Ошибка при получения лидов " + error }
+            body: { error: "Помилка при отриманні договору " + error }
         };
     }
 });

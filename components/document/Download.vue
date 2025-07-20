@@ -10,9 +10,12 @@
           Файли для скачування
         </DialogDescription>
         <div class="w-full flex flex-col gap-2 mt-4">
+          <a v-if="props.invoice.filePath" :href="props.invoice.filePath" class="underline text-blue-600" download>
+            📄 Завантажити документ
+          </a>
           <a v-if="props.invoice.Signature.length !== 0" :href="`/api/download/archive/${Number(props.invoice.id)}`"
             class="underline text-blue-600" download>
-            📦 Скачать ZIP-архив с документами
+            📦 Завантажити ZIP-архів із документами
           </a>
         </div>
         <div class="h-[400px] overflow-auto w-full flex flex-col items-start gap-3 mt-4">

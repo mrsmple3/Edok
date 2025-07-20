@@ -11,14 +11,13 @@ export default defineEventHandler(async (event) => {
 			event.res.statusCode = 404;
 			return {
 				code: 404,
-				body: { error: "Пользователь не найден" },
+				body: {
+					error: "Користувач не знайдено"
+				},
 			};
 		}
 
-		console.log(user);
 		const documents = await getDocumentByUserRole(user.id, user.role);
-		// console.log(documents);
-
 
 		return {
 			code: 200,
@@ -31,7 +30,7 @@ export default defineEventHandler(async (event) => {
 		event.res.statusCode = 500;
 		return {
 			code: 500,
-			body: { error: "Ошибка при получения документов юзера " + error },
+			body: { error: "Помилка при отриманні документів користувача " + error },
 		};
 	}
 });

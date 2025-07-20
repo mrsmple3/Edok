@@ -158,8 +158,8 @@ const uploadDocument = async (file: File, documentType: string) => {
 				userId: userStore.userGetter.id,
 				counterpartyId: userStore.userGetter ? userStore.userGetter.id : null,
 				type: documentType,
-				content: "Информационный",
-				status: 'В ожидании'
+				content: "Інформаційний",
+				status: 'В очікуванні'
 			},
 			file
 		);
@@ -169,14 +169,14 @@ const uploadDocument = async (file: File, documentType: string) => {
 
 		if (error.message) {
 			toast({
-				title: "Ошибка",
+				title: "Помилка",
 				description: error.message,
 				variant: "destructive",
 			});
 		} else {
 			toast({
-				title: "Неизвестная ошибка",
-				description: "Попробуйте позже",
+				title: "Невідома помилка",
+				description: "Спробуйте пізніше",
 				variant: "destructive",
 			});
 		}

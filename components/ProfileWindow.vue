@@ -3,7 +3,7 @@
     <DialogTrigger class="flex-center gap-[13px] mb-[34px] pl-[50px]">
       <img alt="profile-pictures" class="w-14 h-14 rounded-[63px] border-4 border-[#00b074]"
         src="/images/placeholder-profile-img.png">
-      <div class="text-[#464154] text-base font-normal font-['Barlow']">Здравствуйте,
+      <div class="text-[#464154] text-base font-normal font-['Barlow']">Вітаємо,
         <strong>
           {{ userStore.userGetter.name || userStore.userGetter.phone || userStore.userGetter.email }}
         </strong>
@@ -11,15 +11,15 @@
     </DialogTrigger>
     <DialogContent>
       <DialogHeader>
-        <DialogTitle>Профиль</DialogTitle>
-        <DialogDescription> Можете изменить данные {{ userStore.userGetter.name || userStore.userGetter.phone ||
+        <DialogTitle>Профіль</DialogTitle>
+        <DialogDescription> Можете змінити дані {{ userStore.userGetter.name || userStore.userGetter.phone ||
           userStore.userGetter.email }} </DialogDescription>
       </DialogHeader>
       <div class="grid gap-4 py-4">
         <FormField name="name" v-slot="{ componentField }">
           <FormItem class="grid grid-cols-4 items-center gap-4">
             <FormControl>
-              <Label for="name" class="text-[12px] text-start"> Имя </Label>
+              <Label for="name" class="text-[12px] text-start"> Ім'я </Label>
               <div class="col-span-3 flex flex-col gap-2">
                 <Input id="name" type="text" v-bind="componentField" />
                 <FormMessage />
@@ -30,7 +30,7 @@
         <FormField name="email" v-slot="{ componentField }">
           <FormItem class="grid grid-cols-4 items-center gap-4">
             <FormControl>
-              <Label for="type" class="text-[12px] text-start"> Почта </Label>
+              <Label for="type" class="text-[12px] text-start"> Пошта </Label>
               <div class="col-span-3 flex flex-col gap-2">
                 <Input id="type" type="text" v-bind="componentField" />
                 <FormMessage />
@@ -41,7 +41,7 @@
         <FormField name="phone" v-slot="{ componentField }">
           <FormItem class="grid grid-cols-4 items-center gap-4">
             <FormControl>
-              <Label for="phone" class="text-[12px] text-start"> Номер телефона </Label>
+              <Label for="phone" class="text-[12px] text-start"> Номер телефону </Label>
               <div class="col-span-3 flex flex-col gap-2">
                 <Input id="phone" type="text" v-bind="componentField" />
                 <FormMessage />
@@ -52,7 +52,7 @@
         <FormField name="oldPassword" v-slot="{ componentField }">
           <FormItem class="grid grid-cols-4 items-center gap-4">
             <FormControl>
-              <Label for="oldPassword" class="text-[12px] text-start"> Старая пароль </Label>
+              <Label for="oldPassword" class="text-[12px] text-start"> Старий пароль </Label>
               <div class="col-span-3 flex flex-col gap-2">
                 <Input id="oldPassword" type="text" v-bind="componentField" />
                 <FormMessage />
@@ -63,7 +63,7 @@
         <FormField name="newPassword" v-slot="{ componentField }">
           <FormItem class="grid grid-cols-4 items-center gap-4">
             <FormControl>
-              <Label for="newPassword" class="text-[12px] text-start"> Новый пароль </Label>
+              <Label for="newPassword" class="text-[12px] text-start"> Новий пароль </Label>
               <div class="col-span-3 flex flex-col gap-2">
                 <Input id="newPassword" type="text" v-bind="componentField" />
                 <FormMessage />
@@ -72,7 +72,7 @@
           </FormItem>
         </FormField>
       </div>
-      <DialogFooter> <Button @click="updateUser">Изменить</Button> </DialogFooter>
+      <DialogFooter> <Button @click="updateUser">Змінити</Button> </DialogFooter>
     </DialogContent>
   </Dialog>
 </template>
@@ -126,15 +126,15 @@ const updateUser = form.handleSubmit(async (values) => {
 
     if (error.message) {
       toast({
-        title: "Ошибка",
-        description: error.message,
-        variant: "destructive",
+      title: "Помилка",
+      description: error.message,
+      variant: "destructive",
       });
     } else {
       toast({
-        title: "Неизвестная ошибка",
-        description: "Попробуйте позже",
-        variant: "destructive",
+      title: "Невідома помилка",
+      description: "Спробуйте пізніше",
+      variant: "destructive",
       });
     }
   }

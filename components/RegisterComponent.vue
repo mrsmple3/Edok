@@ -43,7 +43,7 @@
 				</FormItem>
 			</FormField>
 		</div>
-		<Button class="form__submit-btn" type="submit">Зарегистрироватся</Button>
+		<Button class="form__submit-btn" type="submit">Зареєструватись</Button>
 	</form>
 </template>
 
@@ -83,7 +83,7 @@ const formSchema = toTypedSchema(
 					return emailRegex.test(value) || phoneRegex.test(value);
 				},
 				{
-					message: "Введите корректный email или телефонный номер",
+					message: "Введіть коректний email або номер телефону",
 				}
 			),
 		password: z.string().min(4).max(50),
@@ -128,8 +128,8 @@ const onSubmitRegister = form.handleSubmit(async (values) => {
 							title: file.name,
 							userId: authStore.userGetter.id,
 							counterpartyId: authStore.userGetter.id,
-							type: "Спецификация",
-							content: "Информационный",
+							type: "Специфікація",
+							content: "Інформаційний",
 						},
 						file
 					);
@@ -147,14 +147,14 @@ const onSubmitRegister = form.handleSubmit(async (values) => {
 
 		if (error.message) {
 			toast({
-				title: "Ошибка",
+				title: "Помилка",
 				description: error.message,
 				variant: "destructive",
 			});
 		} else {
 			toast({
-				title: "Неизвестная ошибка",
-				description: "Попробуйте позже",
+				title: "Невідома помилка",
+				description: "Спробуйте пізніше",
 				variant: "destructive",
 			});
 		}

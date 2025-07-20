@@ -11,7 +11,7 @@ export default defineEventHandler(async (event) => {
             event.res.statusCode = 404;
             return {
                 code: 404,
-                body: { error: "User not found" }
+                body: { error: "Користувача не знайдено" }
             };
         }
 
@@ -28,7 +28,7 @@ export default defineEventHandler(async (event) => {
         event.res.statusCode = 500;
         return {
             code: 500,
-            body: { error: "Ошибка при получения лидов " + error }
+            body: { error: "Помилка при надсиланні повідомлення " + error }
         };
     }
 });
