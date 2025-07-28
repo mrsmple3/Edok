@@ -37,7 +37,7 @@
 			<FormField v-slot="{ componentField }" name="password">
 				<FormItem>
 					<FormControl>
-						<Input class="form__input" placeholder="Пароль" type="text" v-bind="componentField" />
+						<Input class="form__input" placeholder="Пароль" type="password" v-bind="componentField" />
 					</FormControl>
 					<FormMessage />
 				</FormItem>

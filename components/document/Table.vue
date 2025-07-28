@@ -1,6 +1,6 @@
 <template>
   <TableRow class="relative hover:bg-[#2d9cdb]/20"
-    :class="{ 'opacity-50 pointer-events-none': invoice.deleteSignCount !== 0 && invoice.deleteSigns.find(sign => sign.userId === userStore.userGetter.id), }">
+    :class="{ 'opacity-50 pointer-events-none': invoice.deleteSignCount !== 0 && invoice.deleteSigns.find(sign => sign.userId === userStore.userGetter.id), 'opacity-50': invoice.deleteSignCount !== 0 }">
     <div class="doc-select" v-if="!invoice.leadId && route.name === 'user-docs'">
       <Checkbox :checked="checkBox" class="bg-[#FFFFFF] border-[#939393] absolute top-1/2 -translate-y-1/2 z-[10]"
         @update:checked="updateCheckbox" />
@@ -27,7 +27,7 @@
         1</div>
     </TableCell>
     <DocumentDropDown :invoice="invoice"
-      :class="{ 'opacity-50 pointer-events-none': invoice.deleteSignCount !== 0 && invoice.deleteSigns.find(sign => sign.userId === userStore.userGetter.id) }" />
+      :class="{ 'opacity-50 pointer-events-none': invoice.deleteSignCount !== 0 && invoice.deleteSigns.find(sign => sign.userId === userStore.userGetter.id), 'opacity-50': invoice.deleteSignCount !== 0 }" />
   </TableRow>
 </template>
 

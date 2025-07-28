@@ -135,6 +135,7 @@ const createLead = form.handleSubmit(async (values) => {
 						title: file.name,
 						userId: userStore.userGetter.id,
 						counterpartyId: values.counterparty,
+						moderatorId: values.moderator,
 						type: "act",
 						content: "Информационный",
 					},

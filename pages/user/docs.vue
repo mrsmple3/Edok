@@ -7,27 +7,42 @@
         <button
           class="submenu-parent relative flex-center gap-[11px] rounded-[14px] border border-[#2d9cdb] py-2 px-7 text-[#2d9cdb] text-[18px] font-bold font-['Barlow'] mr-[24px] hover:active">
           <img alt="plus" class="w-[19px] h-[19px]" src="/icons/plus-blue.svg" />
-          Додати угоду
+          Додати документ
           <div class="submenu">
             <div class="cursor-pointer">
-              <label for="specification">Додати специфікацію</label>
+              <label for="contract">Договір </label>
+              <input id="contract" type="file" accept="application/pdf" class="hidden"
+                @change="(event) => handleFileUpload(event, 'Договір')" />
+            </div>
+            <div class="cursor-pointer">
+              <label for="additional-agreement">Додаткова угода </label>
+              <input id="additional-agreement" type="file" accept="application/pdf" class="hidden"
+                @change="(event) => handleFileUpload(event, 'Додаткова угода')" />
+            </div>
+            <div class="cursor-pointer">
+              <label for="specification">Специфікація </label>
               <input id="specification" type="file" accept="application/pdf" class="hidden"
                 @change="(event) => handleFileUpload(event, 'Специфікація')" />
             </div>
             <div class="cursor-pointer">
-              <label for="check">Додати рахунок</label>
-              <input id="check" type="file" accept="application/pdf" class="hidden"
+              <label for="invoice">Рахунок</label>
+              <input id="invoice" type="file" accept="application/pdf" class="hidden"
                 @change="(event) => handleFileUpload(event, 'Рахунок')" />
             </div>
             <div class="cursor-pointer">
-              <label for="invoice">Додати накладну</label>
-              <input id="invoice" type="file" accept="application/pdf" class="hidden"
-                @change="(event) => handleFileUpload(event, 'Накладна')" />
+              <label for="delivery-note">Видаткова накладна </label>
+              <input id="delivery-note" type="file" accept="application/pdf" class="hidden"
+                @change="(event) => handleFileUpload(event, 'Видаткова накладна')" />
             </div>
             <div class="cursor-pointer">
-              <label for="confirming">Додати підтверджуючі документи</label>
+              <label for="ttn">Товарно-транспортна накладна </label>
+              <input id="ttn" type="file" accept="application/pdf" class="hidden"
+                @change="(event) => handleFileUpload(event, 'Товарно-транспортна накладна')" />
+            </div>
+            <div class="cursor-pointer">
+              <label for="confirming">Підтверджуючі</label>
               <input id="confirming" type="file" accept="application/pdf" class="hidden"
-                @change="(event) => handleFileUpload(event, 'Підтверджуючий документ')" />
+                @change="(event) => handleFileUpload(event, 'Підтверджуючі')" />
             </div>
           </div>
         </button>
@@ -122,7 +137,6 @@ const handleFileUpload = (event: Event, documentType: string) => {
 
 
 const uploadDocument = async (file: File, documentType: string) => {
-  console.log(Number(route.query.id));
   try {
     const document = await adminStore.createDocument(
       {

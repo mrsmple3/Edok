@@ -6,7 +6,7 @@
     "dist"
   ],
   "include": [
-    "server/entry.ts"
+    "server/entry.js"
   ],
   "compilerOptions": {
     "target": "ES2020",

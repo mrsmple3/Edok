@@ -49,7 +49,7 @@ const openChat = async (invoice: any) => {
 	router.push({ path: route.path, query: { room: 'all', id: invoice.id } });
 
 	userStore.$state.socket = io({
-		path: '/api/socket.io',
+		path: '/socket.io',
 	});
 	userStore.$state.socket.emit('joinRoom', invoice, `all${invoice.id}`, (response: any) => {
 		console.log('Joined room:', response);

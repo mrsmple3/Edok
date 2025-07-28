@@ -12,6 +12,7 @@ export const getAllDocuments = () => {
 			lead: true,
 			deleteSigns: true,
 			Signature: true,
+			moderator: true,
 		},
 	});
 };
@@ -25,6 +26,7 @@ export const getDocumentById = (id: number) => {
 			lead: true,
 			deleteSigns: true,
 			Signature: true,
+			moderator: true,
 		},
 	});
 };
@@ -43,6 +45,8 @@ export const createDocument = (data: any) => {
 			counterparty: {
 				connect: { id: data.counterpartyId },
 			},
+			lead: data.leadId ? { connect: { id: data.leadId } } : undefined,
+			moderator: data.moderatorId ? { connect: { id: data.moderatorId } } : undefined,
 		},
 		include: {
 			user: true,
@@ -50,6 +54,7 @@ export const createDocument = (data: any) => {
 			lead: true,
 			deleteSigns: true,
 			Signature: true,
+			moderator: true,
 		},
 	});
 };
@@ -64,6 +69,7 @@ export const updateDocument = (id: number, data: any) => {
 			lead: true,
 			deleteSigns: true,
 			Signature: true,
+			moderator: true,
 		},
 	});
 };
@@ -82,11 +88,42 @@ export const updateDocumentStatusById = (id: number, status: string) => {
 	});
 };
 
-export const deleteDocuments = () => {
+export const updateDocumentModeratorById = (id: number, moderatorId: number) => {
+	return prisma.document.update({
+		where: { id },
+		data: {
+			moderator: {
+				connect: { id: moderatorId },
+			},
+		},
+		include: {
+			user: true,
+			counterparty: true,
+			lead: true,
+			deleteSigns: true,
+			Signature: true,
+			moderator: true
+		},
+	});
+};
+
+export const deleteDocuments = async () => {
+	await prisma.signature.deleteMany();
+
+	await prisma.documentDeleteSign.deleteMany();
+
 	return prisma.document.deleteMany();
 };
 
-export const deleteDocument = (id: number) => {
+export const deleteDocument = async (id: number) => {
+	await prisma.signature.deleteMany({
+		where: { documentId: id }
+	});
+
+	await prisma.documentDeleteSign.deleteMany({
+		where: { documentId: id }
+	});
+
 	return prisma.document.delete({
 		where: { id },
 	});
@@ -135,7 +172,7 @@ export const deleteDocumentById = async (event: H3Event<EventHandlerRequest>, id
 	};
 };
 
-export const deleteFileOnDocument = async (event: H3Event<EventHandlerRequest>, document: any) => {
+export const deleteFileOnDocument = async (event: H3Event<EventHandlerRequest> | null, document: any) => {
 	const filePath = path.join(process.cwd(), "public", document.filePath);
 
 	try {
@@ -146,11 +183,26 @@ export const deleteFileOnDocument = async (event: H3Event<EventHandlerRequest>, 
 				message: "Файл успішно видалено",
 			},
 		};
-	} catch (error) {
+	} catch (error: any) {
 		console.error("Error deleting file:", error);
-		event.res.statusCode = 500;
+
+		// Если файл не существует, считаем это успехом
+		if (error.code === 'ENOENT') {
+			return {
+				status: 200,
+				body: {
+					message: "Файл уже був видалений",
+				},
+			};
+		}
+
+		// Устанавливаем статус код только если event существует
+		if (event?.res) {
+			event.res.statusCode = 500;
+		}
+
 		return {
-			code: 500,
+			status: 500,
 			body: {
 				error: "Помилка видалення файлу " + error,
 			},
@@ -158,7 +210,7 @@ export const deleteFileOnDocument = async (event: H3Event<EventHandlerRequest>, 
 	}
 };
 
-export const deleteAllFilesOfDocuments = async (event: H3Event<EventHandlerRequest>) => {
+export const deleteAllFilesOfDocuments = async (event: H3Event<EventHandlerRequest> | null = null) => {
 	const documents = await getAllDocuments();
 
 	if (documents.length === 0) {
@@ -173,8 +225,9 @@ export const deleteAllFilesOfDocuments = async (event: H3Event<EventHandlerReque
 	for (const document of documents) {
 		if (document.filePath) {
 			const response = await deleteFileOnDocument(event, document);
+			// Продолжаем даже если удаление файла не удалось
 			if (response.status !== 200) {
-				return response;
+				console.warn(`Failed to delete file for document ${document.id}: ${response.body.error}`);
 			}
 		}
 	}
@@ -247,7 +300,8 @@ export const createFile = async (
 		return {
 			status: 500,
 			body: {
-				error: "Щось пішло не так." + e },
+				error: "Щось пішло не так." + e
+			},
 		};
 	}
 };
@@ -371,6 +425,22 @@ export const getDocumentByUserRole = (userId: number, role: string) => {
 		return prisma.document.findMany({
 			where: {
 				counterpartyId: {
+					equals: userId,
+				},
+			},
+			include: {
+				user: true,
+				counterparty: true,
+				lead: true,
+				deleteSigns: true,
+				Signature: true,
+			},
+		});
+	}
+	if (role === 'moderator') {
+		return prisma.document.findMany({
+			where: {
+				moderatorId: {
 					equals: userId,
 				},
 			},

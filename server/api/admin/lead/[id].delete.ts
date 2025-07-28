@@ -1,6 +1,6 @@
 import { defineEventHandler } from "h3";
 import { deleteDocuments } from "~/server/db/document";
-import { deleteLead, deleteLeads, getLeadById } from "~/server/db/leads";
+import { deleteLead, getLeadById } from "~/server/db/leads";
 
 export default defineEventHandler(async (event) => {
     try {

@@ -39,7 +39,7 @@ export const useAdminStore = defineStore("admin", {
 			return (id: number) => {
 				return state.users.find((user) => user.id === id);
 			};
-		}
+		},
 	},
 	actions: {
 		async createLead(lead: any) {
@@ -115,6 +115,7 @@ export const useAdminStore = defineStore("admin", {
 				formData.append("file", file);
 				formData.append("type", document.type);
 				formData.append("leadId", document.leadId);
+				formData.append("moderatorId", document.moderatorId);
 				formData.append("status", document.status);
 
 				const response: any = await useFetchApi("/api/admin/document", {
@@ -181,6 +182,18 @@ export const useAdminStore = defineStore("admin", {
 					body: document,
 				});
 				this.$patch({ documents: this.documentsGetter.map((d) => (d.id === document.id ? response.body.document : d)) });
+				return response.body.document;
+			} catch (error) {
+				handleApiError(error);
+			}
+		},
+		async updateDocumentModerator(id: number, moderatorId: number) {
+			try {
+				const response: any = await useFetchApi(`/api/admin/document/moder/${id}`, {
+					method: "PATCH",
+					body: { moderatorId },
+				});
+				this.$patch({ documents: this.documentsGetter.map((d) => (d.id === id ? { ...d, moderatorId } : d)) });
 				return response.body.document;
 			} catch (error) {
 				handleApiError(error);

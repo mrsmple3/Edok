@@ -106,6 +106,12 @@ const form = useForm({
 const createLead = form.handleSubmit(async (values) => {
 	try {
 		let response = ref();
+
+		for (let index = 0; index < documentsToLeads.value.length; index++) {
+			const docItem = documentsToLeads.value[index];
+			await adminStore.updateDocumentModerator(docItem.id, values.moderator);
+		}
+
 		response.value = await adminStore.createLead({
 			name: values.name,
 			type: values.type,

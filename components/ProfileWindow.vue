@@ -1,13 +1,9 @@
 <template>
   <Dialog v-model:open="isDialogOpen">
-    <DialogTrigger class="flex-center gap-[13px] mb-[34px] pl-[50px]">
-      <img alt="profile-pictures" class="w-14 h-14 rounded-[63px] border-4 border-[#00b074]"
-        src="/images/placeholder-profile-img.png">
-      <div class="text-[#464154] text-base font-normal font-['Barlow']">Вітаємо,
-        <strong>
-          {{ userStore.userGetter.name || userStore.userGetter.phone || userStore.userGetter.email }}
-        </strong>
-      </div>
+    <DialogTrigger>
+      <button class="relative w-12 h-12 bg-[#ff5b5b]/20 flex items-center justify-center rounded-[15px]">
+        <img alt="user-setting" class="w-7 h-7" src="/icons/setting-red-light.svg">
+      </button>
     </DialogTrigger>
     <DialogContent>
       <DialogHeader>
@@ -54,7 +50,7 @@
             <FormControl>
               <Label for="oldPassword" class="text-[12px] text-start"> Старий пароль </Label>
               <div class="col-span-3 flex flex-col gap-2">
-                <Input id="oldPassword" type="text" v-bind="componentField" />
+                <Input id="oldPassword" type="password" v-bind="componentField" />
                 <FormMessage />
               </div>
             </FormControl>
@@ -65,7 +61,7 @@
             <FormControl>
               <Label for="newPassword" class="text-[12px] text-start"> Новий пароль </Label>
               <div class="col-span-3 flex flex-col gap-2">
-                <Input id="newPassword" type="text" v-bind="componentField" />
+                <Input id="newPassword" type="password" v-bind="componentField" />
                 <FormMessage />
               </div>
             </FormControl>
@@ -126,15 +122,15 @@ const updateUser = form.handleSubmit(async (values) => {
 
     if (error.message) {
       toast({
-      title: "Помилка",
-      description: error.message,
-      variant: "destructive",
+        title: "Помилка",
+        description: error.message,
+        variant: "destructive",
       });
     } else {
       toast({
-      title: "Невідома помилка",
-      description: "Спробуйте пізніше",
-      variant: "destructive",
+        title: "Невідома помилка",
+        description: "Спробуйте пізніше",
+        variant: "destructive",
       });
     }
   }

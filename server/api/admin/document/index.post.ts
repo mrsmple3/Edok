@@ -13,6 +13,8 @@ export default defineEventHandler(async (event) => {
 		const type = (formData.get("type") as string) || null;
 		const status = (formData.get("status") as string) || null;
 		const counterpartyId = (formData.get("counterpartyId") as string) || null;
+		const leadId = (formData.get("leadId") as string) || null;
+		const moderatorId = (formData.get("moderatorId") as string) || null;
 
 		const fileUrl = await createFile(event, file);
 
@@ -38,6 +40,8 @@ export default defineEventHandler(async (event) => {
 				content,
 				type,
 				status,
+				leadId: leadId ? Number(leadId) : null,
+				moderatorId: moderatorId ? parseInt(moderatorId) : null,
 			};
 		} else {
 			const counterparty = getUserById(parseInt(counterpartyId));
@@ -58,6 +62,8 @@ export default defineEventHandler(async (event) => {
 				type,
 				status,
 				counterpartyId: parseInt(counterpartyId),
+				leadId: leadId ? Number(leadId) : null,
+				moderatorId: moderatorId ? parseInt(moderatorId) : null,
 			};
 		}
 

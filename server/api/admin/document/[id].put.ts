@@ -1,10 +1,12 @@
-import { getDocumentById, updateDocument } from "~/server/db/document";
+import { getDocumentById, updateDocument, updateDocumentModeratorById } from "~/server/db/document";
 import { getUserById } from "~/server/db/users";
 
 export default defineEventHandler(async (event) => {
 	try {
 		const { id } = event.context.params;
 		const body = await readBody(event);
+
+		console.log(body);
 
 		const document = await getDocumentById(parseInt(id));
 
@@ -19,7 +21,8 @@ export default defineEventHandler(async (event) => {
 					},
 				};
 			}
-		} else if (body.counterpartyId) {
+		}
+		if (body.counterpartyId) {
 			const user = await getUserById(parseInt(body.counterpartyId));
 			if (!user) {
 				event.res.statusCode = 404;

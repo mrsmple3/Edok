@@ -1,5 +1,5 @@
 <template>
-  <Dialog v-model:open="isDialogOpen">
+  <Dialog v-model:open="isDialogOpen" :class="{ 'pointer-events-none ': isLoading }">
     <DialogTrigger>
       Підписати документ
     </DialogTrigger>
@@ -11,11 +11,16 @@
         </DialogDescription>
       </DialogHeader>
 
-      <div id="sign-widget-parent" class="w-full h-[800px]">
+      <div class="iframe-sign">
+        <div id="sign-widget-parent" class="h-full w-full min-w-[1368px]">
+        </div>
       </div>
 
       <DialogFooter class="mt-auto">
-        <Button @click="signDocument">Підписати</Button>
+        <Button @click="signDocument" :disabled="isLoading">
+          <Loader2 v-if="isLoading" class="mr-2 h-4 w-4 animate-spin" />
+          {{ isLoading ? 'Підписання...' : 'Підписати' }}
+        </Button>
         <Button variant="outline" @click="isDialogOpen = false">Скасувати</Button>
       </DialogFooter>
     </DialogContent>
@@ -27,6 +32,7 @@ import { useToast } from "~/components/ui/toast";
 import { useAdminStore } from "~/store/admin.store";
 import { useUserStore } from "~/store/user.store";
 import { addVisibleStamp } from "~/server/utils/addVisibleStamp"
+import { Loader2 } from "lucide-vue-next"
 
 const adminStore = useAdminStore();
 const route = useRoute();
@@ -36,25 +42,7 @@ const isDialogOpen = ref(false);
 const { toast } = useToast();
 const euSign = ref(null);
 
-const selectedFile = ref<File | null>(null);
-const fileInputRef = ref<HTMLInputElement>();
-
-function handleDrop(event: DragEvent) {
-  const files = event.dataTransfer?.files;
-  if (files && files.length > 0) {
-    selectedFile.value = files[0];
-  }
-}
-
-function handleFileChange(event: Event) {
-  const files = (event.target as HTMLInputElement).files;
-  if (files && files.length > 0) {
-    selectedFile.value = files[0];
-  }
-}
-
-
-
+const isLoading = ref(false);
 
 watch(isDialogOpen, async (newVal) => {
   if (newVal) {
@@ -70,6 +58,12 @@ watch(isDialogOpen, async (newVal) => {
     } else {
       console.error("EndUser не загружен");
     }
+  } else {
+    // Очищаем наблюдатель при закрытии диалога
+    if (iframeObserver) {
+      iframeObserver.disconnect();
+      iframeObserver = null;
+    }
   }
 });
 
@@ -77,6 +71,10 @@ const controlFlag = ref(true);
 
 
 async function signDocument() {
+  if (isLoading.value) return;
+
+  isLoading.value = true;
+
   try {
     const filePath = adminStore.getDocumentById(parseInt(route.query.documentSign))?.filePath;
     if (!filePath) {
@@ -161,11 +159,13 @@ async function signDocument() {
     };
 
     reader.readAsArrayBuffer(file);
+
     toast({
       title: "Успіх",
-      description: "Документ успішно підписано",
+      description: "Документ успішно підписано. Зачекайте, поки вікно закриється.",
       variant: "default",
     });
+
     controlFlag.value = true;
   } catch (e: any) {
     toast({
@@ -173,6 +173,8 @@ async function signDocument() {
       description: e?.message || e,
       variant: "destructive",
     });
+  } finally {
+    isLoading.value = false;
   }
 }
 
@@ -202,4 +204,13 @@ async function fetchFile(filePath: string) {
 }
 </script>
 
-<style lang="scss"></style>
+<style lang="scss">
+.iframe-sign {
+  display: flex;
+  justify-content: flex-start;
+  align-items: start;
+  width: 100%;
+  height: calc(26.6666666667 * (1vw + 1vh));
+  overflow: auto;
+}
+</style>

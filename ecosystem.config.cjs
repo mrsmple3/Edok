@@ -8,32 +8,19 @@ module.exports = {
 			env: {
 				NODE_ENV: "production",
 				DATABASE_URL: "mysql://agroedoc_com:ExApY0eBcnGKJkCd@185.69.155.118:3306/agroedoc_com",
+				PORT: "3001", // Основное приложение на порту 3001
 			},
 		},
 		{
 			name: "NuxtSocketApp",
-			script: "./dist/entry.js",
+			script: "./server/entry.js", // Изменено на .js
 			exec_mode: "fork",
 			watch: false,
 			env: {
 				NODE_ENV: "production",
 				DATABASE_URL: "mysql://agroedoc_com:ExApY0eBcnGKJkCd@185.69.155.118:3306/agroedoc_com",
+				PORT: "3000", // Socket.IO сервер на порту 3000
 			},
 		},
 	],
 };
-// module.exports = {
-//   apps: [
-//     {
-//       name: 'NuxtAppName',
-//       port: '3000',
-//       exec_mode: 'cluster',
-//       instances: 'max',
-//       script: './.output/server/index.mjs',
-//        env: {
-//         NODE_ENV: 'production',
-//         DATABASE_URL: 'mysql://agroedoc_com:ExApY0eBcnGKJkCd@185.69.155.118:3306/agroedoc_com'
-//       }
-//     }
-//   ]
-// }

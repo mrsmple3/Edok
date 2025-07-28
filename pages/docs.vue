@@ -7,38 +7,45 @@
 				<button v-if="userStore.userRole === 'counterparty'"
 					class="submenu-parent relative flex-center gap-[11px] rounded-[14px] border border-[#2d9cdb] py-2 px-7 text-[#2d9cdb] text-[18px] font-bold font-['Barlow'] mr-[24px] hover:active">
 					<img alt="plus" class="w-[19px] h-[19px]" src="/icons/plus-blue.svg" />
-					Добавить соглашение
+					Додати документ
 					<div class="submenu">
 						<div class="cursor-pointer">
-							<label for="specification">Добавить спецификацию</label>
+							<label for="contract">Договір </label>
+							<input id="contract" type="file" accept="application/pdf" class="hidden"
+								@change="(event) => handleFileUpload(event, 'Договір')" />
+						</div>
+						<div class="cursor-pointer">
+							<label for="additional-agreement">Додаткова угода </label>
+							<input id="additional-agreement" type="file" accept="application/pdf" class="hidden"
+								@change="(event) => handleFileUpload(event, 'Додаткова угода')" />
+						</div>
+						<div class="cursor-pointer">
+							<label for="specification">Специфікація </label>
 							<input id="specification" type="file" accept="application/pdf" class="hidden"
-								@change="(event) => handleFileUpload(event, 'Спецификация')" />
+								@change="(event) => handleFileUpload(event, 'Специфікація')" />
 						</div>
 						<div class="cursor-pointer">
-							<label for="check">Добавить счет</label>
-							<input id="check" type="file" accept="application/pdf" class="hidden"
-								@change="(event) => handleFileUpload(event, 'Счет')" />
-						</div>
-						<div class="cursor-pointer">
-							<label for="invoice">Добавить накладную</label>
+							<label for="invoice">Рахунок</label>
 							<input id="invoice" type="file" accept="application/pdf" class="hidden"
-								@change="(event) => handleFileUpload(event, 'Накладная')" />
+								@change="(event) => handleFileUpload(event, 'Рахунок')" />
 						</div>
 						<div class="cursor-pointer">
-							<label for="confirming">Добавить подтверждающие документы</label>
+							<label for="delivery-note">Видаткова накладна </label>
+							<input id="delivery-note" type="file" accept="application/pdf" class="hidden"
+								@change="(event) => handleFileUpload(event, 'Видаткова накладна')" />
+						</div>
+						<div class="cursor-pointer">
+							<label for="ttn">Товарно-транспортна накладна </label>
+							<input id="ttn" type="file" accept="application/pdf" class="hidden"
+								@change="(event) => handleFileUpload(event, 'Товарно-транспортна накладна')" />
+						</div>
+						<div class="cursor-pointer">
+							<label for="confirming">Підтверджуючі</label>
 							<input id="confirming" type="file" accept="application/pdf" class="hidden"
-								@change="(event) => handleFileUpload(event, 'Подтверждающий документ')" />
+								@change="(event) => handleFileUpload(event, 'Підтверджуючі')" />
 						</div>
 					</div>
 				</button>
-
-				<!-- <div class="flex-center gap-6">
-					<img alt="list" class="max-w-[24px] max-h-[24px] min-h-max min-w-max cursor-pointer" src="/icons/leads-icon-list-1.svg" />
-					<img alt="list" class="max-w-[24px] max-h-[24px] min-h-max min-w-max cursor-pointer" src="/icons/leads-icon-list-2.svg" />
-					<img alt="list" class="max-w-[24px] max-h-[24px] min-h-max min-w-max cursor-pointer" src="/icons/leads-icon-list-3.svg" />
-					<img alt="list" class="max-w-[24px] max-h-[24px] min-h-max min-w-max cursor-pointer" src="/icons/leads-icon-list-4.svg" />
-					<img alt="list" class="max-w-[24px] max-h-[24px] min-h-max min-w-max cursor-pointer" src="/icons/leads-icon-list-5.svg" />
-				</div> -->
 			</div>
 
 			<div class="flex-center gap-[15px]">

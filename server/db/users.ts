@@ -59,7 +59,23 @@ export const updateUserRole = (id: number, role: string) => {
 	});
 };
 
-export const deleteUserById = (id: number) => {
+export const deleteUserById = async (id: number) => {
+	await prisma.Signature.deleteMany({
+		where: { userId: id }
+	});
+
+	await prisma.DocumentDeleteSign.deleteMany({
+		where: { userId: id }
+	});
+
+	await prisma.Message.deleteMany({
+		where: { senderId: id }
+	});
+
+	await prisma.document.deleteMany({
+		where: { userId: id }
+	});
+
 	return prisma.user.delete({
 		where: { id },
 	});

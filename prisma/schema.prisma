@@ -26,6 +26,7 @@ model User {
   RefreshToken         RefreshToken[]
   Document             Document[]
   DocumentCounterparty Document[]           @relation("DocumentCounterparty")
+  DocumentModerator    Document[]           @relation("DocumentModerator")
   Signature            Signature[]
   MessageSender        Message[]            @relation("Sender")
   LeadAuthor           Lead[]               @relation("LeadAuthor")
@@ -59,6 +60,8 @@ model Document {
   user            User                 @relation(fields: [userId], references: [id])
   counterpartyId  Int?
   counterparty    User?                @relation("DocumentCounterparty", fields: [counterpartyId], references: [id])
+  moderatorId     Int?
+  moderator       User?                @relation("DocumentModerator", fields: [moderatorId], references: [id])
   leadId          Int?
   lead            Lead?                @relation(fields: [leadId], references: [id])
   Signature       Signature[]
@@ -68,6 +71,7 @@ model Document {
   @@index([leadId])
   @@index([userId])
   @@index([counterpartyId])
+  @@index([moderatorId])
 }
 
 model DocumentDeleteSign {

@@ -4,18 +4,21 @@
       <LoGo class=" mb-[5px]" />
       <p class=" text-[#b9babd] text-xs font-normal mb-[56px]">Сервіс електронного <br> документообігу</p>
     </div>
-    <ProfileWindow />
+    <div class="flex-center gap-[13px] mb-[34px] pl-[50px]">
+      <img alt="profile-pictures" class="w-14 h-14 rounded-[63px] border-4 border-[#00b074]"
+        src="/images/placeholder-profile-img.png">
+      <div class="text-[#464154] text-base font-normal font-['Barlow']">Вітаємо,
+        <strong>
+          {{ userStore.userGetter.name || userStore.userGetter.phone || userStore.userGetter.email }}
+        </strong>
+      </div>
+    </div>
     <div class="flex-stretch self-center justify-self-center gap-[20px] mb-[32px]">
       <button class="relative w-12 h-12 bg-[#2d9cdb]/20 flex items-center justify-center rounded-[15px]"
-        @click="openChat">
+        @click="openChat" v-if="userStore.userRole === 'counterparty'">
         <img alt="sms" class="w-7 h-7" src="/icons/sms-blue.svg">
-        <!-- <div class="chip">
-          53
-        </div> -->
       </button>
-      <button class="relative w-12 h-12 bg-[#ff5b5b]/20 flex items-center justify-center rounded-[15px]">
-        <img alt="sms" class="w-7 h-7" src="/icons/setting-red-light.svg">
-      </button>
+      <ProfileWindow />
     </div>
     <div class="w-full flex-col-start gap-2">
       <NuxtLink v-for="link in sidebarLinks" :to="link.route" class="sidebar__link pl-[50px]"
@@ -69,7 +72,7 @@ const openChat = () => {
     if (!userStore.$state.socket) {
       // Создаем соединение, если оно еще не создано
       userStore.$state.socket = io({
-        path: '/api/socket.io',
+        path: '/socket.io',
       });
 
       // Обработка событий

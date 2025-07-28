@@ -1,8 +1,9 @@
 import { defineEventHandler } from "h3";
-import { deleteAllFilesOfDocuments, deleteDocuments, getAllDocuments } from "~/server/db/document";
+import { deleteAllFilesOfDocuments, deleteDocuments } from "~/server/db/document";
 
 export default defineEventHandler(async (event) => {
 	try {
+		await deleteAllFilesOfDocuments();
 		const deletedDocuments = await deleteDocuments();
 
 		return {

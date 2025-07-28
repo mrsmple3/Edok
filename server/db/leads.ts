@@ -187,6 +187,12 @@ export const updateLead = async (id: number, data: any) => {
 };
 
 export const deleteLead = async (id: number) => {
+
+	await prisma.document.updateMany({
+		where: { leadId: id },
+		data: { leadId: null }
+	});
+
 	return prisma.lead.delete({
 		where: { id },
 	});

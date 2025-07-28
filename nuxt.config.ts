@@ -3,19 +3,6 @@ export default defineNuxtConfig({
   app: {
     head: {
       script: [
-        // {
-        //   src: "/js/euscpt.js",
-        //   type: "text/Javascript",
-        // },
-        // {
-        //   src: "/js/euscpm.js",
-        //   type: "text/Javascript",
-        // },
-        // {
-        //   async: true,
-        //   src: "/js/euscp.js",
-        //   type: "text/javascript",
-        // },
         { src: "/js/eusign.js", type: "text/javascript", },
       ],
       link: [
@@ -60,5 +47,8 @@ export default defineNuxtConfig({
   runtimeConfig: {
     jwtAccessSecret: process.env.JWT_ACCESS_TOKEN_SECRET,
     jwtRefreshSecret: process.env.JWT_REFRESH_TOKEN_SECRET,
+    public: {
+      apiBase: 'http://localhost:3001' // Основное API
+    }
   }
 })
