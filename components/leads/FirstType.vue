@@ -12,7 +12,7 @@
 			</TableRow>
 		</TableHeader>
 		<TableBody class="w-full">
-			<LeadsTable v-for="invoice in invoices" :key="invoice.id" :invoice="invoice" />
+			<LeadsTable v-for="invoice in sortedLead" :key="invoice.id" :invoice="invoice" />
 		</TableBody>
 	</Table>
 </template>
@@ -20,11 +20,19 @@
 <script lang="ts" setup>
 import { type Lead } from "~/store/user.store";
 
-defineProps({
+const props = defineProps({
 	invoices: {
 		type: Array as PropType<Lead[]>,
 		required: true,
 	},
+});
+
+const sortedLead = computed(() => {
+  return [...props.invoices].sort((a, b) => {
+    const dateA = new Date(a.createdAt || a.updatedAt || a.date || 0);
+    const dateB = new Date(b.createdAt || b.updatedAt || b.date || 0);
+    return dateB.getTime() - dateA.getTime();
+  });
 });
 </script>
 

@@ -20,6 +20,7 @@ const { toast } = useToast();
 onBeforeMount(() => {
 	callOnce(async () => {
 		await userStore.initAuth().finally(() => {
+			console.log(userStore.userGetter);
 			if (!userStore.$state.isAuth) {
 				router.push("/login");
 			}

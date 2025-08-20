@@ -6,7 +6,7 @@
 			<DropdownMenuItem class="text-yellow-700" @select="handleSelect">
 				<DocumentEditDialogWindow :invoice="invoice" />
 			</DropdownMenuItem>
-			<DropdownMenuItem @select="handleSelectSign" v-if="invoice.status !== 'Підписано'">
+			<DropdownMenuItem @select="handleSelectSign">
 				<DocumentSignDialogWindow />
 			</DropdownMenuItem>
 			<DropdownMenuItem @select="handleSelectSign">
@@ -40,7 +40,7 @@ const documentView = useState("isDocumentView");
 const documentUrl = useState("documentUrl");
 const openDocument = (event: Event) => {
 	if (props.invoice.status === "Підписано") {
-		documentUrl.value = props.invoice.Signature[0].stampedFile;
+		documentUrl.value = props.invoice.Signature[props.invoice.Signature.length - 1].stampedFile;
 	} else {
 		documentUrl.value = props.invoice.filePath;
 	}

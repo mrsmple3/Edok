@@ -34,6 +34,28 @@
             </FormControl>
           </FormItem>
         </FormField>
+        <FormField name="organization_name" v-slot="{ componentField }">
+          <FormItem class="grid grid-cols-4 items-center gap-4">
+            <FormControl>
+              <Label for="company" class="text-[12px] text-start"> Компания </Label>
+              <div class="col-span-3 flex flex-col gap-2">
+                <Input id="company" type="text" v-bind="componentField" />
+                <FormMessage />
+              </div>
+            </FormControl>
+          </FormItem>
+        </FormField>
+        <FormField name="organization_INN" v-slot="{ componentField }">
+          <FormItem class="grid grid-cols-4 items-center gap-4">
+            <FormControl>
+              <Label for="inn" class="text-[12px] text-start"> ИНН </Label>
+              <div class="col-span-3 flex flex-col gap-2">
+                <Input id="inn" type="text" v-bind="componentField" />
+                <FormMessage />
+              </div>
+            </FormControl>
+          </FormItem>
+        </FormField>
         <FormField name="phone" v-slot="{ componentField }">
           <FormItem class="grid grid-cols-4 items-center gap-4">
             <FormControl>
@@ -90,11 +112,31 @@ const isDialogOpen = ref(false);
 const formSchema = ref(
   toTypedSchema(
     z.object({
-      name: z.string().min(2).max(120),
-      email: z.string().min(2).max(120),
-      phone: z.string().min(1).max(50),
-      oldPassword: z.string().min(6).max(50),
-      newPassword: z.string().min(6).max(50),
+      name: z.string().optional(),
+      email: z.string().email("Невірний формат email").optional().or(z.literal("")),
+      organization_name: z.string().optional(),
+      organization_INN: z.string().optional(),
+      phone: z.string().optional(),
+      oldPassword: z.string().optional(),
+      newPassword: z.string().optional(),
+    }).refine((data) => {
+      // Если oldPassword заполнен, то newPassword обязателен
+      if (data.oldPassword && data.oldPassword.length > 0) {
+        return data.newPassword && data.newPassword.length >= 6;
+      }
+      return true;
+    }, {
+      message: "Новий пароль обов'язковий при зміні пароля та має бути мінімум 6 символів",
+      path: ["newPassword"], // Показывать ошибку на поле newPassword
+    }).refine((data) => {
+      // Если newPassword заполнен, то oldPassword обязателен
+      if (data.newPassword && data.newPassword.length > 0) {
+        return data.oldPassword && data.oldPassword.length >= 6;
+      }
+      return true;
+    }, {
+      message: "Старий пароль обов'язковий при зміні пароля та має бути мінімум 6 символів",
+      path: ["oldPassword"], // Показывать ошибку на поле oldPassword
     })
   )
 );
@@ -106,15 +148,23 @@ const form = useForm({
 const updateUser = form.handleSubmit(async (values) => {
   try {
     let response = ref();
-    const updatedUser = await userStore.updateUser({
+
+    // Формируем объект только с заполненными полями
+    const updateData: any = {
       id: userStore.userGetter.id,
-      name: values.name,
-      email: values.email,
-      phone: values.phone,
-      oldPassword: values.oldPassword,
-      newPassword: values.newPassword,
       role: userStore.userGetter.role,
-    });
+    };
+
+    // Добавляем только заполненные поля
+    if (values.name) updateData.name = values.name;
+    if (values.email) updateData.email = values.email;
+    if (values.phone) updateData.phone = values.phone;
+    if (values.organization_name) updateData.organization_name = values.organization_name;
+    if (values.organization_INN) updateData.organization_INN = values.organization_INN;
+    if (values.oldPassword) updateData.oldPassword = values.oldPassword;
+    if (values.newPassword) updateData.newPassword = values.newPassword;
+
+    const updatedUser = await userStore.updateUser(updateData);
     isDialogOpen.value = false;
   } catch (error: any) {
     const { toast } = useToast();
@@ -142,6 +192,8 @@ watch(isDialogOpen, async (newVal) => {
       name: userStore.$state.user.name || '',
       email: userStore.$state.user.email || '',
       phone: userStore.$state.user.phone || '',
+      organization_INN: userStore.$state.user.organization_INN || '',
+      organization_name: userStore.$state.user.organization_name || '',
       oldPassword: '',
       newPassword: '',
     });

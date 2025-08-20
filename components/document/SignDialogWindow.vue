@@ -58,12 +58,6 @@ watch(isDialogOpen, async (newVal) => {
     } else {
       console.error("EndUser не загружен");
     }
-  } else {
-    // Очищаем наблюдатель при закрытии диалога
-    if (iframeObserver) {
-      iframeObserver.disconnect();
-      iframeObserver = null;
-    }
   }
 });
 
@@ -75,8 +69,11 @@ async function signDocument() {
 
   isLoading.value = true;
 
+  const currentDoc = adminStore.getDocumentById(parseInt(route.query.documentSign));
+
   try {
-    const filePath = adminStore.getDocumentById(parseInt(route.query.documentSign))?.filePath;
+    const filePath = currentDoc.Signature.length !== 0 ? currentDoc.Signature[currentDoc.Signature.length - 1].stampedFile : currentDoc?.filePath;
+    console.log(filePath);
     if (!filePath) {
       toast({
         title: "Ошибка",
@@ -92,10 +89,10 @@ async function signDocument() {
     controlFlag.value = false;
 
     reader.onload = async () => {
+      // Получаем ArrayBuffer напрямую из файла (без PAdES подписи)
+      const originalArrayBuffer = reader.result as ArrayBuffer;
       const binary = new Uint8Array(reader.result as ArrayBuffer);
-      const base64data = btoa(
-        binary.reduce((acc, byte) => acc + String.fromCharCode(byte), "")
-      );
+      const base64data = arrayBufferToBase64(binary);
 
       // 3. Считать ключ (вызовет диалог с iframe, если еще не был считан)
       await euSign.value.ReadPrivateKey();
@@ -106,30 +103,21 @@ async function signDocument() {
       const signAlgo = EndUser.SignAlgo.DSTU4145WithGOST34311;
       const signType = EndUser.SignType.CAdES_X_Long_Trusted;
 
-
-      const signedPdfBase64 = await euSign.value.PAdESSignData(
-        binary,
-        true,  // asBase64String
-        EndUser.SignAlgo.DSTU4145WithGOST34311,
-        EndUser.PAdESSignLevel.PAdES_B_T
-      );
-
-      // 3. Конвертировать подписанный документ из Base64 в ArrayBuffer
-      const signedPdfBlob = base64ToBlob(signedPdfBase64, "application/pdf");
-      const signedPdfArrayBuffer = await signedPdfBlob.arrayBuffer();
-
       // 4. Добавить видимую печать
-      const stampPath = userStore.userRole !== 'counterparty' ? '/images/stamp.png' : '/images/stamp-c.png'; // Путь к изображению печати
-      const finalPdfBytes = await addVisibleStamp(signedPdfArrayBuffer, stampPath);
+      const stampData = {
+        organizationName: userStore.userGetter.organization_name,
+        signerINN: userStore.userGetter.organization_INN,
+      };
+      const finalPdfBytes = await addVisibleStamp(originalArrayBuffer, stampData);
 
       // 5. Создать финальный PDF-файл с печатью
       const finalPdfBlob = new Blob([finalPdfBytes], { type: "application/pdf" });
-      const finalPdfFile = new File([finalPdfBlob], `${file.name}_signed.pdf`, { type: "application/pdf" });
+      const finalPdfFile = new File([finalPdfBlob], `${file.name}`, { type: "application/pdf" });
 
       // Создать ссылку для скачивания
       const downloadLink = document.createElement("a");
       downloadLink.href = URL.createObjectURL(finalPdfBlob);
-      downloadLink.download = `${file.name}_signed.pdf`;
+      downloadLink.download = `${file.name}`;
       downloadLink.click();
       URL.revokeObjectURL(downloadLink.href);
 
@@ -144,8 +132,7 @@ async function signDocument() {
       );
 
       const blob = base64ToBlob(sign, "application/pkcs7-signature");
-      const signedFile = new File([blob], `${file.name}.p7s`, { type: "application/pkcs7-signature" });
-      console.log(signedFile);
+      const signedFile = new File([blob], `${file.name}`, { type: "application/pkcs7-signature" });
 
 
       await adminStore.createSign(
@@ -154,19 +141,21 @@ async function signDocument() {
         signedFile,
         finalPdfFile
       ).then(() => {
+        toast({
+          title: "Успіх",
+          description: "Документ успішно підписано. Зачекайте, поки вікно закриється.",
+          variant: "default",
+        });
         isDialogOpen.value = false;
+        setTimeout(() => {
+          window.location.reload();
+        }, 800);
       });
     };
 
     reader.readAsArrayBuffer(file);
 
-    toast({
-      title: "Успіх",
-      description: "Документ успішно підписано. Зачекайте, поки вікно закриється.",
-      variant: "default",
-    });
-
-    controlFlag.value = true;
+    // controlFlag.value = true;
   } catch (e: any) {
     toast({
       title: "Ошибка",
@@ -176,6 +165,16 @@ async function signDocument() {
   } finally {
     isLoading.value = false;
   }
+}
+
+
+function arrayBufferToBase64(buffer: Uint8Array): string {
+  let binary = '';
+  const len = buffer.byteLength;
+  for (let i = 0; i < len; i++) {
+    binary += String.fromCharCode(buffer[i]);
+  }
+  return btoa(binary);
 }
 
 function base64ToBlob(base64: string, mime: string) {

@@ -28,7 +28,7 @@ export default defineEventHandler(async (event) => {
   if (doc.Signature.length > 0) {
     archive.append(fs.createReadStream(signaturePath), { name: "signature.p7s" });
     archive.append(doc.Signature[0].info.replace(/\\n/g, "\n"), { name: "info.txt" });
-    archive.append(doc.Signature[0].stampedFile.replace(/\\n/g, "\n"), { name: "stampPdfFile.txt" });
+    archive.append(fs.createReadStream(stampFilePath), { name: "stampPdfFile.pdf" });
   }
 
   archive.finalize();

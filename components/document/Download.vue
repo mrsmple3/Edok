@@ -18,7 +18,7 @@
             📦 Завантажити ZIP-архів із документами
           </a>
         </div>
-        <div class="h-[400px] overflow-auto w-full flex flex-col items-start gap-3 mt-4">
+        <div class="w-full h-[400px] overflow-auto w-full flex flex-col items-start gap-3 mt-4">
           <div v-if="props.invoice.Signature[0]?.info" v-for="(line, index) in formattedInfo" :key="index"
             class="w-full flex items-center justify-between">
             <strong class="text-sm text-gray-600">{{ line.key }}</strong>

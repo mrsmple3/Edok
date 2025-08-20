@@ -169,7 +169,11 @@ const uploadDocument = async (file: File, documentType: string) => {
 				status: 'В очікуванні'
 			},
 			file
-		);
+		).then(() => {
+			setTimeout(() => {
+				window.location.reload();
+			}, 300);
+		})
 	} catch (error: any) {
 		const { toast } = useToast();
 		console.log(error);

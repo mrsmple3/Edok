@@ -12,13 +12,13 @@
     </TableHeader>
     <DocumentViewer v-if="documentView" :documentUrl="documentUrl" />
     <TableBody class="w-full">
-      <DocumentTable v-for="(invoice, index) in paginatedDocuments" :key="index" :invoice="invoice" />
+      <DocumentTable v-for="(invoice, index) in sortedDocuments" :key="index" :invoice="invoice" />
     </TableBody>
   </Table>
 </template>
 
 <script setup lang="ts">
-defineProps({
+const props = defineProps({
   paginatedDocuments: {
     type: Array as PropType<Document[]>,
     required: true,
@@ -34,6 +34,15 @@ const adminStore = useAdminStore()
 
 const documentView = useState("isDocumentView", () => false);
 const documentUrl = useState("documentUrl", () => "");
+
+// Сортировка документов по дате (новые сначала)
+const sortedDocuments = computed(() => {
+  return [...props.paginatedDocuments].sort((a, b) => {
+    const dateA = new Date(a.createdAt || a.uploadedAt || a.date || 0);
+    const dateB = new Date(b.createdAt || b.uploadedAt || b.date || 0);
+    return dateB.getTime() - dateA.getTime(); // По убыванию (новые сначала)
+  });
+});
 </script>
 
 <style scoped lang="scss"></style>
