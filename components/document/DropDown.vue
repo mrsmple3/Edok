@@ -12,6 +12,9 @@
 			<DropdownMenuItem @select="handleSelectSign">
 				<DocumentDownload :invoice="invoice" />
 			</DropdownMenuItem>
+			<DropdownMenuItem @select="handleSelectSign">
+				<DocumentProtocol :invoice="invoice" />
+			</DropdownMenuItem>
 			<!-- <DropdownMenuItem class="text-blue-600" @click="redirectToESign()">Перейти на подпись</DropdownMenuItem> -->
 			<DropdownMenuItem class="text-red-600" @click="deleteDocument(invoice)">Видалити</DropdownMenuItem>
 		</DropdownMenuContent>

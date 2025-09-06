@@ -31,7 +31,6 @@
 import { useToast } from "~/components/ui/toast";
 import { useAdminStore } from "~/store/admin.store";
 import { useUserStore } from "~/store/user.store";
-import { addVisibleStamp } from "~/server/utils/addVisibleStamp"
 import { Loader2 } from "lucide-vue-next"
 
 const adminStore = useAdminStore();
@@ -73,7 +72,10 @@ async function signDocument() {
 
   try {
     const filePath = currentDoc.Signature.length !== 0 ? currentDoc.Signature[currentDoc.Signature.length - 1].stampedFile : currentDoc?.filePath;
-    console.log(filePath);
+
+    console.log("filePath", filePath);
+
+
     if (!filePath) {
       toast({
         title: "Ошибка",
@@ -103,25 +105,6 @@ async function signDocument() {
       const signAlgo = EndUser.SignAlgo.DSTU4145WithGOST34311;
       const signType = EndUser.SignType.CAdES_X_Long_Trusted;
 
-      // 4. Добавить видимую печать
-      const stampData = {
-        organizationName: userStore.userGetter.organization_name,
-        signerINN: userStore.userGetter.organization_INN,
-      };
-      const finalPdfBytes = await addVisibleStamp(originalArrayBuffer, stampData);
-
-      // 5. Создать финальный PDF-файл с печатью
-      const finalPdfBlob = new Blob([finalPdfBytes], { type: "application/pdf" });
-      const finalPdfFile = new File([finalPdfBlob], `${file.name}`, { type: "application/pdf" });
-
-      // Создать ссылку для скачивания
-      const downloadLink = document.createElement("a");
-      downloadLink.href = URL.createObjectURL(finalPdfBlob);
-      downloadLink.download = `${file.name}`;
-      downloadLink.click();
-      URL.revokeObjectURL(downloadLink.href);
-
-
       const sign = await euSign.value.SignData(
         base64data,
         external,
@@ -131,26 +114,86 @@ async function signDocument() {
         signType
       );
 
+
+
       const blob = base64ToBlob(sign, "application/pkcs7-signature");
       const signedFile = new File([blob], `${file.name}`, { type: "application/pkcs7-signature" });
 
+
+      // НОВОЕ: Извлекаем certInfo из подписи на клиенте
+      let certInfo = null;
+      let stampData = {
+        organizationName: "",
+        signerINN: "",
+        signerName: "",
+        signerPosition: "",
+        stampCount: 0,
+      };
+      try {
+        // Создаем временный FormData для отправки подписи на сервер для анализа
+        const tempFormData = new FormData();
+        tempFormData.append('signature', signedFile);
+
+        const certInfoResponse = await $fetch('/api/sign/extractCertInfo', {
+          method: 'POST',
+          body: tempFormData
+        });
+
+        if (certInfoResponse.code === 200) {
+          certInfo = certInfoResponse.body.certInfo;
+          console.log('Извлеченная информация о сертификате:', certInfo);
+
+          // Парсим данные из сертификата
+          const parsedCertData = parseCertificateInfo(certInfo);
+
+          console.log(parsedCertData);
+
+          // Обновляем stampData данными из сертификата
+          stampData = {
+            organizationName: parsedCertData.organizationName || "",
+            signerINN: parsedCertData.inn || "",
+            signerName: parsedCertData.fullName || "",
+            signerPosition: parsedCertData.position || "",
+            stampCount: currentDoc.Signature.length || 0,
+          };
+
+          console.log('Данные для печати:', stampData);
+        }
+      } catch (certError) {
+        console.error('Ошибка извлечения информации о сертификате:', certError);
+        // Продолжаем без certInfo, но с предупреждением
+      }
+
+      // const finalPdfBytes = await addVisibleStamp(originalArrayBuffer, stampData);
+
+      // 5. Создать финальный PDF-файл с печатью
+      const finalPdfBlob = new Blob([originalArrayBuffer], { type: "application/pdf" });
+      const finalPdfFile = new File([finalPdfBlob], `${file.name}`, { type: "application/pdf" });
+
+      // // Создать ссылку для скачивания
+      // const downloadLink = document.createElement("a");
+      // downloadLink.href = URL.createObjectURL(finalPdfBlob);
+      // downloadLink.download = `${file.name}`;
+      // downloadLink.click();
+      // URL.revokeObjectURL(downloadLink.href);
 
       await adminStore.createSign(
         parseInt(route.query.documentSign),
         userStore.userGetter.id,
         signedFile,
-        finalPdfFile
-      ).then(() => {
-        toast({
-          title: "Успіх",
-          description: "Документ успішно підписано. Зачекайте, поки вікно закриється.",
-          variant: "default",
+        finalPdfFile,
+        certInfo,
+        stampData).then(() => {
+          toast({
+            title: "Успіх",
+            description: "Документ успішно підписано. Зачекайте, поки вікно закриється.",
+            variant: "default",
+          });
+          isDialogOpen.value = false;
+          setTimeout(() => {
+            window.location.reload();
+          }, 800);
         });
-        isDialogOpen.value = false;
-        setTimeout(() => {
-          window.location.reload();
-        }, 800);
-      });
     };
 
     reader.readAsArrayBuffer(file);
@@ -167,6 +210,108 @@ async function signDocument() {
   }
 }
 
+// Функция для парсинга информации из сертификата
+function parseCertificateInfo(certInfo: any) {
+  const result = {
+    fullName: '',
+    inn: '',
+    organizationName: '',
+    position: 'не видан'
+  };
+
+  try {
+    if (!certInfo || typeof certInfo !== 'string') {
+      console.log('certInfo пустой или не строка:', certInfo);
+      return result;
+    }
+
+    // ---- Берем только Subject владельца ----
+    const subjectMatch = certInfo.match(/Subject: (.+?)(?:\n|$)/s);
+    if (subjectMatch) {
+      const subject = subjectMatch[1];
+      console.log('Subject владельца:', subject);
+
+      // === ФИО ===
+      const cnMatch = subject.match(/CN=([^,\n]+)/);
+      if (cnMatch) {
+        result.fullName = decodeHexString(cnMatch[1]).trim();
+      }
+
+      // === ИНН ===
+      const innMatch = subject.match(/serialNumber=TINUA-(\d+)/);
+      if (innMatch) {
+        result.inn = innMatch[1];
+      }
+      // fallback — UID=
+      const uidMatch = subject.match(/UID=(\d+)/);
+      if (!result.inn && uidMatch) {
+        result.inn = uidMatch[1];
+      }
+
+      // === Должность ===
+      const titleMatch = subject.match(/title=([^,\n]+)/i) || subject.match(/T=([^,\n]+)/i);
+      const ouMatch = subject.match(/OU=([^,\n]+)/i);
+      const oMatch = subject.match(/O=([^,\n]+)/i);
+
+      if (titleMatch) {
+        result.position = decodeHexString(titleMatch[1]).trim();
+      } else if (ouMatch) {
+        const ouVal = decodeHexString(ouMatch[1]).trim();
+        if (ouVal && ouVal !== "ФІЗИЧНА ОСОБА") {
+          result.position = ouVal;
+        }
+      } else if (oMatch) {
+        const oVal = decodeHexString(oMatch[1]).trim();
+        if (oVal && oVal !== "ФІЗИЧНА ОСОБА") {
+          // Если в O явно должность
+          result.position = oVal;
+        }
+      }
+
+      // === Организация ===
+      if (oMatch) {
+        const oVal = decodeHexString(oMatch[1]).trim();
+        if (oVal && oVal !== "ФІЗИЧНА ОСОБА") {
+          result.organizationName = oVal;
+        }
+      }
+    }
+
+  } catch (error) {
+    console.error('Ошибка парсинга сертификата:', error);
+  }
+
+  console.log('Итоговый результат владельца:', result);
+  return result;
+}
+
+// Функция для декодирования hex-encoded строк
+function decodeHexString(hexStr: string): string {
+  try {
+    if (!hexStr) return '';
+
+    // Убираем экранирующие символы и декодируем hex
+    const cleaned = hexStr.replace(/\\x([0-9A-Fa-f]{2})/g, (match, hex) => {
+      return String.fromCharCode(parseInt(hex, 16));
+    });
+
+    // Если строка содержала hex-кодирование, декодируем UTF-8
+    if (hexStr.includes('\\x')) {
+      try {
+        const bytes = new Uint8Array([...cleaned].map(char => char.charCodeAt(0)));
+        return new TextDecoder('utf-8').decode(bytes);
+      } catch (utfError) {
+        console.warn('Ошибка декодирования UTF-8, возвращаем как есть:', cleaned);
+        return cleaned;
+      }
+    }
+
+    return cleaned;
+  } catch (error) {
+    console.error('Ошибка декодирования hex строки:', error);
+    return hexStr || '';
+  }
+}
 
 function arrayBufferToBase64(buffer: Uint8Array): string {
   let binary = '';

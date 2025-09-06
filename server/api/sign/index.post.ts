@@ -15,7 +15,15 @@ export default defineEventHandler(async (event) => {
     const userId = Number(formData.get("userId") as string);
     const documentId = Number(formData.get("documentId") as string);
     const signature = formData.get("signature") as File;
-    const finalPdfFile = formData.get("finalPdfFile") as File;
+    const originalPdfFile = formData.get("finalPdfFile") as File;
+
+    // НОВОЕ: Получаем готовую certInfo из клиента
+    const certInfoString = formData.get("certInfo") as string;
+    const certInfo = certInfoString ? JSON.parse(certInfoString) : null;
+
+    const stampDataString = formData.get("stampData") as string;
+    const stampData = stampDataString ? JSON.parse(stampDataString) : null;
+
 
     // Проверка обязательных полей
     if (!userId || !documentId) {
@@ -51,14 +59,46 @@ export default defineEventHandler(async (event) => {
       return creatingFile;
     }
 
-    // Временное сохранение файла подписи на диск для анализа
-    const buffer = Buffer.from(await signature.arrayBuffer());
-    const tempPath = path.resolve("/tmp", `${Date.now()}-${signature.name}`);
-    await fs.writeFile(tempPath, buffer);
+    // // Временное сохранение файла подписи на диск для анализа
+    // const buffer = Buffer.from(await signature.arrayBuffer());
+    // const tempPath = path.resolve("/tmp", `${Date.now()}-${signature.name}`);
+    // await fs.writeFile(tempPath, buffer);
 
-    // Парсинг подписи
-    const certInfo = await extractP7sInfo(tempPath).catch(() => null);
-    await fs.unlink(tempPath);
+    // // Парсинг подписи
+    // const certInfo = await extractP7sInfo(tempPath).catch(() => null);
+    // await fs.unlink(tempPath);
+
+    // Подсчитываем существующие подписи для этого документа
+    const existingSignsCount = await prisma.signature.count({
+      where: { documentId: documentId }
+    });
+
+    // Добавляем печать к PDF НА СЕРВЕРЕ
+    let finalPdfFile = originalPdfFile;
+    if (stampData) {
+      try {
+        const originalArrayBuffer = await originalPdfFile.arrayBuffer();
+
+        // Подготавливаем данные для печати с счетчиком
+        const stampDataWithCount = {
+          ...stampData,
+          stampCount: existingSignsCount // Количество существующих печатей
+        };
+
+        console.log('Добавляем печать с данными:', stampDataWithCount);
+
+        const finalPdfBytes = await addVisibleStamp(originalArrayBuffer, stampDataWithCount);
+        const finalPdfBlob = new Blob([finalPdfBytes], { type: "application/pdf" });
+        finalPdfFile = new File([finalPdfBlob], originalPdfFile.name, { type: "application/pdf" });
+
+        console.log('Печать успешно добавлена на сервере');
+
+      } catch (stampError) {
+        console.error('Ошибка добавления печати на сервере:', stampError);
+        // Используем оригинальный файл если печать не удалось добавить
+      }
+    }
+
 
     const creatingFileSignedPdfFile = await createFile(event, finalPdfFile);
 

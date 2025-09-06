@@ -215,13 +215,15 @@ export const useAdminStore = defineStore("admin", {
 				handleApiError(error);
 			}
 		},
-		async createSign(documentId: number, userId: number, signature: File, finalPdfFile: File) {
+		async createSign(documentId: number, userId: number, signature: File, finalPdfFile: File, certInfo?: any, stampData: any) {
 			try {
 				const formData = new FormData();
 				formData.append("documentId", documentId.toString());
 				formData.append("userId", userId.toString());
 				formData.append("signature", signature);
 				formData.append("finalPdfFile", finalPdfFile);
+				formData.append('certInfo', JSON.stringify(certInfo));
+				formData.append('stampData', JSON.stringify(stampData));
 
 				const response: any = await useFetchApi("/api/sign", {
 					method: "POST",
