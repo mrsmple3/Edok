@@ -38,6 +38,9 @@ const adminStore = useAdminStore();
 
 const router = useRouter();
 
+const { toast } = useToast();
+
+
 const formSchema = toTypedSchema(
 	z.object({
 		email: z
@@ -78,17 +81,22 @@ const onSubmitLogin = form.handleSubmit(async (values) => {
 			});
 		}
 		await authStore.initAuth().then(async () => {
-			if (authStore.userGetter.role === "admin") {
+			console.log(authStore.$state.user);
+			if (authStore.$state.user.role !== "counterparty") {
 				await adminStore.getUserByRole('counterparty');
 				router.push("/contacts");
-			} else if (authStore.userGetter.role === "counterparty") {
+			} else if (authStore.$state.user.role === "counterparty") {
 				await counterpartyStore.getLeadByUserId(authStore.userGetter.id);
 				router.push("/leads");
+			} else {
+				toast({
+					title: "Попередження",
+					description: 'У вас немає відповідної ролі',
+					variant: "default",
+				});
 			}
-
 		});
 	} catch (error: any) {
-		const { toast } = useToast();
 		toast({
 			title: "Ошибка",
 			description: error.message,

@@ -192,24 +192,24 @@ export async function addVisibleStamp(signedPdfBytes: ArrayBuffer, stampData: St
     });
   });
 
-  // Добавляем имя подписанта (если есть) - БЕЗ транслитерации
-  if (data.signerName && data.signerPosition !== 'Директор') {
-    const signerName = data.signerName;
-    const nameLines = wrapText(signerName, 14);
+  // // Добавляем имя подписанта (если есть) - БЕЗ транслитерации
+  // if (data.signerName && data.signerPosition !== 'Директор') {
+  //   const signerName = data.signerName;
+  //   const nameLines = wrapText(signerName, 14);
 
-    const nameStartY = stampCenterY - 25 - (nameLines.length - 1) * 4;
+  //   const nameStartY = stampCenterY - 25 - (nameLines.length - 1) * 4;
 
-    nameLines.forEach((line, index) => {
-      targetPage.drawText(line, {
-        x: stampCenterX - (line.length * 2),
-        y: nameStartY - (index * 6),
-        size: 6,
-        color: stampColor,
-        font: font,
-        opacity: 1
-      });
-    });
-  }
+  //   nameLines.forEach((line, index) => {
+  //     targetPage.drawText(line, {
+  //       x: stampCenterX - (line.length * 2),
+  //       y: nameStartY - (index * 6),
+  //       size: 6,
+  //       color: stampColor,
+  //       font: font,
+  //       opacity: 1
+  //     });
+  //   });
+  // }
 
   // // Добавляем должность (если есть) - БЕЗ транслитерации
   // if (data.signerPosition && data.signerPosition !== "") {

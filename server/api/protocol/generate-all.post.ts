@@ -1,0 +1,402 @@
+import { PDFDocument, rgb } from 'pdf-lib';
+import fontkit from '@pdf-lib/fontkit';
+import { defineEventHandler, readBody, createError, setHeader } from 'h3';
+
+export default defineEventHandler(async (event) => {
+  try {
+    // Получаем данные из тела запроса
+    const body = await readBody(event);
+    const { signatures, documentTitle, documentId } = body;
+
+    console.log('Received data:', { signaturesCount: signatures?.length, documentTitle, documentId });
+
+    if (!signatures || !Array.isArray(signatures) || signatures.length === 0) {
+      throw createError({
+        statusCode: 400,
+        statusMessage: 'Список подписей не может быть пустым'
+      });
+    }
+
+    // Создаем новый PDF документ
+    const pdfDoc = await PDFDocument.create();
+    pdfDoc.registerFontkit(fontkit);
+
+    // Загружаем украинский шрифт
+    let font: any;
+    let boldFont: any;
+    try {
+      const fontsDir = `/var/www/agroedoc_com_usr/data/www/Edok/public/fonts`;
+      const fontPath = `${fontsDir}/DejaVuSans.ttf`;
+      const boldFontPath = `${fontsDir}/DejaVuSans-Bold.ttf`;
+
+      console.log('Загрузка шрифта из:', fontPath);
+
+      // Читаем основной шрифт
+      const fontBytes = await Bun.file(fontPath).arrayBuffer();
+      font = await pdfDoc.embedFont(new Uint8Array(fontBytes));
+      console.log('Основной шрифт загружен успешно');
+
+      // Пытаемся загрузить жирный шрифт
+      try {
+        const boldFontBytes = await Bun.file(boldFontPath).arrayBuffer();
+        boldFont = await pdfDoc.embedFont(new Uint8Array(boldFontBytes));
+        console.log('Жирный шрифт загружен успешно');
+      } catch (boldError) {
+        console.log('Жирный шрифт не найден, используем обычный');
+        boldFont = font;
+      }
+
+    } catch (error) {
+      console.error('Ошибка загрузки шрифта:', error);
+      throw createError({
+        statusCode: 500,
+        statusMessage: 'Не удалось загрузить шрифт для украинского текста'
+      });
+    }
+
+    // Функция для добавления текста с переносом строк
+    function addText(page: any, text: string, x: number, y: number, options: {
+      font?: any;
+      size?: number;
+      color?: any;
+      maxWidth?: number;
+    } = {}) {
+      const textFont = options.font || font;
+      const fontSize = options.size || 12;
+      const textColor = options.color || rgb(0, 0, 0);
+      const maxWidth = options.maxWidth || 500;
+
+      // Разбиваем текст на строки если нужно
+      const words = text.split(' ');
+      const lines: string[] = [];
+      let currentLine = '';
+
+      for (const word of words) {
+        const testLine = currentLine ? `${currentLine} ${word}` : word;
+        const textWidth = textFont.widthOfTextAtSize(testLine, fontSize);
+
+        if (textWidth <= maxWidth) {
+          currentLine = testLine;
+        } else {
+          if (currentLine) {
+            lines.push(currentLine);
+            currentLine = word;
+          } else {
+            lines.push(word);
+          }
+        }
+      }
+
+      if (currentLine) {
+        lines.push(currentLine);
+      }
+
+      // Рисуем каждую строку
+      let yPos = y;
+      for (const line of lines) {
+        page.drawText(line, {
+          x,
+          y: yPos,
+          size: fontSize,
+          font: textFont,
+          color: textColor,
+        });
+        yPos -= fontSize + 4;
+      }
+
+      return yPos - 5; // Возвращаем новую позицию Y
+    }
+
+    // Создаем отдельную страницу для каждого протокола
+    for (let i = 0; i < signatures.length; i++) {
+      const signature = signatures[i];
+      const protocolNumber = i + 1;
+
+      const page = pdfDoc.addPage();
+      const { width, height } = page.getSize();
+      const margin = 50;
+      let currentY = height - margin;
+
+      // Заголовок
+      currentY = addText(page, `ПРОТОКОЛ ЕЛЕКТРОННОГО ПІДПИСУ №${protocolNumber}`,
+        margin, currentY, {
+        font: boldFont,
+        size: 18
+      });
+      currentY -= 20;
+
+      // Информация о документе
+      currentY = addText(page, `Документ: ${documentTitle || 'Без назви'}`,
+        margin, currentY, { size: 12 }
+      );
+
+      currentY = addText(page, `Дата створення протоколу: ${new Date().toLocaleDateString('uk-UA')}`,
+        margin, currentY, { size: 12 }
+      );
+      currentY -= 15;
+
+      // 1. Информация о подписанте
+      currentY = addText(page, '1. ІНФОРМАЦІЯ ПРО ПІДПИСАНТА',
+        margin, currentY, {
+        font: boldFont,
+        size: 14
+      });
+
+      if (signature.User) {
+        currentY = addText(page, `Користувач системи: ${signature.User.name}`,
+          margin, currentY, { size: 11 }
+        );
+      }
+
+      if (signature.createdAt) {
+        const date = new Date(signature.createdAt);
+        const formattedDate = date.toLocaleDateString('uk-UA', {
+          day: '2-digit',
+          month: '2-digit',
+          year: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit',
+          second: '2-digit'
+        });
+        currentY = addText(page, `Дата і час підпису: ${formattedDate}`,
+          margin, currentY, { size: 11 }
+        );
+      }
+      currentY -= 15;
+
+      // 2. Данные сертификата
+      if (signature.info) {
+        currentY = addText(page, '2. ДАНІ ЕЛЕКТРОННОГО СЕРТИФІКАТА',
+          margin, currentY, {
+          font: boldFont,
+          size: 14
+        });
+
+        // Парсим данные сертификата
+        const structuredInfo = parseSignatureInfo(signature.info);
+
+        for (const section of structuredInfo) {
+          currentY = addText(page, section.title,
+            margin, currentY, {
+            font: boldFont,
+            size: 12
+          });
+
+          for (const item of section.items) {
+            currentY = addText(page, `${item.key}:`,
+              margin + 10, currentY, {
+              font: boldFont,
+              size: 10
+            });
+
+            currentY = addText(page, item.value,
+              margin + 20, currentY, {
+              size: 10,
+              maxWidth: width - margin - 30
+            });
+          }
+          currentY -= 10;
+        }
+      }
+
+      // 3. Файлы подписи
+      currentY = addText(page, '3. ФАЙЛИ ПІДПИСУ',
+        margin, currentY, {
+        font: boldFont,
+        size: 14
+      });
+
+      if (signature.signature) {
+        currentY = addText(page, '• Файл електронного підпису (.p7s)',
+          margin, currentY, { size: 11 }
+        );
+        currentY = addText(page, `  ${signature.signature}`,
+          margin + 10, currentY, { size: 9 }
+        );
+      }
+
+      if (signature.stampedFile) {
+        currentY = addText(page, '• Підписаний документ з печаткою',
+          margin, currentY, { size: 11 }
+        );
+        currentY = addText(page, `  ${signature.stampedFile}`,
+          margin + 10, currentY, { size: 9 }
+        );
+      }
+
+      currentY -= 20;
+
+      // Подвал
+      addText(page, 'Протокол згенеровано автоматично системою електронного документообігу',
+        margin, currentY, {
+        size: 10,
+        color: rgb(0.5, 0.5, 0.5)
+      });
+    }
+
+    // Сериализуем PDF в байты
+    const pdfBytes = await pdfDoc.save();
+
+    // Устанавливаем заголовки для скачивания
+    setHeader(event, 'Content-Type', 'application/pdf');
+    setHeader(event, 'Content-Disposition', `attachment; filename="all_protocols_${documentId || 'document'}.pdf"`);
+
+    return pdfBytes;
+
+  } catch (error: any) {
+    console.error('Error generating PDF:', error);
+    throw createError({
+      statusCode: 500,
+      statusMessage: error?.message || 'Ошибка генерации PDF'
+    });
+  }
+});
+
+// Функция для парсинга информации о сертификате
+function parseSignatureInfo(info: string) {
+  if (!info) return [];
+
+  const sections: Array<{
+    title: string;
+    items: Array<{ key: string; value: string }>;
+  }> = [
+      {
+        title: 'Власник сертифіката',
+        items: []
+      }
+    ];
+
+  try {
+    const normalized = info.replace(/\\n/g, "\n");
+    const lines = normalized.split("\n").map(line => line.trim()).filter(line => line);
+
+    for (const line of lines) {
+      if (line.includes(":")) {
+        const [key, ...valueParts] = line.split(":");
+        const value = valueParts.join(":").trim();
+
+        if (key && value && key.trim() === 'Subject') {
+          const subjectItems = parseSubjectData(value);
+          sections[0].items.push(...subjectItems);
+          break;
+        }
+      }
+    }
+  } catch (error) {
+    console.error('Ошибка парсинга Subject:', error);
+  }
+
+  return sections.filter(section => section.items.length > 0);
+}
+
+function parseSubjectData(data: string): Array<{ key: string; value: string }> {
+  const items: Array<{ key: string; value: string }> = [];
+
+  try {
+    const cleanData = data.replace(/^Subject:\s*/, '');
+    const parts = [];
+    let current = '';
+    let inQuotes = false;
+
+    for (let i = 0; i < cleanData.length; i++) {
+      const char = cleanData[i];
+      if (char === '"') {
+        inQuotes = !inQuotes;
+        current += char;
+      } else if (char === ',' && !inQuotes) {
+        if (current.trim()) {
+          parts.push(current.trim());
+        }
+        current = '';
+      } else {
+        current += char;
+      }
+    }
+
+    if (current.trim()) {
+      parts.push(current.trim());
+    }
+
+    for (const part of parts) {
+      if (part.includes('=')) {
+        const [key, ...valueParts] = part.split('=');
+        const value = valueParts.join('=').trim();
+
+        if (key && value) {
+          const cleanKey = key.trim();
+          const cleanValue = decodeHexString(value);
+          const readableKey = formatCertificateFieldName(cleanKey);
+
+          items.push({
+            key: readableKey,
+            value: cleanValue
+          });
+        }
+      }
+    }
+  } catch (error) {
+    console.error('Ошибка парсинга Subject:', error);
+  }
+
+  return items;
+}
+
+function decodeHexString(hexStr: string): string {
+  try {
+    if (!hexStr) return '';
+
+    const cleaned = hexStr.replace(/\\x([0-9A-Fa-f]{2})/g, (match, hex) => {
+      return String.fromCharCode(parseInt(hex, 16));
+    });
+
+    if (hexStr.includes('\\x')) {
+      try {
+        const bytes = new Uint8Array([...cleaned].map(char => char.charCodeAt(0)));
+        return new TextDecoder('utf-8').decode(bytes);
+      } catch (utfError) {
+        return cleaned;
+      }
+    }
+
+    return cleaned;
+  } catch (error) {
+    return hexStr || '';
+  }
+}
+
+function formatCertificateFieldName(fieldName: string): string {
+  const certificateFieldMap: { [key: string]: string } = {
+    'CN': 'Повне ім\'я / Назва організації',
+    'O': 'Організація',
+    'OU': 'Підрозділ організації',
+    'L': 'Місто / Населений пункт',
+    'ST': 'Область / Регіон',
+    'C': 'Країна',
+    'SN': 'Прізвище',
+    'GN': 'Ім\'я та по батькові',
+    'givenName': 'Ім\'я',
+    'surname': 'Прізвище',
+    'title': 'Посада / Звання',
+    'serialNumber': 'ІПН / Серійний номер',
+    'UID': 'Унікальний ідентифікатор',
+    'organizationIdentifier': 'Ідентифікатор організації',
+    'street': 'Адреса (вулиця, будинок)',
+    'postalCode': 'Поштовий індекс',
+    'businessCategory': 'Категорія діяльності',
+    'emailAddress': 'Електронна пошта',
+    'telephoneNumber': 'Номер телефону',
+    'description': 'Опис'
+  };
+
+  if (certificateFieldMap[fieldName]) {
+    return certificateFieldMap[fieldName];
+  }
+
+  for (const [key, value] of Object.entries(certificateFieldMap)) {
+    if (fieldName.includes(key)) {
+      return value;
+    }
+  }
+
+  return fieldName;
+}

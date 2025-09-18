@@ -58,6 +58,7 @@ const form = useForm({
   validationSchema: formSchema,
 });
 
+const { toast } = useToast();
 const route = useRoute();
 
 const onSubmit = form.handleSubmit(async (values) => {
@@ -76,10 +77,14 @@ const onSubmit = form.handleSubmit(async (values) => {
         router.push({ path: '/contacts' });
       })
       .catch((error) => {
+        toast({
+          title: "Ошибка",
+          description: error.message,
+          variant: "destructive",
+        });
         console.error('Error creating counterparty:', error);
       });
   } catch (error: any) {
-    const { toast } = useToast();
     toast({
       title: "Ошибка",
       description: error.message,

@@ -32,7 +32,6 @@
             <ComboboxGroup>
               <ComboboxItem v-for="(counterparty, index) in counterparties" :key="index" :value="counterparty">
                 {{ counterparty.label }}
-
                 <ComboboxItemIndicator>
                   <Check :class="cn('ml-auto h-4 w-4')" />
                 </ComboboxItemIndicator>
@@ -97,7 +96,7 @@ const applyFilters = () => {
       (!dateRange.start || new Date(doc.createdAt) >= new Date(dateRange.start.toString())) &&
       (!dateRange.end || new Date(doc.createdAt) <= new Date(dateRange.end.toString()));
 
-    const isCounterpartyMatch = !counterparty || doc.counterpartyId === counterparty;
+    const isCounterpartyMatch = !counterparty || doc.counterpartyId === counterparty.value;
 
     return isWithinDateRange && isCounterpartyMatch;
   });

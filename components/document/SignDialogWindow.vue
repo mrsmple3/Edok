@@ -231,54 +231,160 @@ function parseCertificateInfo(certInfo: any) {
       const subject = subjectMatch[1];
       console.log('Subject владельца:', subject);
 
-      // === ФИО ===
+      // === ФИО/Название организации ===
       const cnMatch = subject.match(/CN=([^,\n]+)/);
       if (cnMatch) {
         result.fullName = decodeHexString(cnMatch[1]).trim();
+        // Если это организация, то название организации тоже берем из CN
+        result.organizationName = result.fullName;
       }
 
-      // === ИНН ===
-      const innMatch = subject.match(/serialNumber=TINUA-(\d+)/);
-      if (innMatch) {
-        result.inn = innMatch[1];
-      }
-      // fallback — UID=
-      const uidMatch = subject.match(/UID=(\d+)/);
-      if (!result.inn && uidMatch) {
-        result.inn = uidMatch[1];
+      // === ИНН - ищем в разных местах ===
+      // 1. В serialNumber Subject'а (как в вашем случае)
+      const subjectSerialMatch = subject.match(/serialNumber=(\d+)/);
+      if (subjectSerialMatch) {
+        result.inn = subjectSerialMatch[1];
+        console.log('INN найден в Subject serialNumber:', result.inn);
       }
 
-      // === Должность ===
+      // 2. В TINUA формате (fallback)
+      if (!result.inn) {
+        const innMatch = subject.match(/serialNumber=TINUA-(\d+)/);
+        if (innMatch) {
+          result.inn = innMatch[1];
+          console.log('INN найден в TINUA формате:', result.inn);
+        }
+      }
+
+      // 3. В UID (fallback)
+      if (!result.inn) {
+        const uidMatch = subject.match(/UID=(\d+)/);
+        if (uidMatch) {
+          result.inn = uidMatch[1];
+          console.log('INN найден в UID:', result.inn);
+        }
+      }
+
+      // === Должность/Регион ===
+      // Сначала ищем должность в title
       const titleMatch = subject.match(/title=([^,\n]+)/i) || subject.match(/T=([^,\n]+)/i);
-      const ouMatch = subject.match(/OU=([^,\n]+)/i);
-      const oMatch = subject.match(/O=([^,\n]+)/i);
-
       if (titleMatch) {
-        result.position = decodeHexString(titleMatch[1]).trim();
-      } else if (ouMatch) {
-        const ouVal = decodeHexString(ouMatch[1]).trim();
-        if (ouVal && ouVal !== "ФІЗИЧНА ОСОБА") {
-          result.position = ouVal;
+        const titleValue = decodeHexString(titleMatch[1]).trim();
+        result.position = titleValue;
+        console.log('Позиция найдена в title:', titleValue);
+      }
+      // Если нет title, берем ST (State/область)
+      else {
+        const stMatch = subject.match(/ST=([^,\n]+)/i);
+        if (stMatch) {
+          result.position = decodeHexString(stMatch[1]).trim();
+          console.log('Позиция взята из ST (область):', result.position);
         }
-      } else if (oMatch) {
-        const oVal = decodeHexString(oMatch[1]).trim();
-        if (oVal && oVal !== "ФІЗИЧНА ОСОБА") {
-          // Если в O явно должность
-          result.position = oVal;
+      }
+
+      // Fallback на OU
+      if (!result.position || result.position === 'не видан') {
+        const ouMatch = subject.match(/OU=([^,\n]+)/i);
+        if (ouMatch) {
+          const ouVal = decodeHexString(ouMatch[1]).trim();
+          if (ouVal && ouVal !== "ФІЗИЧНА ОСОБА") {
+            result.position = ouVal;
+          }
         }
+      }
+
+      // === ПРОВЕРКА НА ДИРЕКТОРА ===
+      // Проверяем весь Subject на наличие вариаций слова "директор"
+      const directorPatterns = [
+        /директор/i,
+        /director/i,
+        /директ[оуар]/i,
+        /дирек[тц]/i,
+        /керівник/i,
+        /генеральний\s+директор/i,
+        /ген\.\s*дир/i,
+        /виконавчий\s+директор/i,
+        /управляючий/i
+      ];
+
+      const isDirector = directorPatterns.some(pattern => {
+        const match = subject.match(pattern);
+        if (match) {
+          console.log(`Найдено совпадение с паттерном директора: "${match[0]}" в Subject`);
+          return true;
+        }
+        return false;
+      });
+
+      // Дополнительно проверяем в CN и title
+      const cnValue = result.fullName.toLowerCase();
+      const titleValue = (titleMatch ? decodeHexString(titleMatch[1]).trim() : '').toLowerCase();
+
+      const isDirectorInFields = directorPatterns.some(pattern => {
+        if (pattern.test(cnValue) || pattern.test(titleValue)) {
+          console.log(`Найдено совпадение с паттерном директора в полях CN или title`);
+          return true;
+        }
+        return false;
+      });
+
+      if (isDirector || isDirectorInFields) {
+        result.position = 'Директор';
+        console.log('Определена должность: Директор');
       }
 
       // === Организация ===
-      if (oMatch) {
-        const oVal = decodeHexString(oMatch[1]).trim();
-        if (oVal && oVal !== "ФІЗИЧНА ОСОБА") {
-          result.organizationName = oVal;
+      // Если CN уже содержит название организации, используем его
+      if (result.fullName && (result.fullName.includes('ТОВ') || result.fullName.includes('ООО') || result.fullName.includes('ПП') || result.fullName.includes('ФОП'))) {
+        result.organizationName = result.fullName;
+      } else {
+        // Иначе ищем в O
+        const oMatch = subject.match(/O=([^,\n]+)/i);
+        if (oMatch) {
+          const oVal = decodeHexString(oMatch[1]).trim();
+          if (oVal && oVal !== "ФІЗИЧНА ОСОБА") {
+            result.organizationName = oVal;
+          }
         }
+      }
+    }
+
+    // === Дополнительно проверяем Issuer для INN ===
+    if (!result.inn) {
+      const issuerMatch = certInfo.match(/Issuer: (.+?)(?:\n|$)/s);
+      if (issuerMatch) {
+        const issuer = issuerMatch[1];
+        const issuerSerialMatch = issuer.match(/serialNumber=UA-(\d+)/);
+        if (issuerSerialMatch) {
+          // Это INN выдавшей организации, не владельца
+          console.log('Найден INN выдавшей организации, но не владельца');
+        }
+      }
+    }
+
+    // === Проверяем X509v3 Subject Directory Attributes ===
+    if (!result.inn) {
+      const subjectDirMatch = certInfo.match(/X509v3 Subject Directory Attributes:\s*[\s\S]*?(\d{8,12})/);
+      if (subjectDirMatch) {
+        result.inn = subjectDirMatch[1];
+        console.log('INN найден в Subject Directory Attributes:', result.inn);
       }
     }
 
   } catch (error) {
     console.error('Ошибка парсинга сертификата:', error);
+  }
+
+  // Проверяем что данные корректны
+  if (!result.fullName) {
+    result.fullName = 'Невідомо';
+  }
+  if (!result.organizationName) {
+    result.organizationName = result.fullName;
+  }
+  if (!result.inn) {
+    console.warn('INN не найден в сертификате!');
+    result.inn = 'Невідомо';
   }
 
   console.log('Итоговый результат владельца:', result);

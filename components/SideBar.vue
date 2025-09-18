@@ -20,15 +20,27 @@
       </button>
       <ProfileWindow />
     </div>
-    <div class="w-full flex-col-start gap-2">
+    <div class="w-full flex-col-start gap-2 flex-grow">
       <NuxtLink v-for="link in sidebarLinks" :to="link.route" class="sidebar__link pl-[50px]"
         exact-active-class="active" @click="chatState = false">
         <div
-          class="sidebar__link__item relative min-w-[250px] flex-center !justify-start  gap-[20px] text-black text-lg font-medium font-['Barlow'] py-3 px-[50px] rounded-lg">
+          class="sidebar__link__item relative min-w-[250px] flex-center !justify-start  gap-[20px] text-black text-lg font-medium font-['Barlow'] py-3 px-[30px] rounded-lg">
           <img :src="link.icon" alt="sms" class="w-[30px] h-[30px]">
           <span>{{ link.title }}</span>
         </div>
       </NuxtLink>
+    </div>
+
+    <!-- Кнопка выхода из аккаунта -->
+    <div class="mt-auto mb-6 pl-[50px]">
+      <button @click="handleLogout"
+        class="sidebar__logout__btn relative min-w-[250px] flex-center !justify-center gap-[20px] text-red-600 text-lg font-medium font-['Barlow'] py-3 rounded-lg hover:bg-red-50 transition-colors duration-200">
+        <svg class="w-[30px] h-[30px]" fill="currentColor" viewBox="0 0 24 24">
+          <path
+            d="M17 7l-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.59L17 17l5-5zM4 5h8V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h8v-2H4V5z" />
+        </svg>
+        <span>Вийти з аккаунту</span>
+      </button>
     </div>
   </div>
 </template>
@@ -66,6 +78,31 @@ const userStore = useUserStore();
 const router = useRouter();
 const route = useRoute();
 const socket = ref<Socket>();
+
+// Функция выхода из аккаунта
+const handleLogout = async () => {
+  try {
+    // Закрываем socket соединение если есть
+    if (userStore.$state.socket) {
+      userStore.$state.socket.disconnect();
+      userStore.$state.socket = null;
+    }
+
+    // Очищаем чат состояние
+    chatState.value = false;
+
+    // Вызываем logout из store
+    await userStore.logout();
+
+    // Перенаправляем на страницу входа
+    await router.push('/login');
+
+  } catch (error) {
+    console.error('Ошибка при выходе из аккаунта:', error);
+    // В случае ошибки все равно перенаправляем на логин
+    await router.push('/login');
+  }
+};
 
 const openChat = () => {
   if (userStore.userRole === 'counterparty') {
@@ -114,7 +151,7 @@ onBeforeMount(async () => {
   watch(
     () => [userStore.isAuthInitialized, route.fullPath],
     async ([newVal, changedRoute]) => {
-      if (newVal && userStore.userRole !== 'counterparty') {
+      if (newVal && userStore.$state.user.role !== 'counterparty') {
         callOnce(() => {
           if (sidebarLinks.value.find(link => link.title === 'Контакти')) {
             return;
@@ -183,5 +220,22 @@ onBeforeMount(async () => {
       background: rgba(0, 176, 116, 0.15);
     }
   }
+}
+
+// Стили для кнопки выхода
+.sidebar__logout__btn {
+  &:hover {
+    background-color: rgba(239, 68, 68, 0.1);
+
+    span {
+      color: #dc2626;
+    }
+
+    svg {
+      color: #dc2626;
+    }
+  }
+
+  transition: all 0.2s ease-in-out;
 }
 </style>
