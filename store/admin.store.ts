@@ -205,12 +205,12 @@ export const useAdminStore = defineStore("admin", {
 					method: "POST",
 					body: { userId, documentId: id },
 				});
-				if (response.body.message === 'Удаление подтверждено. Ожидается подтверждение второго пользователя.')
+				if (response.body.message === 'Видалення підтверджено. Очікується підтвердження другого користувача.')
 					this.$patch({ documents: this.documentsGetter.map((d) => (d.id === id ? { ...d, deleteSignCount: d.deleteSignCount + 1 } : d)) });
 				else
 					this.$patch({ documents: this.documentsGetter.filter((d) => d.id !== id) });
 
-				return response.body.message;
+				return response.body.error || response.body.message;
 			} catch (error) {
 				handleApiError(error);
 			}

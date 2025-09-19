@@ -1,6 +1,6 @@
 <template>
 	<form class="flex flex-col items-center" @submit.prevent="onSubmitRegister">
-		<div class="w-full flex flex-col items-stretch gap-[13px] mb-[40px]">
+		<div class="w-full flex flex-col items-stretch form-fields-container">
 			<FormField v-slot="{ componentField }" name="orgName">
 				<FormItem>
 					<FormControl>
@@ -162,4 +162,9 @@ const onSubmitRegister = form.handleSubmit(async (values) => {
 });
 </script>
 
-<style scoped></style>
+<style scoped lang="scss">
+.form-fields-container {
+	gap: size(13px);
+	margin-bottom: size(40px);
+}
+</style>

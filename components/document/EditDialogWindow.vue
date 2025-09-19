@@ -10,7 +10,7 @@
 				<FormField name="title" v-slot="{ componentField }">
 					<FormItem class="grid grid-cols-4 items-center gap-4">
 						<FormControl>
-							<Label for="title" class="text-[12px] text-start"> Назва </Label>
+							<Label for="title" class="form-label text-start"> Назва </Label>
 							<div class="col-span-3 flex flex-col gap-2">
 								<Input id="title" type="text" v-bind="componentField" />
 								<FormMessage />
@@ -21,7 +21,7 @@
 				<FormField name="type" v-slot="{ componentField }">
 					<FormItem class="grid grid-cols-4 items-center gap-4">
 						<FormControl>
-							<Label for="type" class="text-[12px] text-start"> Тип </Label>
+							<Label for="type" class="form-label text-start"> Тип </Label>
 							<div class="col-span-3 flex flex-col gap-2">
 								<Input id="type" type="text" v-bind="componentField" />
 								<FormMessage />
@@ -32,7 +32,7 @@
 				<FormField name="status" v-slot="{ componentField }">
 					<FormItem class="grid grid-cols-4 items-center gap-4">
 						<FormControl>
-							<Label for="status" class="text-[12px] text-start"> Стан </Label>
+							<Label for="status" class="form-label text-start"> Стан </Label>
 							<div class="col-span-3 flex flex-col gap-2">
 								<Input id="status" type="text" v-bind="componentField" />
 								<FormMessage />
@@ -43,7 +43,7 @@
 				<FormField name="content" v-slot="{ componentField }">
 					<FormItem class="grid grid-cols-4 items-center gap-4">
 						<FormControl>
-							<Label for="content" class="text-[12px] text-start"> Контент </Label>
+							<Label for="content" class="form-label text-start"> Контент </Label>
 							<div class="col-span-3 flex flex-col gap-2">
 								<Input id="content" type="text" v-bind="componentField" />
 								<FormMessage />
@@ -131,4 +131,8 @@ watch(isDialogOpen, async (newVal) => {
 });
 </script>
 
-<style scoped></style>
+<style scoped lang="scss">
+.form-label {
+	font-size: size(12px);
+}
+</style>

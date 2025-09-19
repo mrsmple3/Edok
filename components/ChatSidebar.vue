@@ -1,40 +1,40 @@
 <template>
   <div class="chat">
-    <button class="text-[#a8a8a8] text-xs font-normal font-['Barlow'] mb-4">Скрыть повідомлення</button>
-    <h3 class="text-[#464154] text-[32px] font-semibold font-['Barlow'] mb-[30px]">Повідомлення</h3>
+    <button class="chat-hide-btn text-[#a8a8a8] text-xs font-normal font-['Barlow']">Скрыть повідомлення</button>
+    <h3 class="chat-title text-[#464154] font-semibold font-['Barlow']">Повідомлення</h3>
     <Tabs :model-value="tabActive" @update:model-value="updateTab" class="w-full h-full" default-value="all">
-      <TabsList class=" w-full flex justify-start p-0 bg-transparent mb-[34px]">
+      <TabsList class="w-full flex justify-start p-0 bg-transparent chat-tabs-list">
         <TabsTrigger
-          class="border-b-2  border-[#2d9cdb]/20 data-[state=active]:!bg-transparent data-[state=active]:!border-b-[#2d9cdb] !text-[#464154] data-[state=active]:!text-[#2d9cdb] !text-[15px] !font-normal pb-[6px] px-[10px]"
+          class="chat-tab border-b-2 border-[#2d9cdb]/20 data-[state=active]:!bg-transparent data-[state=active]:!border-b-[#2d9cdb] !text-[#464154] data-[state=active]:!text-[#2d9cdb] !font-normal"
           value="all">
           Всі
         </TabsTrigger>
         <TabsTrigger
-          class="border-b-2 border-[#2d9cdb]/20 data-[state=active]:!border-b-[#2d9cdb] !text-[#464154] data-[state=active]:!text-[#2d9cdb] !text-[15px] !font-normal pb-[6px] px-[10px]"
+          class="chat-tab border-b-2 border-[#2d9cdb]/20 data-[state=active]:!border-b-[#2d9cdb] !text-[#464154] data-[state=active]:!text-[#2d9cdb] !font-normal"
           value="leads">
           Обговорення
         </TabsTrigger>
         <TabsTrigger
-          class="border-b-2 border-[#2d9cdb]/20 data-[state=active]:!border-b-[#2d9cdb] !text-[#464154] data-[state=active]:!text-[#2d9cdb] !text-[15px] !font-normal pb-[6px] px-[10px]"
+          class="chat-tab border-b-2 border-[#2d9cdb]/20 data-[state=active]:!border-b-[#2d9cdb] !text-[#464154] data-[state=active]:!text-[#2d9cdb] !font-normal"
           value="docs">
           Докумен
         </TabsTrigger>
         <TabsTrigger
-          class="border-b-2 border-[#2d9cdb]/20 data-[state=active]:!border-b-[#2d9cdb] !text-[#464154] data-[state=active]:!text-[#2d9cdb] !text-[15px] !font-normal pb-[6px] px-[10px]"
+          class="chat-tab border-b-2 border-[#2d9cdb]/20 data-[state=active]:!border-b-[#2d9cdb] !text-[#464154] data-[state=active]:!text-[#2d9cdb] !font-normal"
           value="system">
           Cистема
         </TabsTrigger>
       </TabsList>
-      <TabsContent class="h-[760px]" value="all">
+      <TabsContent class="chat-content" value="all">
         <ChatBlock :tabActive="tabActive" />
       </TabsContent>
-      <TabsContent class="h-[760px]" value="leads">
+      <TabsContent class="chat-content" value="leads">
         <ChatBlock :tabActive="tabActive" />
       </TabsContent>
-      <TabsContent class="h-[760px]" value="docs">
+      <TabsContent class="chat-content" value="docs">
         <ChatBlock :tabActive="tabActive" />
       </TabsContent>
-      <TabsContent class="h-[760px]" value="system">
+      <TabsContent class="chat-content" value="system">
         <ChatBlock :tabActive="tabActive" />
       </TabsContent>
     </Tabs>
@@ -89,5 +89,34 @@ const updateTab = (newValue: string | number) => {
   @include flex-col-start();
   padding: size(30px) size(35px);
   background: white;
+}
+
+// Кнопка скрытия чата
+.chat-hide-btn {
+  margin-bottom: size(16px); // mb-4 = 16px
+}
+
+// Заголовок чата
+.chat-title {
+  font-size: size(32px);
+  margin-bottom: size(30px);
+}
+
+// Список табов
+.chat-tabs-list {
+  margin-bottom: size(34px);
+}
+
+// Отдельные табы
+.chat-tab {
+  font-size: size(15px) !important;
+  padding-bottom: size(6px) !important;
+  padding-left: size(10px) !important;
+  padding-right: size(10px) !important;
+}
+
+// Контент табов
+.chat-content {
+  height: size(760px);
 }
 </style>

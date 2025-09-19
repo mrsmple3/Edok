@@ -1,5 +1,5 @@
 <template>
-  <Badge @click="refreshData" class="w-12 h-12 bg-[#2d9cdb]/20 rounded-[15px] hover:bg-[#2d9cdb]/30">
+  <Badge @click="refreshData" class="refresh-badge bg-[#2d9cdb]/20 hover:bg-[#2d9cdb]/30">
     <img alt="filter" src="/icons/restar.svg" />
   </Badge>
 </template>
@@ -17,5 +17,10 @@ const refreshData = () => {
 }
 </script>
 
-<style scoped>
+<style scoped lang="scss">
+.refresh-badge {
+  width: size(48px); // w-12 = 48px
+  height: size(48px); // h-12 = 48px
+  border-radius: size(15px);
+}
 </style>

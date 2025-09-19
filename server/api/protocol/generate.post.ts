@@ -1,6 +1,8 @@
 import { PDFDocument, rgb } from 'pdf-lib';
 import fontkit from '@pdf-lib/fontkit';
 import { defineEventHandler, readBody, createError, setHeader, getRequestURL } from 'h3';
+import fs from 'fs';
+import path from 'path';
 
 export default defineEventHandler(async (event) => {
   try {
@@ -22,23 +24,63 @@ export default defineEventHandler(async (event) => {
     let font: any;
     let boldFont: any;
     try {
-      const fontsDir = `/var/www/agroedoc_com_usr/data/www/Edok/public/fonts`;
-      const fontPath = `${fontsDir}/DejaVuSans.ttf`;
-      const boldFontPath = `${fontsDir}/DejaVuSans-Bold.ttf`;
+      // Попробуем разные пути к шрифтам
+      const possibleFontPaths = [
+        path.resolve('./public/fonts/DejaVuSans.ttf'),
+        path.resolve('./.output/public/fonts/DejaVuSans.ttf'),
+        path.resolve('./assets/fonts/DejaVuSans.ttf'),
+        '/var/www/agroedoc_com_usr/data/www/Edok/public/fonts/DejaVuSans.ttf'
+      ];
+
+      const possibleBoldFontPaths = [
+        path.resolve('./public/fonts/DejaVuSans-Bold.ttf'),
+        path.resolve('./.output/public/fonts/DejaVuSans-Bold.ttf'),
+        path.resolve('./assets/fonts/DejaVuSans-Bold.ttf'),
+        '/var/www/agroedoc_com_usr/data/www/Edok/public/fonts/DejaVuSans-Bold.ttf'
+      ];
+
+      let fontPath = '';
+      let boldFontPath = '';
+
+      // Находим существующий путь к обычному шрифту
+      for (const testPath of possibleFontPaths) {
+        if (fs.existsSync(testPath)) {
+          fontPath = testPath;
+          break;
+        }
+      }
+
+      // Находим существующий путь к жирному шрифту
+      for (const testPath of possibleBoldFontPaths) {
+        if (fs.existsSync(testPath)) {
+          boldFontPath = testPath;
+          break;
+        }
+      }
+
+      if (!fontPath) {
+        console.error('Шрифт не найден по путям:', possibleFontPaths);
+        throw new Error('Font file not found');
+      }
 
       console.log('Загрузка шрифта из:', fontPath);
 
       // Читаем основной шрифт
-      const fontBytes = await Bun.file(fontPath).arrayBuffer();
-      font = await pdfDoc.embedFont(new Uint8Array(fontBytes));
+      const fontBytes = fs.readFileSync(fontPath);
+      font = await pdfDoc.embedFont(fontBytes);
       console.log('Основной шрифт загружен успешно');
 
       // Пытаемся загрузить жирный шрифт
-      try {
-        const boldFontBytes = await Bun.file(boldFontPath).arrayBuffer();
-        boldFont = await pdfDoc.embedFont(new Uint8Array(boldFontBytes));
-        console.log('Жирный шрифт загружен успешно');
-      } catch (boldError) {
+      if (boldFontPath) {
+        try {
+          const boldFontBytes = fs.readFileSync(boldFontPath);
+          boldFont = await pdfDoc.embedFont(boldFontBytes);
+          console.log('Жирный шрифт загружен успешно');
+        } catch (boldError) {
+          console.log('Жирный шрифт не найден, используем обычный');
+          boldFont = font;
+        }
+      } else {
         console.log('Жирный шрифт не найден, используем обычный');
         boldFont = font;
       }
@@ -292,56 +334,28 @@ function parseSignatureInfo(info: string) {
   return sections.filter(section => section.items.length > 0);
 }
 
-function parseSubjectData(data: string): Array<{ key: string; value: string }> {
-  const items: Array<{ key: string; value: string }> = [];
+function parseSubjectData(subject: string) {
+  const data: { [key: string]: string } = {};
 
-  try {
-    const cleanData = data.replace(/^Subject:\s*/, '');
-    const parts = [];
-    let current = '';
-    let inQuotes = false;
-
-    for (let i = 0; i < cleanData.length; i++) {
-      const char = cleanData[i];
-      if (char === '"') {
-        inQuotes = !inQuotes;
-        current += char;
-      } else if (char === ',' && !inQuotes) {
-        if (current.trim()) {
-          parts.push(current.trim());
-        }
-        current = '';
-      } else {
-        current += char;
-      }
-    }
-
-    if (current.trim()) {
-      parts.push(current.trim());
-    }
-
-    for (const part of parts) {
-      if (part.includes('=')) {
-        const [key, ...valueParts] = part.split('=');
-        const value = valueParts.join('=').trim();
-
-        if (key && value) {
-          const cleanKey = key.trim();
-          const cleanValue = decodeHexString(value);
-          const readableKey = formatCertificateFieldName(cleanKey);
-
-          items.push({
-            key: readableKey,
-            value: cleanValue
-          });
-        }
-      }
-    }
-  } catch (error) {
-    console.error('Ошибка парсинга Subject:', error);
+  // Сначала ищем и извлекаем serialNumber
+  const serialNumberMatch = subject.match(/\/serialNumber=([^,]+)/);
+  if (serialNumberMatch) {
+    data['serialNumber'] = serialNumberMatch[1].trim();
+    // Удаляем serialNumber из строки для дальнейшего парсинга
+    subject = subject.replace(/\/serialNumber=[^,]+/, '');
   }
 
-  return items;
+  const pairs = subject.split(',').map(pair => pair.trim());
+
+  pairs.forEach(pair => {
+    const [key, value] = pair.split('=', 2);
+    if (key && value) {
+      data[key.trim()] = value.trim();
+    }
+  });
+
+  // Конвертируем объект в массив объектов с правильной структурой
+  return Object.entries(data).map(([key, value]) => ({ key, value }));
 }
 
 function decodeHexString(hexStr: string): string {

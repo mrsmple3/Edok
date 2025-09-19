@@ -1,6 +1,6 @@
 <template>
 	<form class="flex flex-col items-center" @submit.prevent="onSubmitLogin">
-		<div class="w-full flex flex-col items-stretch gap-[13px] mb-[40px]">
+		<div class="w-full flex flex-col items-stretch login-form-fields">
 			<FormField v-slot="{ componentField }" name="email">
 				<FormItem>
 					<FormControl>
@@ -107,4 +107,9 @@ const onSubmitLogin = form.handleSubmit(async (values) => {
 });
 </script>
 
-<style scoped></style>
+<style scoped lang="scss">
+.login-form-fields {
+	gap: size(13px);
+	margin-bottom: size(40px);
+}
+</style>

@@ -3,13 +3,13 @@
     <DialogTrigger>
       Скачати
     </DialogTrigger>
-    <DialogContent class="!max-w-[80vw] !w-[80vw] h-[75vh]">
+    <DialogContent class="dialog-content">
       <DialogHeader>
         <DialogTitle>Документы </DialogTitle>
         <DialogDescription>
           Файли для скачування
         </DialogDescription>
-        <div class="w-full flex flex-col gap-2 mt-4">
+        <div class="download-links-container">
           <a v-if="props.invoice.filePath" :href="props.invoice.filePath" class="underline text-blue-600" download>
             📄 Завантажити документ
           </a>
@@ -32,3 +32,19 @@ const props = defineProps({
 });
 const isDialogOpen = ref(false);
 </script>
+
+<style scoped lang="scss">
+.dialog-content {
+  max-width: 80vw !important;
+  width: 80vw !important;
+  height: 75vh;
+}
+
+.download-links-container {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: size(8px);
+  margin-top: size(16px);
+}
+</style>

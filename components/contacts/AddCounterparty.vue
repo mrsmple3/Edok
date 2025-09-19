@@ -1,6 +1,6 @@
 <template>
   <form class="flex flex-col items-center" @submit="onSubmit">
-    <div class="w-full flex flex-col items-stretch gap-[13px] mb-[57px]">
+    <div class="form-fields-container">
       <FormField v-slot="{ componentField }" name="company">
         <FormItem>
           <FormControl>
@@ -35,7 +35,7 @@
         </FormItem>
       </FormField>
     </div>
-    <div class="flex-center gap-[30px]">
+    <div class="form-buttons-container">
       <Button class="form__submit-btn outline" @click="router.push({ path: '/contacts' })">
         Скасувати
       </Button>
@@ -99,6 +99,22 @@ const onSubmit = form.handleSubmit(async (values) => {
 </script>
 
 <style scoped lang="scss">
+.form-fields-container {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: size(13px);
+  margin-bottom: size(50px);
+}
+
+.form-buttons-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: size(30px);
+}
+
 .form__container {
   width: size(490px);
 }

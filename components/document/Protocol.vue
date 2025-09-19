@@ -315,6 +315,12 @@ async function downloadAllProtocolsPDF() {
   try {
     isGeneratingAllPDF.value = true;
 
+    // Проверяем, есть ли подписи
+    if (!props.invoice.Signature || props.invoice.Signature.length === 0) {
+      alert('Немає підписів для створення протоколів');
+      return;
+    }
+
     // Отправляем запрос на сервер для генерации PDF со всеми протоколами
     const response = await fetch('/api/protocol/generate-all', {
       method: 'POST',
@@ -322,14 +328,13 @@ async function downloadAllProtocolsPDF() {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        signatures: sortedSignatures.value,
-        documentTitle: props.invoice.title,
-        documentId: props.invoice.id
+        signatures: props.invoice.Signature,
+        documentTitle: props.invoice.title
       })
     });
 
     if (!response.ok) {
-      throw new Error('Помилка створення PDF');
+      throw new Error('Помилка створення PDF з усіма протоколами');
     }
 
     // Получаем blob из ответа
@@ -340,7 +345,7 @@ async function downloadAllProtocolsPDF() {
     const link = document.createElement('a');
     link.href = url;
 
-    const fileName = `all_protocols_${props.invoice.title || 'document'}_${formatDate(new Date().toISOString())}.pdf`;
+    const fileName = `protocols_all_${formatDate(new Date().toISOString())}.pdf`;
     link.download = fileName;
 
     document.body.appendChild(link);
@@ -349,7 +354,7 @@ async function downloadAllProtocolsPDF() {
     window.URL.revokeObjectURL(url);
 
   } catch (error) {
-    console.error('Ошибка генерации PDF:', error);
+    console.error('Ошибка генерации PDF со всеми протоколами:', error);
     alert('Помилка при створенні PDF файлу з усіма протоколами');
   } finally {
     isGeneratingAllPDF.value = false;
@@ -411,19 +416,38 @@ function getStructuredInfo(info: string) {
       for (const part of parts) {
         if (part.includes('=')) {
           const [key, ...valueParts] = part.split('=');
-          const value = valueParts.join('=').trim();
+          let value = valueParts.join('=').trim();
 
           if (key && value) {
             const cleanKey = key.trim();
-            const cleanValue = decodeHexString(value);
+            let cleanValue = decodeHexString(value);
 
-            // Форматируем ключ в читабельный вид, используя includes для поиска
-            const readableKey = formatCertificateFieldName(cleanKey);
+            // Проверяем, есть ли в значении serialNumber и разделяем их
+            if (cleanValue.includes('/serialNumber=')) {
+              const [mainValue, serialPart] = cleanValue.split('/serialNumber=');
 
-            items.push({
-              key: readableKey,
-              value: cleanValue
-            });
+              // Добавляем основное значение
+              const readableKey = formatCertificateFieldName(cleanKey);
+              items.push({
+                key: readableKey,
+                value: mainValue.trim()
+              });
+
+              // Добавляем serialNumber отдельно
+              if (serialPart) {
+                items.push({
+                  key: 'ІПН / Серійний номер',
+                  value: serialPart.trim()
+                });
+              }
+            } else {
+              // Обычная обработка без serialNumber
+              const readableKey = formatCertificateFieldName(cleanKey);
+              items.push({
+                key: readableKey,
+                value: cleanValue
+              });
+            }
           }
         }
       }

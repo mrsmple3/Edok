@@ -1,10 +1,9 @@
 <template>
 	<Table class="w-full">
-		<TableHeader class="w-full h-[80px]">
+		<TableHeader class="w-full table-header">
 			<TableRow class="border-none">
 				<TableHead class="t-head">
-					<Checkbox :checked="isAllActive" class="bg-[#FFFFFF] border-[#DBDBDB]"
-						@update:checked="toggleAllCheckboxes" />
+					<Checkbox :checked="isAllActive" class="checkbox-style" @update:checked="toggleAllCheckboxes" />
 				</TableHead>
 				<TableHead class="t-head">Название</TableHead>
 				<TableHead class="t-head">Код</TableHead>
@@ -17,12 +16,11 @@
 		<TableBody class="w-full">
 			<TableRow v-for="(invoice, index) in tableData" :key="index" :class="{ 'opacity-50': !invoice.isActive }"
 				class="relative hover:bg-[#2d9cdb]/20">
-				<TableCell class="px-2 w-5">
-					<Checkbox :checked="checkBoxUsers[index]?.id !== null"
-						class="bg-[#FFFFFF] border-[#DBDBDB] absolute top-1/2 -translate-y-1/2 z-[10]"
+				<TableCell class="table-cell-checkbox">
+					<Checkbox :checked="checkBoxUsers[index]?.id !== null" class="checkbox-style table-checkbox"
 						@update:checked="updateCheckbox(index, invoice.id)" />
 				</TableCell>
-				<TableCell class="w-[300px] t-cell text-[17px]">{{ invoice.organization_name || invoice.name }}</TableCell>
+				<TableCell class="table-cell-name t-cell">{{ invoice.organization_name || invoice.name }}</TableCell>
 				<TableCell class="t-cell">{{ invoice.id }}</TableCell>
 				<TableCell class="t-cell">{{ invoice.role }}</TableCell>
 				<TableCell class="t-cell">{{ invoice.email ? invoice.email : "Не задано" }}</TableCell>
@@ -145,4 +143,36 @@ defineExpose({
 });
 </script>
 
-<style lang="scss" scoped></style>
+<style lang="scss" scoped>
+// Заголовок таблицы
+.table-header {
+	height: size(80px);
+}
+
+// Чекбоксы
+.checkbox-style {
+	background: #FFFFFF;
+	border-color: #DBDBDB;
+}
+
+// Ячейка с чекбоксом
+.table-cell-checkbox {
+	padding-left: size(8px); // px-2 = 8px
+	padding-right: size(8px); // px-2 = 8px
+	width: size(20px); // w-5 = 20px
+}
+
+// Чекбокс в таблице
+.table-checkbox {
+	position: absolute;
+	top: 50%;
+	transform: translateY(-50%);
+	z-index: 10;
+}
+
+// Ячейка с названием
+.table-cell-name {
+	width: size(300px);
+	font-size: size(17px);
+}
+</style>

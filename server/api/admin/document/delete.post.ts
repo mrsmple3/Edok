@@ -15,7 +15,30 @@ export default defineEventHandler(async (event) => {
             };
         }
 
-        // Проверяем, инициировал ли пользователь уже удаление
+        const user = await prisma.user.findUnique({
+            where: { id: userId },
+        });
+
+        if (!user) {
+            event.res.statusCode = 404;
+            return {
+                code: 404,
+                body: { error: "Користувача не знайдено" },
+            };
+        }
+
+        // Если пользователь админ или бухгалтер - удаляем документ сразу
+        if (user.role === 'admin' || user.role === 'boogalter') {
+            await deleteDocumentById(event, documentId);
+            return {
+                code: 200,
+                body: {
+                    message: "Документ успішно видалено адміністратором/бухгалтером"
+                },
+            };
+        }
+
+        // Для обычных пользователей - проверяем, инициировал ли пользователь уже удаление
         const existingSign = await prisma.documentDeleteSign.findUnique({
             where: {
                 documentId_userId: {
@@ -43,7 +66,7 @@ export default defineEventHandler(async (event) => {
             },
         });
 
-        // Увеличиваем счетчик удаления
+        // Увеличиваем счетчик удаления для обычных пользователей
         const deleteSignCount = document.deleteSignCount + 1;
 
         // Обновляем документ
@@ -51,7 +74,13 @@ export default defineEventHandler(async (event) => {
 
         // Если счетчик удаления достиг 2, удаляем документ
         if (deleteSignCount === 2) {
-            return await deleteDocumentById(event, documentId);
+            await deleteDocumentById(event, documentId);
+            return {
+                code: 200,
+                body: {
+                    message: "Документ успішно видалено"
+                },
+            }
         }
 
         return {

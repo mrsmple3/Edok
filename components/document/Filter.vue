@@ -1,7 +1,7 @@
 <template>
   <Dialog>
     <DialogTrigger>
-      <Badge class="w-12 h-12 bg-[#2d9cdb]/20 rounded-[15px] hover:bg-[#2d9cdb]/30">
+      <Badge class="filter-badge bg-[#2d9cdb]/20 hover:bg-[#2d9cdb]/30">
         <img alt="фільтр" src="/icons/filter.svg" />
       </Badge>
     </DialogTrigger>
@@ -19,7 +19,7 @@
         <Combobox v-model="filters.counterparty" by="label">
           <ComboboxAnchor>
             <div class="relative w-full items-center">
-              <ComboboxInput class="pl-9" :display-value="(val) => val?.label ?? ''"
+              <ComboboxInput class="combobox-input" :display-value="(val) => val?.label ?? ''"
                 placeholder="Введіть організацію контрагента..." />
             </div>
           </ComboboxAnchor>
@@ -33,7 +33,7 @@
               <ComboboxItem v-for="(counterparty, index) in counterparties" :key="index" :value="counterparty">
                 {{ counterparty.label }}
                 <ComboboxItemIndicator>
-                  <Check :class="cn('ml-auto h-4 w-4')" />
+                  <Check :class="cn('check-icon ml-auto')" />
                 </ComboboxItemIndicator>
               </ComboboxItem>
             </ComboboxGroup>
@@ -42,7 +42,7 @@
       </DialogDescription>
       <DialogFooter>
         <Button variant="outline" @click="resetFilters" class="flex items-center gap-2">
-          <img alt="скинути" src="/icons/restar.svg" class="w-5 h-5" />
+          <img alt="скинути" src="/icons/restar.svg" class="reset-icon" />
           Скинути
         </Button>
         <Button @click="applyFilters">Застосувати</Button>
@@ -116,4 +116,24 @@ const resetFilters = () => {
 };
 </script>
 
-<style scoped></style>
+<style scoped lang="scss">
+.filter-badge {
+  width: size(48px);
+  height: size(48px);
+  border-radius: size(15px);
+}
+
+.combobox-input {
+  padding-left: size(36px);
+}
+
+.check-icon {
+  height: size(16px);
+  width: size(16px);
+}
+
+.reset-icon {
+  width: size(20px);
+  height: size(20px);
+}
+</style>

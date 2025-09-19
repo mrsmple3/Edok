@@ -1,11 +1,11 @@
 <template>
-  <div class="sidebar__width w-full h-[100vh] flex-col-start bg-white pt-[30px] pr-[40px]">
-    <div class="flex-col-start px-[50px]">
-      <LoGo class=" mb-[5px]" />
-      <p class=" text-[#b9babd] text-xs font-normal mb-[56px]">Сервіс електронного <br> документообігу</p>
+  <div class="sidebar__width w-full h-[100vh] flex-col-start bg-white sidebar-container">
+    <div class="flex-col-start sidebar-header">
+      <LoGo class="sidebar-logo" />
+      <p class="sidebar-subtitle text-[#b9babd] text-xs font-normal">Сервіс електронного <br> документообігу</p>
     </div>
-    <div class="flex-center gap-[13px] mb-[34px] pl-[50px]">
-      <img alt="profile-pictures" class="w-14 h-14 rounded-[63px] border-4 border-[#00b074]"
+    <div class="flex-center sidebar-profile">
+      <img alt="profile-pictures" class="sidebar-profile-img rounded-[63px] border-4 border-[#00b074]"
         src="/images/placeholder-profile-img.png">
       <div class="text-[#464154] text-base font-normal font-['Barlow']">Вітаємо,
         <strong>
@@ -13,29 +13,29 @@
         </strong>
       </div>
     </div>
-    <div class="flex-stretch self-center justify-self-center gap-[20px] mb-[32px]">
-      <button class="relative w-12 h-12 bg-[#2d9cdb]/20 flex items-center justify-center rounded-[15px]"
-        @click="openChat" v-if="userStore.userRole === 'counterparty'">
-        <img alt="sms" class="w-7 h-7" src="/icons/sms-blue.svg">
+    <div class="flex-stretch self-center justify-self-center sidebar-actions">
+      <button class="sidebar-chat-btn relative bg-[#2d9cdb]/20 flex items-center justify-center" @click="openChat"
+        v-if="userStore.userRole === 'counterparty'">
+        <img alt="sms" class="sidebar-chat-icon" src="/icons/sms-blue.svg">
       </button>
       <ProfileWindow />
     </div>
     <div class="w-full flex-col-start gap-2 flex-grow">
-      <NuxtLink v-for="link in sidebarLinks" :to="link.route" class="sidebar__link pl-[50px]"
+      <NuxtLink v-for="link in sidebarLinks" :to="link.route" class="sidebar__link sidebar-link-item"
         exact-active-class="active" @click="chatState = false">
         <div
-          class="sidebar__link__item relative min-w-[250px] flex-center !justify-start  gap-[20px] text-black text-lg font-medium font-['Barlow'] py-3 px-[30px] rounded-lg">
-          <img :src="link.icon" alt="sms" class="w-[30px] h-[30px]">
+          class="sidebar__link__item relative sidebar-link-content flex-center !justify-start text-black text-lg font-medium font-['Barlow']">
+          <img :src="link.icon" alt="sms" class="sidebar-link-icon">
           <span>{{ link.title }}</span>
         </div>
       </NuxtLink>
     </div>
 
     <!-- Кнопка выхода из аккаунта -->
-    <div class="mt-auto mb-6 pl-[50px]">
+    <div class="mt-auto sidebar-logout">
       <button @click="handleLogout"
-        class="sidebar__logout__btn relative min-w-[250px] flex-center !justify-center gap-[20px] text-red-600 text-lg font-medium font-['Barlow'] py-3 rounded-lg hover:bg-red-50 transition-colors duration-200">
-        <svg class="w-[30px] h-[30px]" fill="currentColor" viewBox="0 0 24 24">
+        class="sidebar__logout__btn relative sidebar-logout-btn flex-center !justify-center text-red-600 text-lg font-medium font-['Barlow'] hover:bg-red-50 transition-colors duration-200">
+        <svg class="sidebar-logout-icon" fill="currentColor" viewBox="0 0 24 24">
           <path
             d="M17 7l-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.59L17 17l5-5zM4 5h8V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h8v-2H4V5z" />
         </svg>
@@ -172,11 +172,92 @@ onBeforeMount(async () => {
 </script>
 
 <style lang="scss" scoped>
+// Основные контейнеры
+.sidebar-container {
+  padding-top: size(30px);
+  padding-right: size(40px);
+}
+
+.sidebar-header {
+  padding-left: size(50px);
+  padding-right: size(50px);
+}
+
+.sidebar-logo {
+  margin-bottom: size(5px);
+}
+
+.sidebar-subtitle {
+  margin-bottom: size(56px);
+}
+
+.sidebar-profile {
+  gap: size(13px);
+  margin-bottom: size(34px);
+  padding-left: size(50px);
+}
+
+.sidebar-profile-img {
+  width: size(56px); // w-14 = 56px
+  height: size(56px); // h-14 = 56px
+}
+
+.sidebar-actions {
+  gap: size(20px);
+  margin-bottom: size(32px);
+}
+
+.sidebar-chat-btn {
+  width: size(48px); // w-12 = 48px
+  height: size(48px); // h-12 = 48px
+  border-radius: size(15px);
+}
+
+.sidebar-chat-icon {
+  width: size(28px); // w-7 = 28px
+  height: size(28px); // h-7 = 28px
+}
+
+// Навигационные ссылки
+.sidebar-link-item {
+  padding-left: size(50px);
+}
+
+.sidebar-link-content {
+  min-width: size(250px);
+  gap: size(20px);
+  padding: size(12px) size(30px); // py-3 px-30px
+  border-radius: size(8px); // rounded-lg
+}
+
+.sidebar-link-icon {
+  width: size(30px);
+  height: size(30px);
+}
+
+// Кнопка выхода
+.sidebar-logout {
+  margin-bottom: size(24px); // mb-6 = 24px
+  padding-left: size(50px);
+}
+
+.sidebar-logout-btn {
+  min-width: size(250px);
+  gap: size(20px);
+  padding: size(12px); // py-3
+  border-radius: size(8px); // rounded-lg
+}
+
+.sidebar-logout-icon {
+  width: size(30px);
+  height: size(30px);
+}
+
 .chip {
   position: absolute;
   top: -20%;
   right: -20%;
-  padding: 2px 5px;
+  padding: size(2px) size(5px);
   display: flex;
   align-self: center;
   justify-content: center;
@@ -188,7 +269,7 @@ onBeforeMount(async () => {
   font-size: size(12px);
   font-family: 'Barlow', sans-serif;
   font-weight: 400;
-  line-height: 18px;
+  line-height: size(18px);
   word-wrap: break-word
 }
 
@@ -201,7 +282,7 @@ onBeforeMount(async () => {
       position: absolute;
       left: 0;
       top: 0;
-      width: 4px;
+      width: size(4px);
       height: 100%;
       background: #00B074;
       border-radius: 0 10px 10px 0;

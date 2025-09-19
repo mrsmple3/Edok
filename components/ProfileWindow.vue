@@ -1,8 +1,8 @@
 <template>
   <Dialog v-model:open="isDialogOpen">
     <DialogTrigger>
-      <button class="relative w-12 h-12 bg-[#ff5b5b]/20 flex items-center justify-center rounded-[15px]">
-        <img alt="user-setting" class="w-7 h-7" src="/icons/setting-red-light.svg">
+      <button class="relative profile-trigger-btn bg-[#ff5b5b]/20 flex items-center justify-center">
+        <img alt="user-setting" class="profile-trigger-icon" src="/icons/setting-red-light.svg">
       </button>
     </DialogTrigger>
     <DialogContent>
@@ -15,7 +15,7 @@
         <FormField name="name" v-slot="{ componentField }">
           <FormItem class="grid grid-cols-4 items-center gap-4">
             <FormControl>
-              <Label for="name" class="text-[12px] text-start"> Ім'я </Label>
+              <Label for="name" class="profile-label text-start"> Ім'я </Label>
               <div class="col-span-3 flex flex-col gap-2">
                 <Input id="name" type="text" v-bind="componentField" />
                 <FormMessage />
@@ -26,7 +26,7 @@
         <FormField name="email" v-slot="{ componentField }">
           <FormItem class="grid grid-cols-4 items-center gap-4">
             <FormControl>
-              <Label for="type" class="text-[12px] text-start"> Пошта </Label>
+              <Label for="type" class="profile-label text-start"> Пошта </Label>
               <div class="col-span-3 flex flex-col gap-2">
                 <Input id="type" type="text" v-bind="componentField" />
                 <FormMessage />
@@ -37,7 +37,7 @@
         <FormField name="organization_name" v-slot="{ componentField }">
           <FormItem class="grid grid-cols-4 items-center gap-4">
             <FormControl>
-              <Label for="company" class="text-[12px] text-start"> Компания </Label>
+              <Label for="company" class="profile-label text-start"> Компания </Label>
               <div class="col-span-3 flex flex-col gap-2">
                 <Input id="company" type="text" v-bind="componentField" />
                 <FormMessage />
@@ -48,7 +48,7 @@
         <FormField name="organization_INN" v-slot="{ componentField }">
           <FormItem class="grid grid-cols-4 items-center gap-4">
             <FormControl>
-              <Label for="inn" class="text-[12px] text-start"> ИНН </Label>
+              <Label for="inn" class="profile-label text-start"> ИНН </Label>
               <div class="col-span-3 flex flex-col gap-2">
                 <Input id="inn" type="text" v-bind="componentField" />
                 <FormMessage />
@@ -59,7 +59,7 @@
         <FormField name="phone" v-slot="{ componentField }">
           <FormItem class="grid grid-cols-4 items-center gap-4">
             <FormControl>
-              <Label for="phone" class="text-[12px] text-start"> Номер телефону </Label>
+              <Label for="phone" class="profile-label text-start"> Номер телефону </Label>
               <div class="col-span-3 flex flex-col gap-2">
                 <Input id="phone" type="text" v-bind="componentField" />
                 <FormMessage />
@@ -70,7 +70,7 @@
         <FormField name="oldPassword" v-slot="{ componentField }">
           <FormItem class="grid grid-cols-4 items-center gap-4">
             <FormControl>
-              <Label for="oldPassword" class="text-[12px] text-start"> Старий пароль </Label>
+              <Label for="oldPassword" class="profile-label text-start"> Старий пароль </Label>
               <div class="col-span-3 flex flex-col gap-2">
                 <Input id="oldPassword" type="password" v-bind="componentField" />
                 <FormMessage />
@@ -81,7 +81,7 @@
         <FormField name="newPassword" v-slot="{ componentField }">
           <FormItem class="grid grid-cols-4 items-center gap-4">
             <FormControl>
-              <Label for="newPassword" class="text-[12px] text-start"> Новий пароль </Label>
+              <Label for="newPassword" class="profile-label text-start"> Новий пароль </Label>
               <div class="col-span-3 flex flex-col gap-2">
                 <Input id="newPassword" type="password" v-bind="componentField" />
                 <FormMessage />
@@ -201,4 +201,22 @@ watch(isDialogOpen, async (newVal) => {
 });
 </script>
 
-<style scoped></style>
+<style scoped lang="scss">
+// Кнопка триггера профиля
+.profile-trigger-btn {
+  width: size(48px); // w-12 = 48px
+  height: size(48px); // h-12 = 48px
+  border-radius: size(15px);
+}
+
+// Иконка в кнопке триггера
+.profile-trigger-icon {
+  width: size(28px); // w-7 = 28px
+  height: size(28px); // h-7 = 28px
+}
+
+// Лейблы полей формы
+.profile-label {
+  font-size: size(12px);
+}
+</style>

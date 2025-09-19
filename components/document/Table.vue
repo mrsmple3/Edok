@@ -8,13 +8,13 @@
     <div class="status" v-if="invoice.status === 'Підписано'">
       {{ invoice.status }}
     </div>
-    <TableCell class="w-max flex-center gap-[20px] pl-5">
-      <img alt="doc" class="w-[33px] h-[45px]" src="/icons/lead-doc.svg" />
+    <TableCell class="document-cell">
+      <img alt="doc" class="document-icon" src="/icons/lead-doc.svg" />
       <div class="w-max flex flex-col items-start">
-        <span class="text-[#494949] text-[15px] font-medium font-['Barlow']">{{ invoice.title.length > 23 ?
+        <span class="document-title">{{ invoice.title.length > 23 ?
           invoice.title.substring(0, 33) + "..." : invoice.title }}</span>
-        <span class="text-[#898989] text-[15px] font-['Barlow']">{{ invoice.type }}</span>
-        <span class="text-[#404040] text-[11px] font-['Barlow']">{{ invoice.user.name }}</span>
+        <span class="document-type">{{ invoice.type }}</span>
+        <span class="document-author">{{ invoice.user.name }}</span>
       </div>
     </TableCell>
     <TableCell class="t-cell">{{ invoice.lead ? invoice.lead.name : "Ще не створено" }}</TableCell>
@@ -22,8 +22,7 @@
     <TableCell class="t-cell">{{ new Date(invoice.createdAt).toLocaleDateString("uk-UA") }}</TableCell>
     <TableCell class="t-cell">{{ invoice.user.email || invoice.user.organization_name }}</TableCell>
     <TableCell class="t-cell">
-      <div
-        class="w-[49.59px] h-[50px] justify-self-center bg-[#2d9cdb]/20 flex items-center justify-center rounded-full text-[#2d9cdb] text-[25px] font-bold font-['Barlow']">
+      <div class="signature-badge">
         1</div>
     </TableCell>
     <DocumentDropDown :invoice="invoice"
@@ -79,15 +78,64 @@ const getInfoCounterparty = (invoice: any) => {
 </script>
 
 <style scoped lang="scss">
+/* Основные элементы таблицы */
+.document-cell {
+  width: max-content;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: size(20px);
+  padding-left: size(20px);
+}
+
+.document-icon {
+  width: size(33px);
+  height: size(45px);
+}
+
+.document-title {
+  color: #494949;
+  font-size: size(15px);
+  font-weight: 500;
+  font-family: 'Barlow', sans-serif;
+}
+
+.document-type {
+  color: #898989;
+  font-size: size(15px);
+  font-family: 'Barlow', sans-serif;
+}
+
+.document-author {
+  color: #404040;
+  font-size: size(11px);
+  font-family: 'Barlow', sans-serif;
+}
+
+.signature-badge {
+  width: size(50px);
+  height: size(50px);
+  justify-self: center;
+  background-color: rgba(45, 156, 219, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  color: #2d9cdb;
+  font-size: size(25px);
+  font-weight: bold;
+  font-family: 'Barlow', sans-serif;
+}
+
 .status {
   position: absolute;
-  padding: 1px 5px;
+  padding: size(1px) size(5px);
   background: #5a5a5a;
-  border-radius: 10px;
-  top: -3px;
+  border-radius: size(10px);
+  top: size(-3px);
   right: 0;
   z-index: 10;
-  font-size: 9px;
+  font-size: size(9px);
   color: white;
 }
 

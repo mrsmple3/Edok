@@ -3,7 +3,7 @@
     <DialogTrigger>
       Підписати документ
     </DialogTrigger>
-    <DialogContent class="!max-w-[98vw] !w-[98vw] h-[98vh]">
+    <DialogContent class="relative !max-w-[98vw] !w-[98vw] h-[98vh]">
       <DialogHeader class="h-max">
         <DialogTitle>Електронний підпис</DialogTitle>
         <DialogDescription>
@@ -16,7 +16,7 @@
         </div>
       </div>
 
-      <DialogFooter class="mt-auto">
+      <DialogFooter class="dialog-footer">
         <Button @click="signDocument" :disabled="isLoading">
           <Loader2 v-if="isLoading" class="mr-2 h-4 w-4 animate-spin" />
           {{ isLoading ? 'Підписання...' : 'Підписати' }}
@@ -462,5 +462,11 @@ async function fetchFile(filePath: string) {
   width: 100%;
   height: calc(26.6666666667 * (1vw + 1vh));
   overflow: auto;
+}
+
+.dialog-footer {
+  position: absolute;
+  bottom: 20px;
+  right: 20px
 }
 </style>

@@ -1,47 +1,86 @@
 import { PDFDocument, rgb } from 'pdf-lib';
 import fontkit from '@pdf-lib/fontkit';
 import { defineEventHandler, readBody, createError, setHeader } from 'h3';
+import fs from 'fs';
+import path from 'path';
 
 export default defineEventHandler(async (event) => {
   try {
-    // Получаем данные из тела запроса
     const body = await readBody(event);
-    const { signatures, documentTitle, documentId } = body;
-
-    console.log('Received data:', { signaturesCount: signatures?.length, documentTitle, documentId });
+    const { signatures, documentTitle } = body;
 
     if (!signatures || !Array.isArray(signatures) || signatures.length === 0) {
       throw createError({
         statusCode: 400,
-        statusMessage: 'Список подписей не может быть пустым'
+        statusMessage: 'Signatures array is required'
       });
     }
 
-    // Создаем новый PDF документ
+    // Создаем PDF документ
     const pdfDoc = await PDFDocument.create();
     pdfDoc.registerFontkit(fontkit);
 
-    // Загружаем украинский шрифт
+    // Загружаем украинский шрифт с файловой системы
     let font: any;
     let boldFont: any;
     try {
-      const fontsDir = `/var/www/agroedoc_com_usr/data/www/Edok/public/fonts`;
-      const fontPath = `${fontsDir}/DejaVuSans.ttf`;
-      const boldFontPath = `${fontsDir}/DejaVuSans-Bold.ttf`;
+      // Попробуем разные пути к шрифтам
+      const possibleFontPaths = [
+        path.resolve('./public/fonts/DejaVuSans.ttf'),
+        path.resolve('./.output/public/fonts/DejaVuSans.ttf'),
+        path.resolve('./assets/fonts/DejaVuSans.ttf'),
+        '/var/www/agroedoc_com_usr/data/www/Edok/public/fonts/DejaVuSans.ttf'
+      ];
+
+      const possibleBoldFontPaths = [
+        path.resolve('./public/fonts/DejaVuSans-Bold.ttf'),
+        path.resolve('./.output/public/fonts/DejaVuSans-Bold.ttf'),
+        path.resolve('./assets/fonts/DejaVuSans-Bold.ttf'),
+        '/var/www/agroedoc_com_usr/data/www/Edok/public/fonts/DejaVuSans-Bold.ttf'
+      ];
+
+      let fontPath = '';
+      let boldFontPath = '';
+
+      // Находим существующий путь к обычному шрифту
+      for (const testPath of possibleFontPaths) {
+        if (fs.existsSync(testPath)) {
+          fontPath = testPath;
+          break;
+        }
+      }
+
+      // Находим существующий путь к жирному шрифту
+      for (const testPath of possibleBoldFontPaths) {
+        if (fs.existsSync(testPath)) {
+          boldFontPath = testPath;
+          break;
+        }
+      }
+
+      if (!fontPath) {
+        console.error('Шрифт не найден по путям:', possibleFontPaths);
+        throw new Error('Font file not found');
+      }
 
       console.log('Загрузка шрифта из:', fontPath);
 
       // Читаем основной шрифт
-      const fontBytes = await Bun.file(fontPath).arrayBuffer();
-      font = await pdfDoc.embedFont(new Uint8Array(fontBytes));
+      const fontBytes = fs.readFileSync(fontPath);
+      font = await pdfDoc.embedFont(fontBytes);
       console.log('Основной шрифт загружен успешно');
 
       // Пытаемся загрузить жирный шрифт
-      try {
-        const boldFontBytes = await Bun.file(boldFontPath).arrayBuffer();
-        boldFont = await pdfDoc.embedFont(new Uint8Array(boldFontBytes));
-        console.log('Жирный шрифт загружен успешно');
-      } catch (boldError) {
+      if (boldFontPath) {
+        try {
+          const boldFontBytes = fs.readFileSync(boldFontPath);
+          boldFont = await pdfDoc.embedFont(boldFontBytes);
+          console.log('Жирный шрифт загружен успешно');
+        } catch (boldError) {
+          console.log('Жирный шрифт не найден, используем обычный');
+          boldFont = font;
+        }
+      } else {
         console.log('Жирный шрифт не найден, используем обычный');
         boldFont = font;
       }
@@ -64,7 +103,7 @@ export default defineEventHandler(async (event) => {
       const textFont = options.font || font;
       const fontSize = options.size || 12;
       const textColor = options.color || rgb(0, 0, 0);
-      const maxWidth = options.maxWidth || 500;
+      const maxWidth = options.maxWidth || page.getSize().width - 100;
 
       // Разбиваем текст на строки если нужно
       const words = text.split(' ');
@@ -107,40 +146,74 @@ export default defineEventHandler(async (event) => {
       return yPos - 5; // Возвращаем новую позицию Y
     }
 
-    // Создаем отдельную страницу для каждого протокола
-    for (let i = 0; i < signatures.length; i++) {
-      const signature = signatures[i];
-      const protocolNumber = i + 1;
+    // Функция для проверки нужна ли новая страница
+    function checkNewPage(currentY: number, minSpace: number = 100) {
+      return currentY < minSpace;
+    }
 
-      const page = pdfDoc.addPage();
-      const { width, height } = page.getSize();
-      const margin = 50;
-      let currentY = height - margin;
+    // Сортируем подписи по дате
+    const sortedSignatures = [...signatures].sort((a, b) => {
+      return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+    });
 
-      // Заголовок
+    // Создаем первую страницу
+    let page = pdfDoc.addPage();
+    const margin = 50;
+    let currentY = page.getSize().height - margin;
+
+    // Общий заголовок документа
+    currentY = addText(page, `ПРОТОКОЛИ ЕЛЕКТРОННИХ ПІДПИСІВ`,
+      margin, currentY, {
+      font: boldFont,
+      size: 20
+    }
+    );
+    currentY -= 10;
+
+    currentY = addText(page, `Документ: ${documentTitle || 'Без назви'}`,
+      margin, currentY, {
+      font: boldFont,
+      size: 14
+    }
+    );
+
+    currentY = addText(page, `Дата створення: ${new Date().toLocaleDateString('uk-UA')}`,
+      margin, currentY, { size: 12 }
+    );
+
+    currentY = addText(page, `Кількість підписів: ${sortedSignatures.length}`,
+      margin, currentY, { size: 12 }
+    );
+
+    currentY -= 30;
+
+    // Генерируем протоколы для каждой подписи
+    for (let index = 0; index < sortedSignatures.length; index++) {
+      const signature = sortedSignatures[index];
+      const protocolNumber = index + 1;
+
+      // Проверяем, нужна ли новая страница
+      if (checkNewPage(currentY, 200)) {
+        page = pdfDoc.addPage();
+        currentY = page.getSize().height - margin;
+      }
+
+      // Заголовок протокола
       currentY = addText(page, `ПРОТОКОЛ ЕЛЕКТРОННОГО ПІДПИСУ №${protocolNumber}`,
         margin, currentY, {
         font: boldFont,
-        size: 18
-      });
+        size: 16
+      }
+      );
       currentY -= 20;
-
-      // Информация о документе
-      currentY = addText(page, `Документ: ${documentTitle || 'Без назви'}`,
-        margin, currentY, { size: 12 }
-      );
-
-      currentY = addText(page, `Дата створення протоколу: ${new Date().toLocaleDateString('uk-UA')}`,
-        margin, currentY, { size: 12 }
-      );
-      currentY -= 15;
 
       // 1. Информация о подписанте
       currentY = addText(page, '1. ІНФОРМАЦІЯ ПРО ПІДПИСАНТА',
         margin, currentY, {
         font: boldFont,
         size: 14
-      });
+      }
+      );
 
       if (signature.User) {
         currentY = addText(page, `Користувач системи: ${signature.User.name}`,
@@ -164,47 +237,75 @@ export default defineEventHandler(async (event) => {
       }
       currentY -= 15;
 
+      // Проверяем, нужна ли новая страница для данных сертификата
+      if (checkNewPage(currentY, 150)) {
+        page = pdfDoc.addPage();
+        currentY = page.getSize().height - margin;
+      }
+
       // 2. Данные сертификата
       if (signature.info) {
         currentY = addText(page, '2. ДАНІ ЕЛЕКТРОННОГО СЕРТИФІКАТА',
           margin, currentY, {
           font: boldFont,
           size: 14
-        });
+        }
+        );
 
         // Парсим данные сертификата
         const structuredInfo = parseSignatureInfo(signature.info);
 
         for (const section of structuredInfo) {
+          // Проверяем, нужна ли новая страница для секции
+          if (checkNewPage(currentY, 80)) {
+            page = pdfDoc.addPage();
+            currentY = page.getSize().height - margin;
+          }
+
           currentY = addText(page, section.title,
             margin, currentY, {
             font: boldFont,
             size: 12
-          });
+          }
+          );
 
           for (const item of section.items) {
+            // Проверяем, нужна ли новая страница для элемента
+            if (checkNewPage(currentY, 40)) {
+              page = pdfDoc.addPage();
+              currentY = page.getSize().height - margin;
+            }
+
             currentY = addText(page, `${item.key}:`,
               margin + 10, currentY, {
               font: boldFont,
               size: 10
-            });
+            }
+            );
 
             currentY = addText(page, item.value,
               margin + 20, currentY, {
               size: 10,
-              maxWidth: width - margin - 30
-            });
+              maxWidth: page.getSize().width - margin - 30
+            }
+            );
           }
           currentY -= 10;
         }
       }
 
       // 3. Файлы подписи
+      if (checkNewPage(currentY, 80)) {
+        page = pdfDoc.addPage();
+        currentY = page.getSize().height - margin;
+      }
+
       currentY = addText(page, '3. ФАЙЛИ ПІДПИСУ',
         margin, currentY, {
         font: boldFont,
         size: 14
-      });
+      }
+      );
 
       if (signature.signature) {
         currentY = addText(page, '• Файл електронного підпису (.p7s)',
@@ -224,30 +325,58 @@ export default defineEventHandler(async (event) => {
         );
       }
 
-      currentY -= 20;
+      // Разделитель между протоколами (кроме последнего)
+      if (index < sortedSignatures.length - 1) {
+        currentY -= 40;
 
-      // Подвал
-      addText(page, 'Протокол згенеровано автоматично системою електронного документообігу',
-        margin, currentY, {
-        size: 10,
-        color: rgb(0.5, 0.5, 0.5)
-      });
+        // Проверяем, нужна ли новая страница для следующего протокола
+        if (checkNewPage(currentY, 250)) {
+          page = pdfDoc.addPage();
+          currentY = page.getSize().height - margin;
+        } else {
+          // Добавляем разделительную линию
+          page.drawLine({
+            start: { x: margin, y: currentY + 20 },
+            end: { x: page.getSize().width - margin, y: currentY + 20 },
+            thickness: 1,
+            color: rgb(0.7, 0.7, 0.7),
+          });
+          currentY -= 20;
+        }
+      }
     }
 
-    // Сериализуем PDF в байты
+    // Подвал на последней странице
+    currentY -= 20;
+    if (checkNewPage(currentY, 30)) {
+      page = pdfDoc.addPage();
+      currentY = page.getSize().height - margin;
+    }
+
+    addText(page, 'Протоколи згенеровано автоматично системою електронного документообігу',
+      margin, currentY, {
+      size: 10,
+      color: rgb(0.5, 0.5, 0.5)
+    }
+    );
+
+    // Сериализуем PDF
     const pdfBytes = await pdfDoc.save();
 
     // Устанавливаем заголовки для скачивания
+    const fileName = `protocols_all_${new Date().toLocaleDateString('uk-UA').replace(/\./g, '-')}.pdf`;
+
     setHeader(event, 'Content-Type', 'application/pdf');
-    setHeader(event, 'Content-Disposition', `attachment; filename="all_protocols_${documentId || 'document'}.pdf"`);
+    setHeader(event, 'Content-Disposition', `attachment; filename="${fileName}"`);
+    setHeader(event, 'Content-Length', pdfBytes.length);
 
     return pdfBytes;
 
-  } catch (error: any) {
-    console.error('Error generating PDF:', error);
+  } catch (error) {
+    console.error('Ошибка генерации PDF со всеми протоколами:', error);
     throw createError({
       statusCode: 500,
-      statusMessage: error?.message || 'Ошибка генерации PDF'
+      statusMessage: 'Помилка генерації PDF з усіма протоколами'
     });
   }
 });
@@ -320,17 +449,38 @@ function parseSubjectData(data: string): Array<{ key: string; value: string }> {
     for (const part of parts) {
       if (part.includes('=')) {
         const [key, ...valueParts] = part.split('=');
-        const value = valueParts.join('=').trim();
+        let value = valueParts.join('=').trim();
 
         if (key && value) {
           const cleanKey = key.trim();
-          const cleanValue = decodeHexString(value);
-          const readableKey = formatCertificateFieldName(cleanKey);
+          let cleanValue = decodeHexString(value);
 
-          items.push({
-            key: readableKey,
-            value: cleanValue
-          });
+          // Проверяем, есть ли в значении serialNumber и разделяем их
+          if (cleanValue.includes('/serialNumber=')) {
+            const [mainValue, serialPart] = cleanValue.split('/serialNumber=');
+
+            // Добавляем основное значение
+            const readableKey = formatCertificateFieldName(cleanKey);
+            items.push({
+              key: readableKey,
+              value: mainValue.trim()
+            });
+
+            // Добавляем serialNumber отдельно
+            if (serialPart) {
+              items.push({
+                key: 'ІПН / Серійний номер',
+                value: serialPart.trim()
+              });
+            }
+          } else {
+            // Обычная обработка без serialNumber
+            const readableKey = formatCertificateFieldName(cleanKey);
+            items.push({
+              key: readableKey,
+              value: cleanValue
+            });
+          }
         }
       }
     }
