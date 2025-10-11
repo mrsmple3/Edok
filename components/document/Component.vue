@@ -12,7 +12,7 @@
     </TableHeader>
     <DocumentViewer v-if="documentView" :documentUrl="documentUrl" />
     <TableBody class="w-full">
-      <DocumentTable v-for="(invoice, index) in sortedDocuments" :key="index" :invoice="invoice" />
+      <DocumentTable v-for="(invoice, index) in props.paginatedDocuments" :key="index" :invoice="invoice" />
     </TableBody>
   </Table>
 </template>
@@ -36,34 +36,6 @@ const adminStore = useAdminStore()
 
 const documentView = useState("isDocumentView", () => false);
 const documentUrl = useState("documentUrl", () => "");
-
-// Функция для преобразования даты из формата DD.MM.YYYY в Date объект
-const parseDate = (dateStr: string | undefined): Date => {
-  if (!dateStr) return new Date(0);
-
-  // Если дата уже в формате ISO или стандартном формате
-  if (dateStr.includes('T') || dateStr.includes('-')) {
-    return new Date(dateStr);
-  }
-
-  // Если дата в формате DD.MM.YYYY
-  if (dateStr.includes('.')) {
-    const [day, month, year] = dateStr.split('.');
-    return new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
-  }
-
-  // Fallback для других форматов
-  return new Date(dateStr);
-};
-
-// Сортировка документов по дате (новые сначала)
-const sortedDocuments = computed(() => {
-  return [...props.paginatedDocuments].sort((a, b) => {
-    const dateA = parseDate(a.createdAt || a.uploadedAt || a.date);
-    const dateB = parseDate(b.createdAt || b.uploadedAt || b.date);
-    return dateB.getTime() - dateA.getTime(); // По убыванию (новые сначала)
-  });
-});
 </script>
 
 <style scoped lang="scss">

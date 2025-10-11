@@ -53,6 +53,7 @@ export default defineEventHandler(async (event) => {
     }
 
     const creatingFile = await createFile(event, signature);
+    console.log('Результат создания файла подписи:', creatingFile);
 
     if (creatingFile.status !== 200) {
       event.res.statusCode = creatingFile.status;
@@ -101,6 +102,7 @@ export default defineEventHandler(async (event) => {
 
 
     const creatingFileSignedPdfFile = await createFile(event, finalPdfFile);
+    console.log('Результат создания PDF файла:', creatingFileSignedPdfFile);
 
     // Сохранение сообщения в базе данных
     const sign = await createSign({
@@ -110,6 +112,8 @@ export default defineEventHandler(async (event) => {
       certInfo,
       stampedFile: creatingFileSignedPdfFile.body.fileUrl,
     });
+
+    console.log('Созданная подпись в БД:', sign);
 
     await updateDocument(document.id, { status: 'Підписано' });
 

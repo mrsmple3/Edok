@@ -23,6 +23,13 @@ export const getSignByUserId = (userId: number) => {
 }
 
 export const createSign = (data: any) => {
+  console.log('Создаем подпись с данными:', {
+    signature: data.signature,
+    stampedFile: data.stampedFile,
+    signatureLength: data.signature?.length,
+    stampedFileLength: data.stampedFile?.length
+  });
+
   return prisma.signature.create({
     data: {
       signature: data.signature,

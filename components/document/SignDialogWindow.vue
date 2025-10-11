@@ -3,7 +3,7 @@
     <DialogTrigger>
       Підписати документ
     </DialogTrigger>
-    <DialogContent class="relative !max-w-[98vw] !w-[98vw] h-[98vh]">
+    <DialogContent class="!max-w-[98vw] !w-[98vw] h-[98vh]">
       <DialogHeader class="h-max">
         <DialogTitle>Електронний підпис</DialogTitle>
         <DialogDescription>
@@ -66,9 +66,16 @@ const controlFlag = ref(true);
 async function signDocument() {
   if (isLoading.value) return;
 
+  console.log("🚀 Начинаем процесс подписания документа");
   isLoading.value = true;
 
   const currentDoc = adminStore.getDocumentById(parseInt(route.query.documentSign));
+
+  console.log("📄 Текущий документ:", {
+    id: currentDoc?.id,
+    signaturesCount: currentDoc?.Signature?.length || 0,
+    hasSignatures: currentDoc?.Signature?.length > 0
+  });
 
   try {
     const filePath = currentDoc.Signature.length !== 0 ? currentDoc.Signature[currentDoc.Signature.length - 1].stampedFile : currentDoc?.filePath;
@@ -86,6 +93,22 @@ async function signDocument() {
     };
 
     const file = await fetchFile(filePath);
+
+    if (!file) {
+      toast({
+        title: "Ошибка",
+        description: 'Не удалось загрузить файл для подписи',
+        variant: "destructive",
+      });
+      return;
+    }
+
+    console.log("📂 Файл для подписи загружен:", {
+      name: file.name,
+      size: file.size,
+      type: file.type
+    });
+
     const reader = new FileReader();
 
     controlFlag.value = false;
@@ -99,11 +122,19 @@ async function signDocument() {
       // 3. Считать ключ (вызовет диалог с iframe, если еще не был считан)
       await euSign.value.ReadPrivateKey();
 
+      console.log("🔑 Ключ успешно прочитан, начинаем подписание...");
+
       // 4. Подписать
       const external = false;
       const asBase64String = true;
       const signAlgo = EndUser.SignAlgo.DSTU4145WithGOST34311;
       const signType = EndUser.SignType.CAdES_X_Long_Trusted;
+
+      console.log("📝 Параметры подписания:", {
+        external,
+        asBase64String,
+        dataSize: base64data.length
+      });
 
       const sign = await euSign.value.SignData(
         base64data,
@@ -114,11 +145,22 @@ async function signDocument() {
         signType
       );
 
+      console.log("✍️ Подпись создана:", {
+        signSize: sign ? sign.length : 0,
+        signType: typeof sign
+      });
+
 
 
       const blob = base64ToBlob(sign, "application/pkcs7-signature");
       const signedFile = new File([blob], `${file.name}`, { type: "application/pkcs7-signature" });
 
+      console.log("🔍 Создан signedFile:", {
+        name: signedFile.name,
+        size: signedFile.size,
+        type: signedFile.type,
+        lastModified: signedFile.lastModified
+      });
 
       // НОВОЕ: Извлекаем certInfo из подписи на клиенте
       let certInfo = null;
@@ -170,12 +212,27 @@ async function signDocument() {
       const finalPdfBlob = new Blob([originalArrayBuffer], { type: "application/pdf" });
       const finalPdfFile = new File([finalPdfBlob], `${file.name}`, { type: "application/pdf" });
 
-      // // Создать ссылку для скачивания
-      // const downloadLink = document.createElement("a");
-      // downloadLink.href = URL.createObjectURL(finalPdfBlob);
-      // downloadLink.download = `${file.name}`;
-      // downloadLink.click();
-      // URL.revokeObjectURL(downloadLink.href);
+      console.log("📄 Создан finalPdfFile:", {
+        name: finalPdfFile.name,
+        size: finalPdfFile.size,
+        type: finalPdfFile.type,
+        originalSize: originalArrayBuffer.byteLength
+      });
+
+      // Валидация файлов перед отправкой
+      if (!signedFile.size || !finalPdfFile.size) {
+        throw new Error("Ошибка: размер одного из файлов равен 0");
+      }
+
+      if (signedFile.size < 100) {
+        throw new Error("Ошибка: размер подписи слишком мал");
+      }
+
+      if (finalPdfFile.size < 1000) {
+        throw new Error("Ошибка: размер PDF файла слишком мал");
+      }
+
+      console.log("✅ Файлы прошли валидацию, отправляем на сервер...");
 
       await adminStore.createSign(
         parseInt(route.query.documentSign),
@@ -183,7 +240,93 @@ async function signDocument() {
         signedFile,
         finalPdfFile,
         certInfo,
-        stampData).then(() => {
+        stampData).then(async (result) => {
+          console.log("✅ Подпись успешно создана:", result);
+
+          // Проверяем доступность созданных файлов
+          const verificationPromises = [];
+
+          if (result?.signature) {
+            console.log("🔍 Проверяем файл подписи:", result.signature);
+
+            verificationPromises.push(
+              fetch(result.signature, { method: 'HEAD' })
+                .then(response => ({
+                  type: 'signature',
+                  exists: response.ok,
+                  url: result.signature,
+                  status: response.status
+                }))
+                .catch(error => ({
+                  type: 'signature',
+                  exists: false,
+                  url: result.signature,
+                  error: error.message
+                }))
+            );
+          }
+
+          if (result?.stampedFile) {
+            console.log("🔍 Проверяем штампованный файл:", result.stampedFile);
+
+            verificationPromises.push(
+              fetch(result.stampedFile, { method: 'HEAD' })
+                .then(response => ({
+                  type: 'stampedFile',
+                  exists: response.ok,
+                  url: result.stampedFile,
+                  status: response.status
+                }))
+                .catch(error => ({
+                  type: 'stampedFile',
+                  exists: false,
+                  url: result.stampedFile,
+                  error: error.message
+                }))
+            );
+          }
+
+          if (verificationPromises.length > 0) {
+            const verificationResults = await Promise.all(verificationPromises);
+
+            console.log("🔍 Результаты проверки файлов:", verificationResults);
+
+            const missingFiles = verificationResults.filter(r => !r.exists);
+
+            if (missingFiles.length > 0) {
+              console.error("❌ Некоторые файлы подписи недоступны:", missingFiles);
+              console.error("❌ Детали недоступных файлов:", missingFiles.map(f => ({
+                type: f.type,
+                originalUrl: f.url,
+                status: 'status' in f ? f.status : 'N/A',
+                error: 'error' in f ? f.error : 'N/A'
+              })));
+
+              // Удаляем подпись из базы данных
+              try {
+                await adminStore.deleteSignature(result.id);
+                console.log("🗑️ Подпись удалена из-за недоступности файлов");
+              } catch (deleteError) {
+                console.error("❌ Ошибка при удалении подписи:", deleteError);
+              }
+
+              toast({
+                title: "Помилка збереження",
+                description: "Файли підпису не були збережені коректно. Підпис скасовано. Спробуйте ще раз.",
+                variant: "destructive",
+              });
+
+              isDialogOpen.value = false;
+              setTimeout(() => {
+                window.location.reload();
+              }, 1000);
+              return;
+            } else {
+              console.log("✅ Все файлы доступны:", verificationResults);
+            }
+          }
+
+          // Если все файлы доступны
           toast({
             title: "Успіх",
             description: "Документ успішно підписано. Зачекайте, поки вікно закриється.",
@@ -193,6 +336,9 @@ async function signDocument() {
           setTimeout(() => {
             window.location.reload();
           }, 800);
+        }).catch((error) => {
+          console.error("❌ Ошибка при создании подписи:", error);
+          throw new Error(`Ошибка сохранения подписи: ${error.message || error}`);
         });
     };
 
@@ -200,12 +346,20 @@ async function signDocument() {
 
     // controlFlag.value = true;
   } catch (e: any) {
+    console.error("❌ Ошибка в процессе подписания:", e);
+    console.error("Детали ошибки:", {
+      message: e?.message,
+      stack: e?.stack,
+      name: e?.name
+    });
+
     toast({
       title: "Ошибка",
       description: e?.message || e,
       variant: "destructive",
     });
   } finally {
+    console.log("🏁 Завершение процесса подписания, isLoading = false");
     isLoading.value = false;
   }
 }

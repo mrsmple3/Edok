@@ -38,6 +38,7 @@ export default defineEventHandler(async (event) => {
 			role,
 			organization_name,
 			organization_INN,
+			canDeleterDocuments: role === 'admin' || role === 'boogalter' ? true : false
 		};
 
 		if (email) {

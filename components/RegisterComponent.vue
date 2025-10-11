@@ -104,7 +104,7 @@ const onSubmitRegister = form.handleSubmit(async (values) => {
 			response.value = await authStore.register({
 				organization_INN: values.orgIIN,
 				organization_name: values.orgName,
-				email: values.email,
+				email: values.email.trim(),
 				password_hash: values.password,
 				role: "counterparty",
 			});
@@ -112,7 +112,7 @@ const onSubmitRegister = form.handleSubmit(async (values) => {
 			response.value = await authStore.register({
 				organization_INN: values.orgIIN,
 				organization_name: values.orgName,
-				phone: values.email,
+				phone: values.email.trim(),
 				password_hash: values.password,
 				role: "counterparty",
 			});

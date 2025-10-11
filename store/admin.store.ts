@@ -217,6 +217,26 @@ export const useAdminStore = defineStore("admin", {
 		},
 		async createSign(documentId: number, userId: number, signature: File, finalPdfFile: File, certInfo?: any, stampData: any) {
 			try {
+				console.log("📤 Отправляем данные на сервер:", {
+					documentId,
+					userId,
+					signatureSize: signature.size,
+					signatureName: signature.name,
+					finalPdfFileSize: finalPdfFile.size,
+					finalPdfFileName: finalPdfFile.name,
+					certInfo: certInfo ? 'есть' : 'отсутствует',
+					stampData: stampData ? 'есть' : 'отсутствует'
+				});
+
+				// Валидация перед отправкой
+				if (!signature || signature.size === 0) {
+					throw new Error('Файл подписи пустой или отсутствует');
+				}
+
+				if (!finalPdfFile || finalPdfFile.size === 0) {
+					throw new Error('PDF файл пустой или отсутствует');
+				}
+
 				const formData = new FormData();
 				formData.append("documentId", documentId.toString());
 				formData.append("userId", userId.toString());
@@ -225,13 +245,35 @@ export const useAdminStore = defineStore("admin", {
 				formData.append('certInfo', JSON.stringify(certInfo));
 				formData.append('stampData', JSON.stringify(stampData));
 
+				console.log("📤 FormData готов к отправке");
+
 				const response: any = await useFetchApi("/api/sign", {
 					method: "POST",
 					body: formData,
 				});
+
+				console.log("✅ Ответ от сервера:", response);
 				return response.body.sign;
 			} catch (error) {
+				console.error("❌ Ошибка в createSign:", error);
 				handleApiError(error);
+				throw error; // Пробрасываем ошибку выше
+			}
+		},
+		async deleteSignature(signId: number) {
+			try {
+				console.log("🗑️ Удаляем подпись с ID:", signId);
+
+				const response: any = await useFetchApi(`/api/sign/${signId}`, {
+					method: "DELETE",
+				});
+
+				console.log("✅ Подпись удалена:", response);
+				return response.body.sign;
+			} catch (error) {
+				console.error("❌ Ошибка при удалении подписи:", error);
+				handleApiError(error);
+				throw error;
 			}
 		},
 		async getDocumentsByUserId(userId: any) {
@@ -277,6 +319,19 @@ export const useAdminStore = defineStore("admin", {
 			try {
 				const response: any = await useFetchApi(`/api/admin/user/${user.id}`, {
 					method: "PUT",
+					body: user,
+				});
+				this.$patch({ users: this.users.map((u) => (u.id === user.id ? response.body.user : u)) });
+				return response.body.user;
+			} catch (error) {
+				handleApiError(error);
+			}
+		},
+		// new method to patch user
+		async patchUser(user: any) {
+			try {
+				const response: any = await useFetchApi(`/api/admin/user/${user.id}`, {
+					method: "PATCH",
 					body: user,
 				});
 				this.$patch({ users: this.users.map((u) => (u.id === user.id ? response.body.user : u)) });

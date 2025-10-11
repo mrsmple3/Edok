@@ -67,17 +67,24 @@ const form = useForm({
 
 const onSubmitLogin = form.handleSubmit(async (values) => {
 	try {
-		let response = ref();
+		// Убираем все пробелы из email/phone и пароля
+		const cleanEmail = values.email.replace(/\s/g, '');
+		const cleanPassword = values.password.replace(/\s/g, '');
+
+		let response;
 		const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-		if (emailRegex.test(values.email)) {
-			response.value = await authStore.login({
-				email: values.email,
-				password_hash: values.password,
+		if (emailRegex.test(cleanEmail)) {
+			console.log('Logging in with email:', cleanEmail);
+
+			response = await authStore.login({
+				email: cleanEmail,
+				password_hash: cleanPassword,
 			});
 		} else {
-			response.value = await authStore.login({
-				phone: values.email,
-				password_hash: values.password,
+			console.log('Logging in with phone:', cleanEmail);
+			response = await authStore.login({
+				phone: cleanEmail,
+				password_hash: cleanPassword,
 			});
 		}
 		await authStore.initAuth().then(async () => {

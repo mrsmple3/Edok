@@ -66,8 +66,8 @@ const onSubmit = form.handleSubmit(async (values) => {
     const { name, email, phone } = values;
     const newCounterparty = {
       name: name,
-      email: email,
-      phone: phone,
+      email: email.trim(),
+      phone: phone.trim(),
       password_hash: "123456",
       role: route.query.role,
     };

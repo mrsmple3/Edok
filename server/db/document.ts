@@ -3,6 +3,8 @@ import { EventHandlerRequest, H3Event } from "h3";
 import fs, { mkdir, stat, writeFile } from "fs/promises";
 import path, { join } from "path";
 import mime from "mime";
+import { createSafeFileName } from "~/server/utils/transliterate";
+import { Buffer } from "buffer";
 
 export const getAllDocuments = () => {
 	return prisma.document.findMany({
@@ -286,9 +288,23 @@ export const createFile = async (
 
 	try {
 		const uniqueSuffix = `${Date.now()}-${Math.round(Math.random() * 1e9)}`;
-		const filename = `${file.name.replace(/\.[^/.]+$/, "")}-${uniqueSuffix}.${mime.getExtension(file.type)}`;
+
+		// Создаем безопасное имя файла без кириллических символов
+		const cleanName = createSafeFileName(file.name);
+
+		// Определяем правильное расширение
+		let extension = mime.getExtension(file.type);
+		if (file.type === 'application/pkcs7-signature') {
+			extension = 'p7s';
+		} else if (file.type === 'application/pdf') {
+			extension = 'pdf';
+		}
+
+		const filename = `${cleanName}-${uniqueSuffix}.${extension}`;
 		await writeFile(`${uploadDir}/${filename}`, buffer);
 		const fileUrl = `${relativeUploadDir}/${filename}`;
+
+		console.log(`Файл создан: ${filename}, тип: ${file.type}, расширение: ${extension}`);
 
 		return {
 			status: 200,

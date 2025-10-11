@@ -4,6 +4,7 @@
 			<NuxtPage />
 		</NuxtLayout>
 		<Toaster />
+		<PageLoader />
 	</div>
 </template>
 

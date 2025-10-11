@@ -1,5 +1,5 @@
 <template>
-  <Dialog>
+  <Dialog v-model:open="isDialogOpen">
     <DialogTrigger>
       <Badge class="filter-badge bg-[#2d9cdb]/20 hover:bg-[#2d9cdb]/30">
         <img alt="фільтр" src="/icons/filter.svg" />
@@ -45,7 +45,7 @@
           <img alt="скинути" src="/icons/restar.svg" class="reset-icon" />
           Скинути
         </Button>
-        <Button @click="applyFilters">Застосувати</Button>
+        <Button @click="handleApplyFilters">Застосувати</Button>
       </DialogFooter>
     </DialogContent>
   </Dialog>
@@ -68,10 +68,13 @@ import { cn } from "@/lib/utils";
 const userStore = useUserStore()
 const adminStore = useAdminStore()
 
+// Контроль состояния диалога
+const isDialogOpen = ref(false)
+
 const todayDate = today(getLocalTimeZone());
 
-const start = today(getLocalTimeZone());
-const end = start.add({ days: -7 });
+const start = today(getLocalTimeZone()).subtract({ days: 7 });
+const end = today(getLocalTimeZone());
 
 const value = ref<DateRange>({
   start,
@@ -79,40 +82,82 @@ const value = ref<DateRange>({
 }) as Ref<DateRange>;
 
 const filters = ref({
-  dateRange: value, // Используем уже существующий `value` для диапазона дат
+  dateRange: null as DateRange | null, // Диапазон дат
   counterparty: null, // Выбранный контрагент
 });
 
+// Следим за изменениями календаря
 watch(value, (newValue) => {
   filters.value.dateRange = newValue;
-});
+}, { deep: true });
 
 const applyFilters = () => {
   const { dateRange, counterparty } = filters.value;
 
   // Фильтруем документы
-  const filteredDocuments = adminStore.$state.documents.filter((doc) => {
-    const isWithinDateRange =
-      (!dateRange.start || new Date(doc.createdAt) >= new Date(dateRange.start.toString())) &&
-      (!dateRange.end || new Date(doc.createdAt) <= new Date(dateRange.end.toString()));
+  const filteredDocuments = adminStore.$state.documents.filter((doc: any) => {
+    let isWithinDateRange = true;
+    let isCounterpartyMatch = true;
 
-    const isCounterpartyMatch = !counterparty || doc.counterpartyId === counterparty.value;
+    // Фильтр по дате
+    if (dateRange && (dateRange.start || dateRange.end)) {
+      const docDate = new Date(doc.createdAt);
+
+      if (dateRange.start) {
+        const startDate = new Date(dateRange.start.toString());
+        startDate.setHours(0, 0, 0, 0); // Начало дня
+        isWithinDateRange = isWithinDateRange && docDate >= startDate;
+      }
+
+      if (dateRange.end) {
+        const endDate = new Date(dateRange.end.toString());
+        endDate.setHours(23, 59, 59, 999); // Конец дня
+        isWithinDateRange = isWithinDateRange && docDate <= endDate;
+      }
+    }
+
+    // Фильтр по контрагенту
+    if (counterparty && counterparty.value) {
+      isCounterpartyMatch = doc.counterpartyId === counterparty.value;
+    }
 
     return isWithinDateRange && isCounterpartyMatch;
   });
 
   // Обновляем отображаемые документы
   adminStore.$state.filteredDocuments = filteredDocuments;
+
+  console.log('Применены фильтры:', {
+    dateRange: dateRange,
+    counterparty: counterparty,
+    totalDocuments: adminStore.$state.documents.length,
+    filteredDocuments: filteredDocuments.length
+  });
+};
+
+const handleApplyFilters = () => {
+  applyFilters();
+  isDialogOpen.value = false; // Закрываем диалог
 };
 
 const resetFilters = () => {
+  // Сбрасываем фильтры
   filters.value = {
-    dateRange: value,
+    dateRange: null,
     counterparty: null,
+  };
+
+  // Сбрасываем календарь к начальным значениям
+  value.value = {
+    start: today(getLocalTimeZone()).subtract({ days: 7 }),
+    end: today(getLocalTimeZone()),
   };
 
   // Сбрасываем отфильтрованные документы к исходным
   adminStore.$state.filteredDocuments = adminStore.$state.documents;
+
+  console.log('Фильтры сброшены');
+  isDialogOpen.value = false; // Закрываем диалог
 };
 </script>
 

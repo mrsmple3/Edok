@@ -53,22 +53,83 @@ definePageMeta({
 const route = useRoute();
 const adminStore = useAdminStore();
 const userStore = useUserStore();
+const { withLoader } = usePageLoader();
 
 const currentPage = ref(1); // Текущая страница
-const itemsPerPage = 6; // Количество элементов на странице
+const windowHeight = ref(0); // Высота окна
+
+// Динамическое определение количества элементов на странице в зависимости от высоты экрана
+const itemsPerPage = computed(() => {
+  if (windowHeight.value === 0) return 6; // Значение по умолчанию
+
+  // Приблизительная высота одного элемента документа (включая отступы)
+  const itemHeight = 80; // px
+  // Высота хедера, breadcrumbs, пагинации и отступов
+  const reservedHeight = 400; // px
+
+  // Доступная высота для списка документов
+  const availableHeight = windowHeight.value - reservedHeight;
+
+  // Вычисляем максимальное количество элементов
+  const maxItems = Math.floor(availableHeight / itemHeight);
+
+  // Минимум 3 элемента, максимум 12
+  const result = Math.max(3, Math.min(12, maxItems));
+
+  return result;
+});
 
 // Получаем данные для текущей страницы
 const paginatedDocuments = computed(() => {
-  const start = (currentPage.value - 1) * itemsPerPage;
-  const end = start + itemsPerPage;
-  return adminStore.$state.unsignedDocuments.slice(start, end);
+  // Сначала сортируем документы по дате (новые сначала)
+  const sortedDocs = [...adminStore.$state.unsignedDocuments].sort((a, b) => {
+    const dateA = new Date(a.createdAt);
+    const dateB = new Date(b.createdAt);
+    return dateB.getTime() - dateA.getTime(); // По убыванию (новые сначала)
+  });
+
+  // Затем применяем пагинацию
+  const start = (currentPage.value - 1) * itemsPerPage.value;
+  const end = start + itemsPerPage.value;
+  const result = sortedDocs.slice(start, end);
+
+  console.log('Paginated documents:', {
+    currentPage: currentPage.value,
+    itemsPerPage: itemsPerPage.value,
+    start,
+    end,
+    totalDocuments: adminStore.$state.unsignedDocuments.length,
+    resultLength: result.length
+  });
+
+  return result;
 });
 
+
 onBeforeMount(async () => {
+  // Устанавливаем начальную высоту окна
+  if (typeof window !== 'undefined') {
+    windowHeight.value = window.innerHeight;
+
+    // Отслеживаем изменения размера окна
+    const handleResize = () => {
+      windowHeight.value = window.innerHeight;
+    };
+
+    window.addEventListener('resize', handleResize);
+
+    // Очистка при размонтировании
+    onUnmounted(() => {
+      window.removeEventListener('resize', handleResize);
+    });
+  }
+
   watch(() => [userStore.isAuthInitialized, route.fullPath],
     async (newVal, routeFull) => {
       if (newVal) {
-        await getUnsignedDocuments()
+        await withLoader(async () => {
+          await getUnsignedDocuments()
+        });
       }
     },
     {

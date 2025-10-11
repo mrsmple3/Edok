@@ -23,6 +23,7 @@ model User {
   organization_name    String?
   organization_INN     String?
   company_type         String?
+  canDeleterDocuments  Boolean?             @default(false)
   RefreshToken         RefreshToken[]
   Document             Document[]
   DocumentCounterparty Document[]           @relation("DocumentCounterparty")
@@ -120,8 +121,8 @@ model Message {
 
 model Signature {
   id          Int      @id @default(autoincrement())
-  signature   String
-  stampedFile String   @default("")
+  signature   String   @db.Text
+  stampedFile String   @default("") @db.Text
   documentId  Int
   info        String   @db.Text
   document    Document @relation(fields: [documentId], references: [id])

@@ -65,7 +65,9 @@ const formSchema = toTypedSchema(z.object({
 
 const form = useForm({
   validationSchema: formSchema,
-})
+});
+const { toast } = useToast();
+
 
 const onSubmit = form.handleSubmit(async (values) => {
   try {
@@ -73,8 +75,8 @@ const onSubmit = form.handleSubmit(async (values) => {
     const newCounterparty = {
       organization_INN: code,
       organization_name: company,
-      email: email,
-      phone: phone,
+      email: email.trim(),
+      phone: phone.trim(),
       password_hash: "123456",
       role: "counterparty",
     };
@@ -84,10 +86,14 @@ const onSubmit = form.handleSubmit(async (values) => {
         router.push({ path: '/contacts' });
       })
       .catch((error) => {
+        toast({
+          title: "Ошибка",
+          description: error.message,
+          variant: "destructive",
+        });
         console.error('Error creating counterparty:', error);
       });
   } catch (error: any) {
-    const { toast } = useToast();
     toast({
       title: "Ошибка",
       description: error.message,

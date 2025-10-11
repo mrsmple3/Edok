@@ -9,9 +9,9 @@
 			<DropdownMenuItem @select="handleSelectSign">
 				<DocumentSignDialogWindow />
 			</DropdownMenuItem>
-			<DropdownMenuItem @select="handleSelectSign">
+			<!-- <DropdownMenuItem @select="handleSelectSign">
 				<DocumentDownload :invoice="invoice" />
-			</DropdownMenuItem>
+			</DropdownMenuItem> -->
 			<DropdownMenuItem @select="handleSelectSign">
 				<DocumentProtocol :invoice="invoice" />
 			</DropdownMenuItem>

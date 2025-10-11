@@ -7,9 +7,9 @@
       </div>
 
       <div class="flex-center gap-[15px]">
-        <Badge class="w-12 h-12 bg-[#2d9cdb]/20 rounded-[15px] hover:bg-[#2d9cdb]/30">
+        <!-- <Badge class="w-12 h-12 bg-[#2d9cdb]/20 rounded-[15px] hover:bg-[#2d9cdb]/30">
           <img alt="filter" src="/icons/filter.svg" />
-        </Badge>
+        </Badge> -->
         <RefreshData :refreshFunction="async () => await adminStore.getLeadByUserId(userStore.userGetter.id)" />
       </div>
     </div>
@@ -57,28 +57,76 @@ const route = useRoute()
 
 const adminStore = useAdminStore()
 const userStore = useUserStore()
+const { withLoader } = usePageLoader()
+
 
 const currentPage = ref(1); // Текущая страница
-const itemsPerPage = 7; // Количество элементов на странице
+const windowHeight = ref(0); // Высота окна
+
+// Динамическое определение количества элементов на странице в зависимости от высоты экрана
+const itemsPerPage = computed(() => {
+  if (windowHeight.value === 0) return 6; // Значение по умолчанию
+
+  // Приблизительная высота одного элемента документа (включая отступы)
+  const itemHeight = 80; // px
+  // Высота хедера, breadcrumbs, пагинации и отступов
+  const reservedHeight = 400; // px
+
+  // Доступная высота для списка документов
+  const availableHeight = windowHeight.value - reservedHeight;
+
+  // Вычисляем максимальное количество элементов
+  const maxItems = Math.floor(availableHeight / itemHeight);
+
+  // Минимум 3 элемента, максимум 12
+  const result = Math.max(3, Math.min(12, maxItems));
+
+  return result;
+});
 
 // Получаем данные для текущей страницы
 const paginatedLeads = computed(() => {
-  const start = (currentPage.value - 1) * itemsPerPage;
-  const end = start + itemsPerPage;
-  return adminStore.$state.leads.slice(start, end);
-});
+  const start = (currentPage.value - 1) * itemsPerPage.value;
+  const end = start + itemsPerPage.value;
+  const result = adminStore.$state.leads.slice(start, end);
 
-// Общее количество страниц
-const totalPages = computed(() => {
-  return Math.ceil(adminStore.$state.leads.length / itemsPerPage);
+  console.log('Paginated Leads:', {
+    currentPage: currentPage.value,
+    itemsPerPage: itemsPerPage.value,
+    start,
+    end,
+    totalLeads: adminStore.$state.leads.length,
+    resultLength: result.length
+  });
+
+  return result;
 });
 
 onBeforeMount(async () => {
+  // Устанавливаем начальную высоту окна
+  if (typeof window !== 'undefined') {
+    windowHeight.value = window.innerHeight;
+
+    // Отслеживаем изменения размера окна
+    const handleResize = () => {
+      windowHeight.value = window.innerHeight;
+    };
+
+    window.addEventListener('resize', handleResize);
+
+    // Очистка при размонтировании
+    onUnmounted(() => {
+      window.removeEventListener('resize', handleResize);
+    });
+  }
+
   watch(
     () => [userStore.isAuthInitialized, route.fullPath],
     async ([newVal, changedRoute]) => {
       if (newVal) {
-        await adminStore.getLeadByUserId(route.query.id);
+        await withLoader(async () => {
+          await adminStore.getLeadByUserId(route.query.id);
+        });
       }
     },
     {

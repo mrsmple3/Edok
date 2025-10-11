@@ -1,6 +1,8 @@
 <template>
-  <TableRow class="relative hover:bg-[#2d9cdb]/20"
-    :class="{ 'opacity-50 pointer-events-none': invoice.deleteSignCount !== 0 && invoice.deleteSigns.find(sign => sign.userId === userStore.userGetter.id), 'opacity-50': invoice.deleteSignCount !== 0 }">
+  <TableRow class="relative hover:bg-[#2d9cdb]/20" :class="{
+    'opacity-50': invoice.deleteSignCount !== 0,
+    'pointer-events-none': (invoice.deleteSigns.find(sign => sign.userId === userStore.userGetter.id)) && (userStore.$state.user.role !== 'admin' && userStore.$state.user.role !== 'boogalter' && !userStore.$state.user.canDeleterDocuments),
+  }">
     <div class="doc-select" v-if="!invoice.leadId && route.name === 'user-docs'">
       <Checkbox :checked="checkBox" class="bg-[#FFFFFF] border-[#939393] absolute top-1/2 -translate-y-1/2 z-[10]"
         @update:checked="updateCheckbox" />
@@ -25,8 +27,10 @@
       <div class="signature-badge">
         1</div>
     </TableCell>
-    <DocumentDropDown :invoice="invoice"
-      :class="{ 'opacity-50 pointer-events-none': invoice.deleteSignCount !== 0 && invoice.deleteSigns.find(sign => sign.userId === userStore.userGetter.id), 'opacity-50': invoice.deleteSignCount !== 0 }" />
+    <DocumentDropDown :invoice="invoice" :class="{
+      'opacity-50': invoice.deleteSignCount !== 0,
+      'pointer-events-none': (userStore.$state.user.role !== 'admin' && userStore.$state.user.role !== 'boogalter' && !userStore.$state.user.canDeleterDocuments) && (invoice.deleteSigns.find(sign => sign.userId === userStore.userGetter.id)),
+    }" />
   </TableRow>
 </template>
 
@@ -59,6 +63,10 @@ const updateCheckbox = () => {
     documentsToLeads.value.splice(idx, 1);
   }
 };
+
+onMounted(() => {
+  console.log((props.invoice.deleteSigns.find(sign => sign.userId === userStore.userGetter.id)) && (userStore.$state.user.role !== 'admin' || userStore.$state.user.role !== 'boogalter' || !userStore.$state.user.canDeleterDocuments))
+});
 
 
 

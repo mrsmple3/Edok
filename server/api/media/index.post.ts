@@ -1,6 +1,7 @@
 import mime from "mime";
-import {join} from "path";
-import {mkdir, stat, writeFile} from "fs/promises";
+import { join } from "path";
+import { mkdir, stat, writeFile } from "fs/promises";
+import { createSafeFileName } from "~/server/utils/transliterate";
 
 
 export default defineEventHandler(async (event) => {
@@ -11,7 +12,7 @@ export default defineEventHandler(async (event) => {
     if (!image) {
         return {
             status: 400,
-            body: {error: "Missing required fields"},
+            body: { error: "Missing required fields" },
         };
     }
 
@@ -29,7 +30,7 @@ export default defineEventHandler(async (event) => {
         await stat(uploadDir);
     } catch (e: any) {
         if (e.code === "ENOENT") {
-            await mkdir(uploadDir, {recursive: true});
+            await mkdir(uploadDir, { recursive: true });
         } else {
             console.error(
                 "Error while trying to create directory when uploading a file\n",
@@ -37,29 +38,40 @@ export default defineEventHandler(async (event) => {
             );
             return {
                 status: 500,
-                body: {error: "Something went wrong."},
+                body: { error: "Something went wrong." },
             };
         }
     }
 
     try {
         const uniqueSuffix = `${Date.now()}-${Math.round(Math.random() * 1e9)}`;
-        const filename = `${image.name.replace(
-            /\.[^/.]+$/,
-            ""
-        )}-${uniqueSuffix}.${mime.getExtension(image.type)}`;
+
+        // Создаем безопасное имя файла без кириллических символов
+        const cleanName = createSafeFileName(image.name);
+
+        // Определяем правильное расширение
+        let extension = mime.getExtension(image.type);
+        if (image.type === 'application/pkcs7-signature') {
+            extension = 'p7s';
+        } else if (image.type === 'application/pdf') {
+            extension = 'pdf';
+        }
+
+        const filename = `${cleanName}-${uniqueSuffix}.${extension}`;
         await writeFile(`${uploadDir}/${filename}`, buffer);
         const fileUrl = `${relativeUploadDir}/${filename}`;
 
+        console.log(`Медиа файл создан: ${filename}, тип: ${image.type}, расширение: ${extension}`);
+
         return {
             status: 200,
-            body: {filePath: fileUrl},
+            body: { filePath: fileUrl },
         };
     } catch (e) {
         console.error("Error while trying to upload a file\n", e);
         return {
             status: 500,
-            body: {error: "Something went wrong."},
+            body: { error: "Something went wrong." },
         };
     }
 });

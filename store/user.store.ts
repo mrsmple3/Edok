@@ -25,6 +25,7 @@ export interface User {
 	organization_name?: string; // Nullable
 	organization_INN?: string; // Nullable
 	company_type?: string; // Nullable
+	canDeleterDocuments: boolean;
 	createdAt: Date;
 }
 
@@ -110,6 +111,7 @@ const defaultValue: {
 		organization_INN: "",
 		isActive: false,
 		role: "",
+		canDeleterDocuments: false,
 		createdAt: new Date(),
 	},
 	leads: [],

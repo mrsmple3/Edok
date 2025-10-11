@@ -76,6 +76,7 @@
 </template>
 
 <script lang="ts" setup>
+import { onMounted } from "vue";
 import roles from "~/assets/data/roles.json";
 import { useToast } from "~/components/ui/toast";
 import { useAdminStore } from "~/store/admin.store";
@@ -90,46 +91,106 @@ const route = useRoute();
 
 const adminStore = useAdminStore();
 const userStore = useUserStore();
+const { withLoader } = usePageLoader();
 
 const contactTableRef = ref(null);
 
 const selectedRole = ref("counterparty");
 
 const onSelectUser = async (role: string) => {
-	await adminStore.getUserByRole(role).then(() => {
-		selectedRole.value = role;
-		router.push({ path: '/contacts', query: { role: selectedRole.value } });
-	})
+	await withLoader(async () => {
+		await adminStore.getUserByRole(role).then(() => {
+			selectedRole.value = role;
+			router.push({ path: '/contacts', query: { role: selectedRole.value } });
+		})
+	});
 };
 
 const currentPage = ref(1); // Текущая страница
-const itemsPerPage = 7; // Количество элементов на странице
+const windowHeight = ref(0); // Высота окна
+
+// Динамическое определение количества элементов на странице в зависимости от высоты экрана
+const itemsPerPage = computed(() => {
+	if (windowHeight.value === 0) return 6; // Значение по умолчанию
+
+	// Приблизительная высота одного элемента документа (включая отступы)
+	const itemHeight = 80; // px
+	// Высота хедера, breadcrumbs, пагинации и отступов
+	const reservedHeight = 400; // px
+
+	// Доступная высота для списка документов
+	const availableHeight = windowHeight.value - reservedHeight;
+
+	// Вычисляем максимальное количество элементов
+	const maxItems = Math.floor(availableHeight / itemHeight);
+
+	// Минимум 3 элемента, максимум 12
+	const result = Math.max(3, Math.min(12, maxItems));
+
+	return result;
+});
 
 // Получаем данные для текущей страницы
 const paginatedUsers = computed(() => {
-	const start = (currentPage.value - 1) * itemsPerPage;
-	const end = start + itemsPerPage;
-	return adminStore.$state.users.slice(start, end);
-});
 
-// Общее количество страниц
-const totalPages = computed(() => {
-	return Math.ceil(adminStore.$state.users.length / itemsPerPage);
+	// Сначала сортируем документы по дате (новые сначала)
+	const sortedDocs = [...adminStore.$state.users].sort((a, b) => {
+		const dateA = new Date(a.createdAt);
+		const dateB = new Date(b.createdAt);
+		return dateB.getTime() - dateA.getTime(); // По убыванию (новые сначала)
+	});
+
+	const start = (currentPage.value - 1) * itemsPerPage.value;
+	const end = start + itemsPerPage.value;
+	const result = sortedDocs.slice(start, end);
+
+	console.log('Paginated documents:', {
+		currentPage: currentPage.value,
+		itemsPerPage: itemsPerPage.value,
+		start,
+		end,
+		totalUsers: adminStore.$state.users.length,
+		resultLength: result.length
+	});
+
+	return result;
 });
 
 onBeforeMount(() => {
+	// Устанавливаем начальную высоту окна
+	if (typeof window !== 'undefined') {
+		windowHeight.value = window.innerHeight;
+
+		// Отслеживаем изменения размера окна
+		const handleResize = () => {
+			windowHeight.value = window.innerHeight;
+		};
+
+		window.addEventListener('resize', handleResize);
+
+		// Очистка при размонтировании
+		onUnmounted(() => {
+			window.removeEventListener('resize', handleResize);
+		});
+	}
+
+
+
+
 	watch(
 		() => [userStore.isAuthInitialized, route.fullPath],
 		async ([newVal, changedRoute]) => {
 			if (newVal) {
-				await adminStore.getUserByRole(selectedRole.value);
+				await withLoader(async () => {
+					await adminStore.getUserByRole(selectedRole.value);
 
-				router.replace({
-					path: route.path,
-					query: {
-						...route.query,
-						role: selectedRole.value,
-					},
+					router.replace({
+						path: route.path,
+						query: {
+							...route.query,
+							role: selectedRole.value,
+						},
+					});
 				});
 			}
 		},
@@ -138,6 +199,14 @@ onBeforeMount(() => {
 		}
 	);
 });
+
+onMounted(() => {
+	callOnce(async () => {
+		if (!userStore.$state.isAuth) {
+			router.push("/login");
+		}
+	});
+})
 
 const getRoles = (): { id: string; name: string; value: string }[] => {
 	const userRole = userStore.userGetter.role;

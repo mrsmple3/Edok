@@ -28,7 +28,7 @@ export default defineEventHandler(async (event) => {
         }
 
         // Если пользователь админ или бухгалтер - удаляем документ сразу
-        if (user.role === 'admin' || user.role === 'boogalter') {
+        if (user.role === 'admin' || user.role === 'boogalter' || user.canDeleterDocuments) {
             await deleteDocumentById(event, documentId);
             return {
                 code: 200,
