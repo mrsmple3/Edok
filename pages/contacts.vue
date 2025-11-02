@@ -192,6 +192,11 @@ onBeforeMount(() => {
 						},
 					});
 				});
+				callOnce(async () => {
+					if (!userStore.$state.isAuth) {
+						router.push("/login");
+					}
+				});
 			}
 		},
 		{
@@ -201,11 +206,7 @@ onBeforeMount(() => {
 });
 
 onMounted(() => {
-	callOnce(async () => {
-		if (!userStore.$state.isAuth) {
-			router.push("/login");
-		}
-	});
+
 })
 
 const getRoles = (): { id: string; name: string; value: string }[] => {

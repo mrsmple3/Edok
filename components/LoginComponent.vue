@@ -89,7 +89,9 @@ const onSubmitLogin = form.handleSubmit(async (values) => {
 		}
 		await authStore.initAuth().then(async () => {
 			console.log(authStore.$state.user);
-			if (authStore.$state.user.role !== "counterparty") {
+			if (authStore.$state.user.role === "lawyer") {
+				router.push("/docs");
+			} else if (authStore.$state.user.role !== "counterparty") {
 				await adminStore.getUserByRole('counterparty');
 				router.push("/contacts");
 			} else if (authStore.$state.user.role === "counterparty") {

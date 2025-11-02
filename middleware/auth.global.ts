@@ -19,10 +19,15 @@ export default defineNuxtRouteMiddleware(async (to, from) => {
     try {
       // Показываем loader во время проверки авторизации
       const { showLoader, hideLoader } = usePageLoader();
-      showLoader();
 
-      // Ждем завершения инициализации авторизации, если она еще не завершена
+      // Показываем loader только если авторизация еще не инициализирована
       if (!userStore.$state.isAuthInitialized) {
+        showLoader();
+      }
+
+      // Ждем завершения инициализации авторизации
+      if (!userStore.$state.isAuthInitialized) {
+        console.log('Initializing auth...');
         await userStore.initAuth();
       }
 
@@ -35,7 +40,7 @@ export default defineNuxtRouteMiddleware(async (to, from) => {
         return navigateTo('/login');
       }
 
-      console.log('User authenticated:', userStore.$state.user);
+      console.log('User authenticated:', userStore.$state.user.email || userStore.$state.user.phone);
     } catch (error) {
       // Скрываем loader в случае ошибки
       const { hideLoader } = usePageLoader();

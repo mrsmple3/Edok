@@ -152,16 +152,15 @@ onBeforeMount(async () => {
     () => [userStore.isAuthInitialized, route.fullPath],
     async ([newVal, changedRoute]) => {
       if (newVal && userStore.$state.user.role !== 'counterparty') {
-        callOnce(() => {
-          if (sidebarLinks.value.find(link => link.title === 'Контакти')) {
-            return;
-          }
-          sidebarLinks.value.push({
-            title: 'Контакти',
-            icon: '/icons/Document%20Writer.svg',
-            route: '/contacts'
-          })
-        });
+        console.log(userStore.$state.user, sidebarLinks.value);
+        if (sidebarLinks.value.find(link => link.title === 'Контакти')) {
+          return;
+        }
+        sidebarLinks.value.push({
+          title: 'Контакти',
+          icon: '/icons/Document%20Writer.svg',
+          route: '/contacts'
+        })
       }
     },
     {

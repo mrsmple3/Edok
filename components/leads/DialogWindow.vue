@@ -39,43 +39,27 @@
 						class="col-span-3" />
 				</div>
 				<FormField v-slot="{ componentField }" name="moderator">
-					<FormItem>
-						<Select v-bind="componentField">
-							<FormControl>
-								<SelectTrigger>
-									<SelectValue placeholder="Оберіть модератора" />
-								</SelectTrigger>
-							</FormControl>
-							<SelectContent>
-								<SelectGroup>
-									<SelectLabel>Модератори</SelectLabel>
-									<SelectItem v-for="moderator in userStore.moderatorsGetter" :key="moderator.id" :value="moderator.id">
-										{{ moderator.name }} </SelectItem>
-								</SelectGroup>
-							</SelectContent>
-						</Select>
-						<FormMessage />
+					<FormItem class="grid grid-cols-4 items-center gap-4">
+						<FormControl>
+							<Label class="text-[12px] text-start">Модератор</Label>
+							<div class="col-span-3 flex flex-col gap-2">
+								<SearchableSelect :users="userStore.moderatorsGetter" placeholder="Оберіть модератора..."
+									display-field="name" v-bind="componentField" />
+								<FormMessage />
+							</div>
+						</FormControl>
 					</FormItem>
 				</FormField>
 				<FormField v-slot="{ componentField }" name="counterparty">
-					<FormItem>
-						<Select v-bind="componentField">
-							<FormControl>
-								<SelectTrigger>
-									<SelectValue placeholder="Оберіть контрагента" />
-								</SelectTrigger>
-							</FormControl>
-							<SelectContent>
-								<SelectGroup>
-									<SelectLabel>Контрагенти</SelectLabel>
-									<SelectItem v-for="counterparty in userStore.counterpartiesGetter" :key="counterparty.id"
-										:value="counterparty.id">
-										{{ counterparty.name || counterparty.organization_name }}
-									</SelectItem>
-								</SelectGroup>
-							</SelectContent>
-						</Select>
-						<FormMessage />
+					<FormItem class="grid grid-cols-4 items-center gap-4">
+						<FormControl>
+							<Label class="text-[12px] text-start">Контрагент</Label>
+							<div class="col-span-3 flex flex-col gap-2">
+								<SearchableSelect :users="userStore.counterpartiesGetter" placeholder="Оберіть контрагента..."
+									display-field="auto" v-bind="componentField" />
+								<FormMessage />
+							</div>
+						</FormControl>
 					</FormItem>
 				</FormField>
 			</div>
@@ -85,7 +69,7 @@
 </template>
 
 <script setup lang="ts">
-
+import { ref, watch } from "vue";
 import { useForm } from "vee-validate";
 import { toTypedSchema } from "@vee-validate/zod";
 import * as z from "zod";
@@ -93,6 +77,7 @@ import { useUserStore } from "~/store/user.store";
 import { useToast } from "~/components/ui/toast";
 import type { Document } from "~/store/user.store";
 import { useAdminStore } from "~/store/admin.store";
+import SearchableSelect from "../custom/SearchableSelect.vue";
 
 const adminStore = useAdminStore();
 const userStore = useUserStore();
