@@ -49,6 +49,11 @@
               <input id="confirming" type="file" accept="application/pdf" class="hidden"
                 @change="(event) => handleFileUpload(event, 'Акт переоцінки')" />
             </div>
+            <div class="cursor-pointer">
+              <label for="confirming">АКТ ЗВІРКИ</label>
+              <input id="confirming" type="file" accept="application/pdf" class="hidden"
+                @change="(event) => handleFileUpload(event, 'АКТ ЗВІРКИ')" />
+            </div>
           </div>
         </button>
 
@@ -57,6 +62,7 @@
       </div>
 
       <div class="flex-center gap-[15px]">
+        <DocumentFilter :counterparties="counterparties" />
         <RefreshData :refreshFunction="async () => await adminStore.getDocumentsByUserId(route.query.id)" />
       </div>
     </div>
@@ -104,6 +110,8 @@ const userStore = useUserStore()
 const adminStore = useAdminStore()
 const { withLoader } = usePageLoader()
 
+const counterparties = ref();
+
 const selectedFile = ref<File | null>(null); // Хранение выбранного файла
 
 
@@ -112,6 +120,7 @@ const windowHeight = ref(0); // Высота окна
 
 // Динамическое определение количества элементов на странице в зависимости от высоты экрана
 const itemsPerPage = computed(() => {
+  return 7;
   if (windowHeight.value === 0) return 6; // Значение по умолчанию
 
   // Приблизительная высота одного элемента документа (включая отступы)
@@ -159,21 +168,21 @@ const paginatedDocuments = computed(() => {
 
 onBeforeMount(async () => {
   // Устанавливаем начальную высоту окна
-  if (typeof window !== 'undefined') {
-    windowHeight.value = window.innerHeight;
+  // if (typeof window !== 'undefined') {
+  //   windowHeight.value = window.innerHeight;
 
-    // Отслеживаем изменения размера окна
-    const handleResize = () => {
-      windowHeight.value = window.innerHeight;
-    };
+  //   // Отслеживаем изменения размера окна
+  //   const handleResize = () => {
+  //     windowHeight.value = window.innerHeight;
+  //   };
 
-    window.addEventListener('resize', handleResize);
+  //   window.addEventListener('resize', handleResize);
 
-    // Очистка при размонтировании
-    onUnmounted(() => {
-      window.removeEventListener('resize', handleResize);
-    });
-  }
+  //   // Очистка при размонтировании
+  //   onUnmounted(() => {
+  //     window.removeEventListener('resize', handleResize);
+  //   });
+  // }
 
 
   watch(() => [userStore.isAuthInitialized, route.fullPath],
@@ -182,6 +191,12 @@ onBeforeMount(async () => {
         await withLoader(async () => {
           await adminStore.getDocumentsByUserId(route.query.id).then(() => {
             adminStore.$state.filteredDocuments = adminStore.$state.documents;
+          })
+          await userStore.getCounterparties().then(() => {
+            counterparties.value = userStore.$state.counterparties.map((counterparty) => ({
+              value: counterparty.id,
+              label: counterparty.organization_name,
+            }));
           })
         });
       }

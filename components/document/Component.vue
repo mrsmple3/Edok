@@ -2,12 +2,14 @@
   <Table class="w-full">
     <TableHeader class="table-header">
       <TableRow class="border-none">
-        <TableHead class="t-head">Назва документа</TableHead>
-        <TableHead class="t-head">Угода</TableHead>
-        <TableHead class="t-head">Контрагент</TableHead>
-        <TableHead class="t-head">Завантажено</TableHead>
+        <TableHead class="t-head">Назва</TableHead>
+        <TableHead class="t-head">№</TableHead>
+        <TableHead class="t-head">Дата документа</TableHead>
+        <TableHead class="t-head">Тип</TableHead>
+        <TableHead class="t-head">Статус</TableHead>
+        <TableHead class="t-head">Відправник</TableHead>
         <TableHead class="t-head">Автор</TableHead>
-        <TableHead class="t-head">Погоджуючі</TableHead>
+        <TableHead class="t-head">Сторони</TableHead>
       </TableRow>
     </TableHeader>
     <DocumentViewer v-if="documentView" :documentUrl="documentUrl" />

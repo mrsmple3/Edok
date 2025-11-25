@@ -60,6 +60,7 @@ const windowHeight = ref(0); // Высота окна
 
 // Динамическое определение количества элементов на странице в зависимости от высоты экрана
 const itemsPerPage = computed(() => {
+  return 7;
   if (windowHeight.value === 0) return 6; // Значение по умолчанию
 
   // Приблизительная высота одного элемента документа (включая отступы)
@@ -108,21 +109,21 @@ const paginatedDocuments = computed(() => {
 
 onBeforeMount(async () => {
   // Устанавливаем начальную высоту окна
-  if (typeof window !== 'undefined') {
-    windowHeight.value = window.innerHeight;
+  // if (typeof window !== 'undefined') {
+  //   windowHeight.value = window.innerHeight;
 
-    // Отслеживаем изменения размера окна
-    const handleResize = () => {
-      windowHeight.value = window.innerHeight;
-    };
+  //   // Отслеживаем изменения размера окна
+  //   const handleResize = () => {
+  //     windowHeight.value = window.innerHeight;
+  //   };
 
-    window.addEventListener('resize', handleResize);
+  //   window.addEventListener('resize', handleResize);
 
-    // Очистка при размонтировании
-    onUnmounted(() => {
-      window.removeEventListener('resize', handleResize);
-    });
-  }
+  //   // Очистка при размонтировании
+  //   onUnmounted(() => {
+  //     window.removeEventListener('resize', handleResize);
+  //   });
+  // }
 
   watch(() => [userStore.isAuthInitialized, route.fullPath],
     async (newVal, routeFull) => {

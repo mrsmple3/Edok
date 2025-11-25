@@ -9,6 +9,7 @@ const defaultValue: {
 	documents: Document[];
 	users: User[];
 	filteredDocuments: Document[];
+	filteredLeads: Lead[];
 	unsignedDocuments: Document[];
 	signedDocuments: Document[];
 } = {
@@ -16,6 +17,7 @@ const defaultValue: {
 	documents: [],
 	users: [],
 	filteredDocuments: [],
+	filteredLeads: [],
 	unsignedDocuments: [],
 	signedDocuments: [],
 };

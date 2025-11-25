@@ -4,7 +4,7 @@
 			<div class="flex-center">
 				<h2 class="page__title m-r-32">Документи</h2>
 
-				<button v-if="userStore.userRole === 'counterparty'"
+				<!-- <button v-if="userStore.userRole === 'counterparty'"
 					class="submenu-parent relative flex-center page-button hover:active">
 					<img alt="plus" class="page-icon" src="/icons/plus-blue.svg" />
 					Додати документ
@@ -49,8 +49,13 @@
 							<input id="confirming" type="file" accept="application/pdf" class="hidden"
 								@change="(event) => handleFileUpload(event, 'Акт переоцінки')" />
 						</div>
+						<div class="cursor-pointer">
+							<label for="confirming">АКТ ЗВІРКИ</label>
+							<input id="confirming" type="file" accept="application/pdf" class="hidden"
+								@change="(event) => handleFileUpload(event, 'АКТ ЗВІРКИ')" />
+						</div>
 					</div>
-				</button>
+				</button> -->
 			</div>
 
 			<div class="flex-center gap-15">
@@ -104,16 +109,12 @@ const adminStore = useAdminStore();
 const { withLoader } = usePageLoader();
 
 const counterparties = ref();
-
-const selectedFile = ref<File | null>(null); // Хранение выбранного файла
-
-
-
 const currentPage = ref(1); // Текущая страница
 const windowHeight = ref(0); // Высота окна
 
 // Динамическое определение количества элементов на странице в зависимости от высоты экрана
 const itemsPerPage = computed(() => {
+	return 7;
 	if (windowHeight.value === 0) return 6; // Значение по умолчанию
 
 	// Приблизительная высота одного элемента документа (включая отступы)
@@ -160,22 +161,22 @@ const paginatedDocuments = computed(() => {
 });
 
 onBeforeMount(async () => {
-	// Устанавливаем начальную высоту окна
-	if (typeof window !== 'undefined') {
-		windowHeight.value = window.innerHeight;
+	// // Устанавливаем начальную высоту окна
+	// if (typeof window !== 'undefined') {
+	// 	windowHeight.value = window.innerHeight;
 
-		// Отслеживаем изменения размера окна
-		const handleResize = () => {
-			windowHeight.value = window.innerHeight;
-		};
+	// 	// Отслеживаем изменения размера окна
+	// 	const handleResize = () => {
+	// 		windowHeight.value = window.innerHeight;
+	// 	};
 
-		window.addEventListener('resize', handleResize);
+	// 	window.addEventListener('resize', handleResize);
 
-		// Очистка при размонтировании
-		onUnmounted(() => {
-			window.removeEventListener('resize', handleResize);
-		});
-	}
+	// 	// Очистка при размонтировании
+	// 	onUnmounted(() => {
+	// 		window.removeEventListener('resize', handleResize);
+	// 	});
+	// }
 
 	watch(
 		() => [userStore.isAuthInitialized, route.fullPath],
@@ -212,10 +213,9 @@ const getDocument = async () => {
 const handleFileUpload = (event: Event, documentType: string) => {
 	const target = event.target as HTMLInputElement;
 	if (target.files && target.files[0]) {
-		selectedFile.value = target.files[0];
-
+		const file = target.files[0];
 		// Здесь можно вызвать метод для загрузки документа
-		uploadDocument(selectedFile.value, documentType);
+		uploadDocument(file, documentType);
 	}
 };
 

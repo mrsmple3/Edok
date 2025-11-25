@@ -1,6 +1,6 @@
 <template>
   <TableRow class="relative hover:bg-[#2d9cdb]/20">
-    <TableCell class="flex-center justify-start gap-[20px] t-cell">
+    <TableCell class="flex-center !justify-start gap-[10px] t-cell">
       <img alt="документ" class="w-[33px] h-[45px]" src="/icons/lead-doc.svg" />
       <div class="text-start">
         {{ invoice.name.length > 23 ? invoice.name.substring(0, 20) + "..." : invoice.name }}

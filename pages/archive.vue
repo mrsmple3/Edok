@@ -57,23 +57,24 @@ const windowHeight = ref(0); // Высота окна
 
 // Динамическое определение количества элементов на странице в зависимости от высоты экрана
 const itemsPerPage = computed(() => {
+  return 7;
   if (windowHeight.value === 0) return 6; // Значение по умолчанию
 
-  // Приблизительная высота одного элемента документа (включая отступы)
-  const itemHeight = 80; // px
-  // Высота хедера, breadcrumbs, пагинации и отступов
-  const reservedHeight = 400; // px
+  // // Приблизительная высота одного элемента документа (включая отступы)
+  // const itemHeight = 80; // px
+  // // Высота хедера, breadcrumbs, пагинации и отступов
+  // const reservedHeight = 400; // px
 
-  // Доступная высота для списка документов
-  const availableHeight = windowHeight.value - reservedHeight;
+  // // Доступная высота для списка документов
+  // const availableHeight = windowHeight.value - reservedHeight;
 
-  // Вычисляем максимальное количество элементов
-  const maxItems = Math.floor(availableHeight / itemHeight);
+  // // Вычисляем максимальное количество элементов
+  // const maxItems = Math.floor(availableHeight / itemHeight);
 
-  // Минимум 3 элемента, максимум 12
-  const result = Math.max(3, Math.min(12, maxItems));
+  // // Минимум 3 элемента, максимум 12
+  // const result = Math.max(3, Math.min(12, maxItems));
 
-  return result;
+  // return result;
 });
 
 // Получаем данные для текущей страницы
@@ -104,21 +105,21 @@ const paginatedDocuments = computed(() => {
 
 onBeforeMount(async () => {
   // Устанавливаем начальную высоту окна
-  if (typeof window !== 'undefined') {
-    windowHeight.value = window.innerHeight;
+  // if (typeof window !== 'undefined') {
+  //   windowHeight.value = window.innerHeight;
 
-    // Отслеживаем изменения размера окна
-    const handleResize = () => {
-      windowHeight.value = window.innerHeight;
-    };
+  //   // Отслеживаем изменения размера окна
+  //   const handleResize = () => {
+  //     windowHeight.value = window.innerHeight;
+  //   };
 
-    window.addEventListener('resize', handleResize);
+  //   window.addEventListener('resize', handleResize);
 
-    // Очистка при размонтировании
-    onUnmounted(() => {
-      window.removeEventListener('resize', handleResize);
-    });
-  }
+  //   // Очистка при размонтировании
+  //   onUnmounted(() => {
+  //     window.removeEventListener('resize', handleResize);
+  //   });
+  // }
 
   watch(() => [userStore.isAuthInitialized, route.fullPath],
     async (newVal, routeFull) => {

@@ -149,7 +149,7 @@ watch(isDialogOpen, async (newVal) => {
 			toast({
 				title: "Помилка",
 				description: "Потрібно вибрати хоча б один документ",
-				variant: "destructive",
+				variant: "default",
 			});
 			isDialogOpen.value = false;
 			return;

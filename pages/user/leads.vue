@@ -65,6 +65,7 @@ const windowHeight = ref(0); // Высота окна
 
 // Динамическое определение количества элементов на странице в зависимости от высоты экрана
 const itemsPerPage = computed(() => {
+  return 7;
   if (windowHeight.value === 0) return 6; // Значение по умолчанию
 
   // Приблизительная высота одного элемента документа (включая отступы)
@@ -86,9 +87,17 @@ const itemsPerPage = computed(() => {
 
 // Получаем данные для текущей страницы
 const paginatedLeads = computed(() => {
+  // Сначала сортируем договоры по дате создания (новые сначала)
+  const sortedLeads = [...adminStore.$state.leads].sort((a, b) => {
+    const dateA = new Date(a.createdAt || a.updatedAt || a.date || 0);
+    const dateB = new Date(b.createdAt || b.updatedAt || b.date || 0);
+    return dateB.getTime() - dateA.getTime(); // По убыванию (новые сначала)
+  });
+
+  // Затем применяем пагинацию к отсортированным данным
   const start = (currentPage.value - 1) * itemsPerPage.value;
   const end = start + itemsPerPage.value;
-  const result = adminStore.$state.leads.slice(start, end);
+  const result = sortedLeads.slice(start, end);
 
   console.log('Paginated Leads:', {
     currentPage: currentPage.value,
@@ -104,21 +113,21 @@ const paginatedLeads = computed(() => {
 
 onBeforeMount(async () => {
   // Устанавливаем начальную высоту окна
-  if (typeof window !== 'undefined') {
-    windowHeight.value = window.innerHeight;
+  // if (typeof window !== 'undefined') {
+  //   windowHeight.value = window.innerHeight;
 
-    // Отслеживаем изменения размера окна
-    const handleResize = () => {
-      windowHeight.value = window.innerHeight;
-    };
+  //   // Отслеживаем изменения размера окна
+  //   const handleResize = () => {
+  //     windowHeight.value = window.innerHeight;
+  //   };
 
-    window.addEventListener('resize', handleResize);
+  //   window.addEventListener('resize', handleResize);
 
-    // Очистка при размонтировании
-    onUnmounted(() => {
-      window.removeEventListener('resize', handleResize);
-    });
-  }
+  //   // Очистка при размонтировании
+  //   onUnmounted(() => {
+  //     window.removeEventListener('resize', handleResize);
+  //   });
+  // }
 
   watch(
     () => [userStore.isAuthInitialized, route.fullPath],
