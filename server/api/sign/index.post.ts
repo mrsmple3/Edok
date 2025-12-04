@@ -7,6 +7,74 @@ import { promises as fs } from "fs";
 import path from "path";
 import { addVisibleStamp } from "~/server/utils/addVisibleStamp"
 
+const MAX_SIGNATURES_PER_ORGANIZATION = 2;
+
+function decodeHexString(hexStr?: string | null): string {
+  if (!hexStr) return '';
+
+  const cleaned = hexStr.replace(/\\x([0-9A-Fa-f]{2})/g, (_match, hex) => {
+    return String.fromCharCode(parseInt(hex, 16));
+  });
+
+  if (hexStr.includes('\\x')) {
+    try {
+      const bytes = new Uint8Array([...cleaned].map((char) => char.charCodeAt(0)));
+      return new TextDecoder('utf-8').decode(bytes);
+    } catch (error) {
+      console.warn('Не вдалося декодувати UTF-8 значення сертифіката', error);
+      return cleaned;
+    }
+  }
+
+  return cleaned;
+}
+
+function normalizeOrganizationName(name?: string | null) {
+  if (!name) return '';
+  return name.replace(/\s+/g, ' ').trim().toLowerCase();
+}
+
+function extractOrganizationNameFromCertInfo(certInfo?: string | null) {
+  if (!certInfo || typeof certInfo !== 'string') {
+    return '';
+  }
+
+  const subjectMatch = certInfo.match(/Subject:\s*(.+?)(?:\n|$)/s);
+  if (!subjectMatch) {
+    return '';
+  }
+
+  const subject = subjectMatch[1];
+  const cnMatch = subject.match(/CN=([^,\n]+)/);
+  const oMatch = subject.match(/O=([^,\n]+)/i);
+
+  const decodedCn = cnMatch ? decodeHexString(cnMatch[1]).trim() : '';
+  const decodedO = oMatch ? decodeHexString(oMatch[1]).trim() : '';
+
+  const organizationKeywords = /(ТОВ|ООО|ПП|ФОП)/i;
+  if (decodedCn && organizationKeywords.test(decodedCn)) {
+    return decodedCn;
+  }
+
+  if (decodedO && decodedO !== 'ФІЗИЧНА ОСОБА') {
+    return decodedO;
+  }
+
+  return decodedCn || decodedO;
+}
+
+function buildOrganizationCountMap(signatures: Array<{ info: string | null }>) {
+  const counts = new Map<string, number>();
+  signatures.forEach((signature) => {
+    if (!signature?.info) return;
+    const organizationName = extractOrganizationNameFromCertInfo(signature.info);
+    const normalized = normalizeOrganizationName(organizationName);
+    if (!normalized) return;
+    counts.set(normalized, (counts.get(normalized) || 0) + 1);
+  });
+  return counts;
+}
+
 export default defineEventHandler(async (event) => {
   try {
     // Чтение данных из тела запроса
@@ -19,7 +87,7 @@ export default defineEventHandler(async (event) => {
 
     // НОВОЕ: Получаем готовую certInfo из клиента
     const certInfoString = formData.get("certInfo") as string;
-    const certInfo = certInfoString ? JSON.parse(certInfoString) : null;
+    const clientCertInfo = certInfoString ? JSON.parse(certInfoString) : null;
 
     const stampDataString = formData.get("stampData") as string;
     const stampData = stampDataString ? JSON.parse(stampDataString) : null;
@@ -60,19 +128,41 @@ export default defineEventHandler(async (event) => {
       return creatingFile;
     }
 
-    // // Временное сохранение файла подписи на диск для анализа
-    // const buffer = Buffer.from(await signature.arrayBuffer());
-    // const tempPath = path.resolve("/tmp", `${Date.now()}-${signature.name}`);
-    // await fs.writeFile(tempPath, buffer);
-
-    // // Парсинг подписи
-    // const certInfo = await extractP7sInfo(tempPath).catch(() => null);
-    // await fs.unlink(tempPath);
-
-    // Подсчитываем существующие подписи для этого документа
-    const existingSignsCount = await prisma.signature.count({
-      where: { documentId: documentId }
+    const existingSignatures = await prisma.signature.findMany({
+      where: { documentId: documentId },
+      select: { info: true }
     });
+    const existingSignsCount = existingSignatures.length;
+
+    let resolvedCertInfo = typeof clientCertInfo === 'string' ? clientCertInfo : null;
+
+    if (!resolvedCertInfo) {
+      try {
+        const buffer = Buffer.from(await signature.arrayBuffer());
+        const tempPath = path.resolve("/tmp", `${Date.now()}-${signature.name}`);
+        await fs.writeFile(tempPath, buffer);
+        resolvedCertInfo = await extractP7sInfo(tempPath).catch(() => null);
+        await fs.unlink(tempPath);
+      } catch (certError) {
+        console.error('Не вдалося отримати інформацію про сертифікат:', certError);
+      }
+    }
+
+    const currentOrganizationName = extractOrganizationNameFromCertInfo(resolvedCertInfo);
+    const normalizedCurrentOrganization = normalizeOrganizationName(currentOrganizationName);
+    const existingOrgCounts = buildOrganizationCountMap(existingSignatures);
+    const currentOrgSignCount = normalizedCurrentOrganization ? (existingOrgCounts.get(normalizedCurrentOrganization) || 0) : 0;
+
+    if (normalizedCurrentOrganization && currentOrgSignCount >= MAX_SIGNATURES_PER_ORGANIZATION) {
+      const displayName = currentOrganizationName || 'Невідомо';
+      event.res.statusCode = 400;
+      return {
+        code: 400,
+        body: {
+          error: `Організація "${displayName}" вже підписувала документ ${MAX_SIGNATURES_PER_ORGANIZATION} рази.`
+        }
+      };
+    }
 
     // Добавляем печать к PDF НА СЕРВЕРЕ
     let finalPdfFile = originalPdfFile;
@@ -109,7 +199,7 @@ export default defineEventHandler(async (event) => {
       signature: creatingFile.body.fileUrl,
       documentId,
       userId,
-      certInfo,
+      certInfo: resolvedCertInfo,
       stampedFile: creatingFileSignedPdfFile.body.fileUrl,
     });
 
@@ -121,7 +211,7 @@ export default defineEventHandler(async (event) => {
       code: 201,
       body: {
         sign,
-        certInfo
+        certInfo: resolvedCertInfo
       },
     };
   } catch (error: any) {

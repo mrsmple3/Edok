@@ -3,7 +3,7 @@
     <DialogTrigger>
       Протокол
     </DialogTrigger>
-    <DialogContent class="!max-w-[90vw] !w-[90vw] h-[80vh]">
+    <DialogContent class="!max-w-[90vw] !w-[90vw] h-[80vh] overflow-y-auto">
       <DialogHeader>
         <DialogTitle class="text-xl font-bold">Протокол електронних підписів</DialogTitle>
         <DialogDescription class="flex items-center justify-between">
@@ -21,7 +21,7 @@
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                 d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
             </svg>
-            {{ isGeneratingAllPDF ? 'Генерація всіх...' : 'Скачати всі протоколи' }}
+            {{ isGeneratingAllPDF ? 'Створення PDF...' : 'Скачати PDF (протоколи + документ)' }}
           </button>
         </DialogDescription>
 
@@ -310,31 +310,32 @@ async function downloadProtocolPDF(signature: any, protocolNumber: number) {
   }
 }
 
-// Функция генерации PDF со всеми протоколами
+// Функция генерации архива со всеми протоколами и документом
 async function downloadAllProtocolsPDF() {
   try {
     isGeneratingAllPDF.value = true;
 
     // Проверяем, есть ли подписи
     if (!props.invoice.Signature || props.invoice.Signature.length === 0) {
-      alert('Немає підписів для створення протоколів');
+      alert('Немає підписів для створення PDF');
       return;
     }
 
-    // Отправляем запрос на сервер для генерации PDF со всеми протоколами
-    const response = await fetch('/api/protocol/generate-all', {
+    // Отправляем запрос на сервер для генерации единого PDF
+    const response = await fetch('/api/protocol/download-archive', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
         signatures: props.invoice.Signature,
-        documentTitle: props.invoice.title
+        documentTitle: props.invoice.title,
+        documentFilePath: props.invoice.filePath
       })
     });
 
     if (!response.ok) {
-      throw new Error('Помилка створення PDF з усіма протоколами');
+      throw new Error('Помилка створення PDF');
     }
 
     // Получаем blob из ответа
@@ -345,7 +346,7 @@ async function downloadAllProtocolsPDF() {
     const link = document.createElement('a');
     link.href = url;
 
-    const fileName = `protocols_all_${formatDate(new Date().toISOString())}.pdf`;
+    const fileName = `protocols_and_document_${formatDate(new Date().toISOString())}.pdf`;
     link.download = fileName;
 
     document.body.appendChild(link);
@@ -354,8 +355,8 @@ async function downloadAllProtocolsPDF() {
     window.URL.revokeObjectURL(url);
 
   } catch (error) {
-    console.error('Ошибка генерации PDF со всеми протоколами:', error);
-    alert('Помилка при створенні PDF файлу з усіма протоколами');
+    console.error('Ошибка генерации PDF:', error);
+    alert('Помилка при створенні PDF файлу');
   } finally {
     isGeneratingAllPDF.value = false;
   }

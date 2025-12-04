@@ -12,6 +12,7 @@ const defaultValue: {
 	filteredLeads: Lead[];
 	unsignedDocuments: Document[];
 	signedDocuments: Document[];
+	trashDocuments: Document[];
 } = {
 	leads: [],
 	documents: [],
@@ -20,6 +21,7 @@ const defaultValue: {
 	filteredLeads: [],
 	unsignedDocuments: [],
 	signedDocuments: [],
+	trashDocuments: [],
 };
 
 export const useAdminStore = defineStore("admin", {
@@ -42,6 +44,7 @@ export const useAdminStore = defineStore("admin", {
 				return state.users.find((user) => user.id === id);
 			};
 		},
+		trashDocumentsGetter: (state): Document[] => state.trashDocuments,
 	},
 	actions: {
 		async createLead(lead: any) {
@@ -168,11 +171,50 @@ export const useAdminStore = defineStore("admin", {
 				handleApiError(error);
 			}
 		},
+		async getTrashDocuments() {
+			try {
+				const response: any = await useFetchApi("/api/admin/document/trash");
+				this.$patch({ trashDocuments: response.body.documents });
+				return response.body.documents;
+			} catch (error) {
+				handleApiError(error);
+			}
+		},
+		async getTrashDocumentsByUserId(userId: number) {
+			try {
+				const response: any = await useFetchApi(`/api/admin/document/trash/${userId}`);
+				this.$patch({ trashDocuments: response.body.documents });
+				return response.body.documents;
+			} catch (error) {
+				handleApiError(error);
+			}
+		},
 		async getSignedDocumentsByUserId(userId: number) {
 			try {
 				const response: Document[] = await useFetchApi(`/api/admin/document/archive/${userId}`);
 				this.$patch({ signedDocuments: response.body.documents });
 				return response.body.documents;
+			} catch (error) {
+				handleApiError(error);
+			}
+		},
+		async restoreDocument(userId: number, documentId: number) {
+			try {
+				const response: any = await useFetchApi("/api/admin/document/trash/restore", {
+					method: "POST",
+					body: { userId, documentId },
+				});
+
+				const restoredDocument = response.body.document;
+
+				if (restoredDocument) {
+					this.$patch({
+						documents: this.documentsGetter.map((doc) => (doc.id === restoredDocument.id ? restoredDocument : doc)),
+						trashDocuments: this.trashDocumentsGetter.filter((doc) => doc.id !== restoredDocument.id),
+					});
+				}
+
+				return response.body;
 			} catch (error) {
 				handleApiError(error);
 			}
@@ -207,10 +249,32 @@ export const useAdminStore = defineStore("admin", {
 					method: "POST",
 					body: { userId, documentId: id },
 				});
-				if (response.body.message === 'Видалення підтверджено. Очікується підтвердження другого користувача.')
-					this.$patch({ documents: this.documentsGetter.map((d) => (d.id === id ? { ...d, deleteSignCount: d.deleteSignCount + 1 } : d)) });
-				else
-					this.$patch({ documents: this.documentsGetter.filter((d) => d.id !== id) });
+				if (response.body.message === 'Видалення підтверджено. Очікується підтвердження другого користувача.') {
+					let updatedDocument: Document | undefined;
+					const updatedDocuments = this.documentsGetter.map((d) => {
+						if (d.id === id) {
+							updatedDocument = { ...d, deleteSignCount: d.deleteSignCount + 1 };
+							return updatedDocument;
+						}
+						return d;
+					});
+
+					const updatedTrash = this.trashDocumentsGetter.some((doc) => doc.id === id)
+						? this.trashDocumentsGetter.map((doc) => (doc.id === id && updatedDocument ? updatedDocument : doc))
+						: updatedDocument
+							? [...this.trashDocumentsGetter, updatedDocument]
+							: this.trashDocumentsGetter;
+
+					this.$patch({
+						documents: updatedDocuments,
+						trashDocuments: updatedTrash,
+					});
+				} else {
+					this.$patch({
+						documents: this.documentsGetter.filter((d) => d.id !== id),
+						trashDocuments: this.trashDocumentsGetter.filter((doc) => doc.id !== id),
+					});
+				}
 
 				return response.body.error || response.body.message;
 			} catch (error) {

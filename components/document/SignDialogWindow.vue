@@ -42,6 +42,7 @@ const { toast } = useToast();
 const euSign = ref(null);
 
 const isLoading = ref(false);
+const MAX_SIGNATURES_PER_ORG = 2;
 
 watch(isDialogOpen, async (newVal) => {
   if (newVal) {
@@ -189,6 +190,22 @@ async function signDocument() {
           const parsedCertData = parseCertificateInfo(certInfo);
 
           console.log(parsedCertData);
+
+          const currentOrgName = parsedCertData.organizationName || parsedCertData.fullName || '';
+          const normalizedCurrentOrgName = normalizeOrganizationName(currentOrgName);
+
+          const existingOrgCounts = getOrganizationSignCounts(currentDoc?.Signature || []);
+          const existingOrgSignCount = normalizedCurrentOrgName ? (existingOrgCounts.get(normalizedCurrentOrgName) || 0) : 0;
+
+          if (normalizedCurrentOrgName && existingOrgSignCount >= MAX_SIGNATURES_PER_ORG) {
+            toast({
+              title: "Обмеження підписів",
+              description: `Організація "${currentOrgName}" вже підписувала цей документ ${MAX_SIGNATURES_PER_ORG} рази.`,
+              variant: "destructive",
+            });
+            isLoading.value = false;
+            return;
+          }
 
           // Обновляем stampData данными из сертификата
           stampData = {
@@ -571,6 +588,30 @@ function decodeHexString(hexStr: string): string {
     console.error('Ошибка декодирования hex строки:', error);
     return hexStr || '';
   }
+}
+
+function getOrganizationSignCounts(signatures: any[]) {
+  const counts = new Map<string, number>();
+  if (!Array.isArray(signatures)) {
+    return counts;
+  }
+
+  for (const signature of signatures) {
+    if (!signature?.info) continue;
+    const parsed = parseCertificateInfo(signature.info);
+    const organizationName = parsed.organizationName || parsed.fullName;
+    const normalizedName = normalizeOrganizationName(organizationName);
+
+    if (!normalizedName) continue;
+    counts.set(normalizedName, (counts.get(normalizedName) || 0) + 1);
+  }
+
+  return counts;
+}
+
+function normalizeOrganizationName(name?: string) {
+  if (!name) return '';
+  return name.replace(/\s+/g, ' ').trim().toLowerCase();
 }
 
 function arrayBufferToBase64(buffer: Uint8Array): string {

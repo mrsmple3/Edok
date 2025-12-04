@@ -12,6 +12,7 @@ export interface DocumentDeleteSign {
 	documentId: number;
 	userId: number;
 	createdAt: Date;
+	user?: User;
 }
 
 export interface User {

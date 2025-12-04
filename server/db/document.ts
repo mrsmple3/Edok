@@ -19,6 +19,59 @@ export const getAllDocuments = () => {
 	});
 };
 
+export const getDocumentsPaginated = async (params: {
+	page: number;
+	limit: number;
+	sortBy?: string;
+	sortOrder?: 'asc' | 'desc';
+	userId?: number;
+	leadId?: number;
+	userRole?: string;
+}) => {
+	const { page, limit, sortBy = 'createdAt', sortOrder = 'desc', userId, leadId, userRole } = params;
+	const skip = (page - 1) * limit;
+
+	// Формируем условия фильтрации
+	const where: any = {};
+
+	if (userRole === 'counterparty' && userId) {
+		where.userId = userId;
+	}
+
+	if (leadId) {
+		where.leadId = leadId;
+	}
+
+	// Получаем общее количество документов
+	const total = await prisma.document.count({ where });
+
+	// Получаем документы с пагинацией
+	const documents = await prisma.document.findMany({
+		where,
+		skip,
+		take: limit,
+		orderBy: {
+			[sortBy]: sortOrder,
+		},
+		include: {
+			user: true,
+			counterparty: true,
+			lead: true,
+			deleteSigns: true,
+			Signature: true,
+			moderator: true,
+		},
+	});
+
+	return {
+		documents,
+		total,
+		page,
+		limit,
+		totalPages: Math.ceil(total / limit),
+	};
+};
+
 export const getDocumentById = (id: number) => {
 	return prisma.document.findUnique({
 		where: { id },
@@ -210,6 +263,27 @@ export const deleteFileOnDocument = async (event: H3Event<EventHandlerRequest> |
 			},
 		};
 	}
+};
+
+export const resetDocumentDeletionRequest = async (documentId: number) => {
+	await prisma.documentDeleteSign.deleteMany({
+		where: { documentId },
+	});
+
+	return prisma.document.update({
+		where: { id: documentId },
+		data: {
+			deleteSignCount: 0,
+		},
+		include: {
+			user: true,
+			counterparty: true,
+			lead: true,
+			deleteSigns: true,
+			Signature: true,
+			moderator: true,
+		},
+	});
 };
 
 export const deleteAllFilesOfDocuments = async (event: H3Event<EventHandlerRequest> | null = null) => {
@@ -435,6 +509,61 @@ export const getSignedDocumentsByUserId = (id: number) => {
 		},
 	});
 }
+
+export const getDocumentsMarkedForDeletion = () => {
+	return prisma.document.findMany({
+		where: {
+			deleteSignCount: {
+				gt: 0,
+			},
+		},
+		orderBy: {
+			createdAt: "desc",
+		},
+		include: {
+			user: true,
+			counterparty: true,
+			lead: true,
+			deleteSigns: {
+				include: {
+					user: true,
+				},
+			},
+			Signature: true,
+			moderator: true,
+		},
+	});
+};
+
+export const getDocumentsMarkedForDeletionByUserId = (userId: number) => {
+	return prisma.document.findMany({
+		where: {
+			deleteSignCount: {
+				gt: 0,
+			},
+			deleteSigns: {
+				some: {
+					userId,
+				},
+			},
+		},
+		orderBy: {
+			createdAt: "desc",
+		},
+		include: {
+			user: true,
+			counterparty: true,
+			lead: true,
+			deleteSigns: {
+				include: {
+					user: true,
+				},
+			},
+			Signature: true,
+			moderator: true,
+		},
+	});
+};
 
 export const getDocumentByUserRole = (userId: number, role: string) => {
 	if (role === 'counterparty') {
