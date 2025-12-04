@@ -32,6 +32,7 @@ import { useToast } from "~/components/ui/toast";
 import { useAdminStore } from "~/store/admin.store";
 import { useUserStore } from "~/store/user.store";
 import { Loader2 } from "lucide-vue-next"
+import { documentRequiresSignature } from "~/lib/documents";
 
 const adminStore = useAdminStore();
 const route = useRoute();
@@ -63,6 +64,14 @@ watch(isDialogOpen, async (newVal) => {
 
 const controlFlag = ref(true);
 
+const getCurrentDocument = () => {
+	const documentId = route.query.documentSign ? parseInt(route.query.documentSign as string, 10) : NaN;
+	if (Number.isNaN(documentId)) {
+		return null;
+	}
+	return adminStore.getDocumentById(documentId);
+};
+
 
 async function signDocument() {
   if (isLoading.value) return;
@@ -70,7 +79,17 @@ async function signDocument() {
   console.log("🚀 Начинаем процесс подписания документа");
   isLoading.value = true;
 
-  const currentDoc = adminStore.getDocumentById(parseInt(route.query.documentSign));
+  const currentDoc = getCurrentDocument();
+
+  if (!currentDoc || !documentRequiresSignature(currentDoc.type)) {
+    toast({
+      title: "Помилка",
+      description: "Цей документ не потребує підпису",
+      variant: "destructive",
+    });
+    isLoading.value = false;
+    return;
+  }
 
   console.log("📄 Текущий документ:", {
     id: currentDoc?.id,

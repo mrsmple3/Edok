@@ -5,6 +5,9 @@ import path, { join } from "path";
 import mime from "mime";
 import { createSafeFileName } from "~/server/utils/transliterate";
 import { Buffer } from "buffer";
+import { DOCUMENT_TYPES_WITHOUT_SIGNATURE } from "~/lib/documents";
+
+const NON_SIGNABLE_DOCUMENT_TYPES = [...DOCUMENT_TYPES_WITHOUT_SIGNATURE];
 
 export const getAllDocuments = () => {
 	return prisma.document.findMany({
@@ -448,6 +451,11 @@ export const getUnsignedDocuments = () => {
 			status: {
 				not: "Підписано",
 			},
+			NOT: {
+				type: {
+					in: NON_SIGNABLE_DOCUMENT_TYPES,
+				},
+			},
 		},
 		include: {
 			user: true,
@@ -465,6 +473,11 @@ export const getUnsignedDocumentsByUserId = (id: number) => {
 			userId: id,
 			status: {
 				not: "Підписано",
+			},
+			NOT: {
+				type: {
+					in: NON_SIGNABLE_DOCUMENT_TYPES,
+				},
 			},
 		},
 		include: {

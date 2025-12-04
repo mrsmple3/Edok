@@ -106,6 +106,7 @@
 import { useToast } from "~/components/ui/toast"
 import { useUserStore } from "~/store/user.store"
 import { useAdminStore } from "~/store/admin.store"
+import { getInitialDocumentStatus } from "~/lib/documents"
 
 definePageMeta({
 	layout: "page",
@@ -245,6 +246,7 @@ const handleFileUpload = (event: Event, documentType: string) => {
 
 const uploadDocument = async (file: File, documentType: string) => {
 	try {
+		const status = getInitialDocumentStatus(documentType);
 		const document = await adminStore.createDocument(
 			{
 				title: file.name,
@@ -252,7 +254,7 @@ const uploadDocument = async (file: File, documentType: string) => {
 				counterpartyId: userStore.userGetter ? userStore.userGetter.id : null,
 				type: documentType,
 				content: "Інформаційний",
-				status: 'В очікуванні'
+				status
 			},
 			file
 		).then(() => {

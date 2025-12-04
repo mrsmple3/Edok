@@ -31,7 +31,7 @@
 
     <!-- Статус -->
     <TableCell class="t-cell">
-      <span :class="getStatusClass(invoice.status)">{{ invoice.status }}</span>
+      <span :class="getStatusClass(invoice)">{{ getStatusText(invoice) }}</span>
     </TableCell>
 
     <!-- Відправник -->
@@ -63,6 +63,8 @@
 
 <script setup lang="ts">
 import { useUserStore, type Document } from "~/store/user.store"
+import { documentRequiresSignature, getDocumentStatusLabel } from "~/lib/documents"
+
 const props = defineProps({
   invoice: {
     type: Object,
@@ -100,8 +102,12 @@ const getDocumentNumber = (invoice: any) => {
 };
 
 // Получение класса для статуса
-const getStatusClass = (status: string) => {
-  switch (status) {
+const getStatusClass = (invoice: any) => {
+  if (!documentRequiresSignature(invoice?.type)) {
+    return 'px-2 py-1 text-xs rounded-full bg-blue-100 text-blue-800';
+  }
+
+  switch (invoice.status) {
     case 'Підписано':
       return 'px-2 py-1 text-xs rounded-full bg-green-100 text-green-800';
     case 'В очікуванні':
@@ -111,6 +117,10 @@ const getStatusClass = (status: string) => {
     default:
       return 'px-2 py-1 text-xs rounded-full bg-gray-100 text-gray-800';
   }
+};
+
+const getStatusText = (invoice: any) => {
+  return getDocumentStatusLabel(invoice?.status, invoice?.type);
 };
 
 // Получение информации об отправителе

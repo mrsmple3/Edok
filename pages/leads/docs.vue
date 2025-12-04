@@ -98,6 +98,7 @@
 import { useUserStore } from "~/store/user.store"
 import { useAdminStore } from "~/store/admin.store"
 import { useToast } from "~/components/ui/toast"
+import { getInitialDocumentStatus } from "~/lib/documents"
 
 definePageMeta({
   layout: "page",
@@ -239,6 +240,8 @@ const uploadDocument = async (file: File, documentType: string) => {
     const lead = leadResult;
 
     // Создаем документ с корректными данными
+    const status = getInitialDocumentStatus(documentType);
+
     await adminStore.createDocument(
       {
         title: file.name,
@@ -248,7 +251,7 @@ const uploadDocument = async (file: File, documentType: string) => {
         type: documentType,
         leadId: Number(route.query.id),
         content: "Інформаційний",
-        status: 'В очікуванні'
+        status
       },
       file
     ).then(() => {

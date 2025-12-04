@@ -6,7 +6,7 @@
 			<DropdownMenuItem class="text-yellow-700" @select="handleSelect">
 				<DocumentEditDialogWindow :invoice="invoice" />
 			</DropdownMenuItem>
-			<DropdownMenuItem @select="handleSelectSign">
+			<DropdownMenuItem v-if="canSignDocument" @select="handleSelectSign">
 				<DocumentSignDialogWindow />
 			</DropdownMenuItem>
 			<!-- <DropdownMenuItem @select="handleSelectSign">
@@ -25,6 +25,7 @@
 import { useToast } from "~/components/ui/toast";
 import { useAdminStore } from "~/store/admin.store";
 import { useUserStore } from "~/store/user.store";
+import { documentRequiresSignature } from "~/lib/documents";
 
 const props = defineProps({
 	invoice: {
@@ -37,6 +38,7 @@ const router = useRouter();
 const adminStore = useAdminStore();
 const userStore = useUserStore();
 const { toast } = useToast();
+const canSignDocument = computed(() => documentRequiresSignature(props.invoice?.type));
 
 
 const documentView = useState("isDocumentView");
@@ -55,6 +57,10 @@ const handleSelect = (event: Event) => {
 };
 
 const handleSelectSign = (event: Event) => {
+	if (!canSignDocument.value) {
+		event.preventDefault();
+		return;
+	}
 	event.preventDefault();
 	const currentQuery = { ...router.currentRoute.value.query };
 	router.push({
