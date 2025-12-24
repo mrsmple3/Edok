@@ -7,7 +7,7 @@
 				<DocumentEditDialogWindow :invoice="invoice" />
 			</DropdownMenuItem>
 			<DropdownMenuItem v-if="canSignDocument" @select="handleSelectSign">
-				<DocumentSignDialogWindow />
+				<DocumentSignDialogWindow :documents="[invoice.id]" />
 			</DropdownMenuItem>
 			<!-- <DropdownMenuItem @select="handleSelectSign">
 				<DocumentDownload :invoice="invoice" />
@@ -34,7 +34,6 @@ const props = defineProps({
 	},
 });
 
-const router = useRouter();
 const adminStore = useAdminStore();
 const userStore = useUserStore();
 const { toast } = useToast();
@@ -57,18 +56,7 @@ const handleSelect = (event: Event) => {
 };
 
 const handleSelectSign = (event: Event) => {
-	if (!canSignDocument.value) {
-		event.preventDefault();
-		return;
-	}
 	event.preventDefault();
-	const currentQuery = { ...router.currentRoute.value.query };
-	router.push({
-		query: {
-			...currentQuery,
-			documentSign: props.invoice.id
-		}
-	});
 };
 
 const deleteDocument = async (invoice: any) => {

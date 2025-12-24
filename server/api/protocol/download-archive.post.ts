@@ -81,11 +81,17 @@ export default defineEventHandler(async (event) => {
     console.log(`✅ Единый PDF создан, размер: ${combinedPdfBytes.length} байт`);
 
     // Устанавливаем заголовки для скачивания
-    const fileName = `protocols_and_document_${sanitizeFileName(documentTitle)}_${formatDate(new Date().toISOString())}.pdf`;
+    const safeTitle = sanitizeFileName(documentTitle);
+    const fileName = `protocols_and_document_${safeTitle}_${formatDate(new Date().toISOString())}.pdf`;
     const disposition = buildContentDispositionHeader(fileName);
 
     setHeader(event, 'Content-Type', 'application/pdf');
-    setHeader(event, 'Content-Disposition', disposition);
+    try {
+      setHeader(event, 'Content-Disposition', disposition);
+    } catch (headerError) {
+      console.warn('⚠️ Invalid Content-Disposition header detected, using safe fallback', headerError);
+      setHeader(event, 'Content-Disposition', 'attachment; filename="protocol.pdf"');
+    }
     setHeader(event, 'Content-Length', combinedPdfBytes.length.toString());
 
     return combinedPdfBytes;
@@ -584,21 +590,46 @@ function formatFullDate(dateString: string): string {
   return date.toLocaleString('uk-UA');
 }
 
-function sanitizeFileName(filename: string): string {
-  return filename
+function sanitizeFileName(filename: string | undefined | null): string {
+  if (!filename || typeof filename !== 'string') {
+    return 'document';
+  }
+
+  const normalized = filename
+    .normalize('NFKD')
+    .replace(/\r|\n|\t/g, ' ')
     .replace(/[^a-zA-Z0-9а-яА-ЯіІїЇєЄ\s\-_\.]/g, '')
     .replace(/\s+/g, '_')
+    .replace(/_+/g, '_')
+    .replace(/^_+|_+$/g, '')
     .substring(0, 50);
+
+  return normalized || 'document';
 }
 
 function buildContentDispositionHeader(filename: string): string {
   const asciiFallback = filename
     .normalize('NFKD')
     .replace(/[^\x20-\x7E]/g, '_')
-    .replace(/_+/g, '_') || 'download.zip';
+    .replace(/_+/g, '_')
+    .replace(/^_+|_+$/g, '') || 'protocol.pdf';
 
   const encoded = encodeRFC5987ValueChars(filename);
-  return `attachment; filename="${asciiFallback}"; filename*=UTF-8''${encoded}`;
+  const candidate = `attachment; filename="${asciiFallback}"; filename*=UTF-8''${encoded}`;
+  return ensureAsciiHeaderValue(candidate) || 'attachment; filename="protocol.pdf"';
+}
+
+function ensureAsciiHeaderValue(value: string): string | null {
+  if (!value) {
+    return null;
+  }
+
+  const cleaned = value
+    .replace(/[\r\n]/g, '')
+    .replace(/[^\x20-\x7E]/g, '')
+    .trim();
+
+  return cleaned || null;
 }
 
 function encodeRFC5987ValueChars(str: string): string {

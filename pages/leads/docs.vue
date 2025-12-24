@@ -46,17 +46,20 @@
                 @change="(event) => handleFileUpload(event, 'Підтверджуючі')" />
             </div>
             <div class="cursor-pointer">
-              <label for="confirming">Акт переоцінки</label>
-              <input id="confirming" type="file" accept="application/pdf" class="hidden"
+              <label for="revaluation">Акт переоцінки</label>
+              <input id="revaluation" type="file" accept="application/pdf" class="hidden"
                 @change="(event) => handleFileUpload(event, 'Акт переоцінки')" />
             </div>
             <div class="cursor-pointer">
-              <label for="confirming">АКТ ЗВІРКИ</label>
-              <input id="confirming" type="file" accept="application/pdf" class="hidden"
+              <label for="animal">АКТ ЗВІРКИ</label>
+              <input id="animal" type="file" accept="application/pdf" class="hidden"
                 @change="(event) => handleFileUpload(event, 'АКТ ЗВІРКИ')" />
             </div>
           </div>
         </button>
+
+        <DocumentSignDialogWindow :documents="selectedDocumentIds" trigger-label="Підписати обрані"
+          :trigger-class="bulkSignButtonClass" :disabled="selectedDocumentIds.length === 0" />
       </div>
 
       <div class="flex-center gap-[15px]">
@@ -110,6 +113,15 @@ const adminStore = useAdminStore()
 const { withLoader } = usePageLoader()
 
 const counterparties = ref();
+
+const documentsToLeads = useState('documentsToLeads', () => []);
+const selectedDocumentIds = computed(() => documentsToLeads.value.map((doc: any) => doc.id));
+const bulkSignButtonClass = computed(() => {
+  const baseClass = "flex-center gap-[11px] rounded-[14px] border border-[#2d9cdb] py-2 px-7 text-[#2d9cdb] text-[18px] font-bold font-['Barlow'] mr-[24px]";
+  return selectedDocumentIds.value.length === 0
+    ? `${baseClass} opacity-50 cursor-not-allowed`
+    : `${baseClass} hover:active`;
+});
 
 const selectedFile = ref<File | null>(null); // Хранение выбранного файла
 

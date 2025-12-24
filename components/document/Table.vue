@@ -3,7 +3,7 @@
     'opacity-50': invoice.deleteSignCount !== 0,
     'pointer-events-none': (invoice.deleteSigns.find((sign: any) => sign.userId === userStore.userGetter.id)) && (userStore.$state.user.role !== 'admin' && userStore.$state.user.role !== 'boogalter' && !userStore.$state.user.canDeleterDocuments),
   }">
-    <div class="doc-select" v-if="!invoice.leadId && route.name === 'user-docs'">
+    <div class="doc-select" v-if="showSelection">
       <Checkbox :checked="checkBox" class="bg-[#FFFFFF] border-[#939393] absolute top-1/2 -translate-y-1/2 z-[10]"
         @update:checked="updateCheckbox" />
     </div>
@@ -62,6 +62,7 @@
 </template>
 
 <script setup lang="ts">
+import { computed } from "vue"
 import { useUserStore, type Document } from "~/store/user.store"
 import { documentRequiresSignature, getDocumentStatusLabel } from "~/lib/documents"
 
@@ -76,6 +77,12 @@ const userStore = useUserStore();
 const checkBox = ref(false);
 
 const route = useRoute();
+const showSelection = computed(() => {
+  // const routeName = (route.name ?? "").toString();
+  // const isDocsRoute = routeName.startsWith("docs");
+  // const isUserDocsRoute = routeName === "user-docs";
+  return true;
+});
 
 const documentsToLeads = useState('documentsToLeads', () => []);
 
@@ -133,11 +140,11 @@ const getSenderInfo = (invoice: any) => {
 
 // Получение информации об авторе
 const getAuthorInfo = (invoice: any) => {
-  const lead = invoice.lead;
-  if (lead && lead.authorId) {
-    // Можно добавить логику для получения автора договора
-    return 'Автор договору';
-  }
+  // const lead = invoice.lead;
+  // if (lead && lead.authorId) {
+  //   // Можно добавить логику для получения автора договора
+  //   return 'Автор договору';
+  // }
   return getSenderInfo(invoice);
 };
 

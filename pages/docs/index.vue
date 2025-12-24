@@ -4,6 +4,9 @@
 			<div class="flex-center">
 				<h2 class="page__title m-r-32">Документи</h2>
 
+				<DocumentSignDialogWindow :documents="selectedDocumentIds" trigger-label="Підписати обрані"
+					:trigger-class="bulkSignButtonClass" :disabled="selectedDocumentIds.length === 0" />
+
 				<!-- <button v-if="userStore.userRole === 'counterparty'"
 					class="submenu-parent relative flex-center page-button hover:active">
 					<img alt="plus" class="page-icon" src="/icons/plus-blue.svg" />
@@ -45,15 +48,15 @@
 								@change="(event) => handleFileUpload(event, 'Підтверджуючі')" />
 						</div>
 						<div class="cursor-pointer">
-							<label for="confirming">Акт переоцінки</label>
-							<input id="confirming" type="file" accept="application/pdf" class="hidden"
-								@change="(event) => handleFileUpload(event, 'Акт переоцінки')" />
-						</div>
-						<div class="cursor-pointer">
-							<label for="confirming">АКТ ЗВІРКИ</label>
-							<input id="confirming" type="file" accept="application/pdf" class="hidden"
-								@change="(event) => handleFileUpload(event, 'АКТ ЗВІРКИ')" />
-						</div>
+              <label for="revaluation">Акт переоцінки</label>
+              <input id="revaluation" type="file" accept="application/pdf" class="hidden"
+                @change="(event) => handleFileUpload(event, 'Акт переоцінки')" />
+            </div>
+            <div class="cursor-pointer">
+              <label for="animal">АКТ ЗВІРКИ</label>
+              <input id="animal" type="file" accept="application/pdf" class="hidden"
+                @change="(event) => handleFileUpload(event, 'АКТ ЗВІРКИ')" />
+            </div>
 					</div>
 				</button> -->
 			</div>
@@ -79,9 +82,8 @@
 				:paginatedDocuments="paginatedDocuments" />
 			<NotFoundDocument v-else />
 		</div>
-		<Pagination class="pagination-class" v-slot="{ page }" :items-per-page="itemsPerPage"
-			:total="totalDocuments" :sibling-count="1" show-edges :default-page="1"
-			@update:page="(newPage) => (currentPage = newPage)">
+		<Pagination class="pagination-class" v-slot="{ page }" :items-per-page="itemsPerPage" :total="totalDocuments"
+			:sibling-count="1" show-edges :default-page="1" @update:page="(newPage) => (currentPage = newPage)">
 			<PaginationList v-slot="{ items }" class="flex items-center gap-1">
 				<PaginationFirst />
 				<PaginationPrev />
@@ -118,6 +120,12 @@ const adminStore = useAdminStore();
 const { withLoader } = usePageLoader();
 
 const counterparties = ref();
+const documentsToLeads = useState('documentsToLeads', () => []);
+const selectedDocumentIds = computed(() => documentsToLeads.value.map((doc: any) => doc.id));
+const bulkSignButtonClass = computed(() => {
+	const base = "page-button";
+	return selectedDocumentIds.value.length === 0 ? `${base} opacity-50 cursor-not-allowed` : `${base} hover:active`;
+});
 const currentPage = ref(1); // Текущая страница
 const windowHeight = ref(0); // Высота окна
 const totalDocuments = ref(0); // Общее количество документов
