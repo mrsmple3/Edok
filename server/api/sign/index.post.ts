@@ -6,6 +6,7 @@ import { extractP7sInfo } from "../../db/extractP7sInfo";
 import { promises as fs } from "fs";
 import path from "path";
 import { addVisibleStamp } from "~/server/utils/addVisibleStamp"
+import { documentRequiresCounterpartySignature } from "~/lib/documents";
 
 const MAX_SIGNATURES_PER_ORGANIZATION = 2;
 
@@ -118,6 +119,32 @@ export default defineEventHandler(async (event) => {
           error: "Документ із зазначеним id не знайдено",
         },
       };
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+    });
+
+    if (!user) {
+      event.res.statusCode = 404;
+      return {
+        code: 404,
+        body: {
+          error: "Користувача з вказаним id не знайдено",
+        },
+      };
+    }
+
+    if (documentRequiresCounterpartySignature(document.type)) {
+      if (user.role !== "counterparty" || document.counterpartyId !== user.id) {
+        event.res.statusCode = 403;
+        return {
+          code: 403,
+          body: {
+            error: "Цей документ може підписувати лише контрагент.",
+          },
+        };
+      }
     }
 
     const creatingFile = await createFile(event, signature);

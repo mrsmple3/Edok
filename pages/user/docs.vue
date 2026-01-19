@@ -50,6 +50,21 @@
                 @change="(event) => handleFileUpload(event, 'Акт переоцінки')" />
             </div>
             <div class="cursor-pointer">
+              <label for="guarantee-letter">Гарантійний лист</label>
+              <input id="guarantee-letter" type="file" accept="application/pdf" class="hidden"
+                @change="(event) => handleFileUpload(event, 'Гарантійний лист')" />
+            </div>
+            <div class="cursor-pointer">
+              <label for="animal">АКТ ЗВІРКИ</label>
+              <input id="animal" type="file" accept="application/pdf" class="hidden"
+                @change="(event) => handleFileUpload(event, 'АКТ ЗВІРКИ')" />
+            </div>
+            <div class="cursor-pointer">
+              <label for="robit">Акт виконаних робіт/акт наданих послуг</label>
+              <input id="robit" type="file" accept="application/pdf" class="hidden"
+                @change="(event) => handleFileUpload(event, 'Акт виконаних робіт/акт наданих послуг')" />
+            </div>
+            <div class="cursor-pointer">
               <label for="animal">АКТ ЗВІРКИ</label>
               <input id="animal" type="file" accept="application/pdf" class="hidden"
                 @change="(event) => handleFileUpload(event, 'АКТ ЗВІРКИ')" />

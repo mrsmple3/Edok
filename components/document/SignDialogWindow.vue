@@ -44,7 +44,7 @@ import { useToast } from "~/components/ui/toast";
 import { useAdminStore } from "~/store/admin.store";
 import { useUserStore } from "~/store/user.store";
 import { Loader2 } from "lucide-vue-next";
-import { documentRequiresSignature } from "~/lib/documents";
+import { documentRequiresCounterpartySignature, documentRequiresSignature } from "~/lib/documents";
 
 const props = defineProps({
   documents: {
@@ -220,6 +220,12 @@ async function processDocument(docId: number) {
 
   if (!documentRequiresSignature(currentDoc.type)) {
     throw new Error("Цей документ не потребує підпису");
+  }
+
+  if (documentRequiresCounterpartySignature(currentDoc.type)) {
+    if (userStore.userRole !== "counterparty" || currentDoc.counterpartyId !== userStore.userGetter.id) {
+      throw new Error("Цей документ може підписувати лише контрагент.");
+    }
   }
 
   const filePath =

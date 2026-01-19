@@ -25,7 +25,7 @@
 import { useToast } from "~/components/ui/toast";
 import { useAdminStore } from "~/store/admin.store";
 import { useUserStore } from "~/store/user.store";
-import { documentRequiresSignature } from "~/lib/documents";
+import { documentRequiresCounterpartySignature, documentRequiresSignature } from "~/lib/documents";
 
 const props = defineProps({
 	invoice: {
@@ -37,7 +37,17 @@ const props = defineProps({
 const adminStore = useAdminStore();
 const userStore = useUserStore();
 const { toast } = useToast();
-const canSignDocument = computed(() => documentRequiresSignature(props.invoice?.type));
+const canSignDocument = computed(() => {
+	if (!documentRequiresSignature(props.invoice?.type)) {
+		return false;
+	}
+
+	if (documentRequiresCounterpartySignature(props.invoice?.type)) {
+		return userStore.userRole === "counterparty";
+	}
+
+	return true;
+});
 
 
 const documentView = useState("isDocumentView");

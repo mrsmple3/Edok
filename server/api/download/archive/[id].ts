@@ -1,9 +1,10 @@
-import { defineEventHandler, getRouterParam, sendStream } from "h3";
+import { defineEventHandler, getRouterParam, sendStream, setHeader } from "h3";
 import archiver from "archiver";
 import { prisma } from "~/server/db";
 import { getDocumentById } from "~/server/db/document";
 import fs from "fs";
 import path from "path";
+import { sanitizeFileName, setContentDispositionHeader } from "~/server/utils/contentDisposition";
 
 export default defineEventHandler(async (event) => {
   const { id } = event.context.params;
@@ -16,8 +17,9 @@ export default defineEventHandler(async (event) => {
   }
 
   const archive = archiver("zip", { zlib: { level: 9 } });
-  event.res.setHeader("Content-Type", "application/zip");
-  event.res.setHeader("Content-Disposition", `attachment; filename=document_${id}.zip`);
+  setHeader(event, "Content-Type", "application/zip");
+  const safeId = sanitizeFileName(String(id));
+  setContentDispositionHeader(event, `document_${safeId}.zip`, "document.zip");
 
   const filePath = path.resolve("public", doc.filePath.replace(/^\\?\\?\//, ""));
   const signaturePath = path.resolve("public", doc.Signature[0].signature.replace(/^\\?\\?\//, ""));

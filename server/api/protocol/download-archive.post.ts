@@ -3,6 +3,7 @@ import { PDFDocument, rgb } from 'pdf-lib';
 import fontkit from '@pdf-lib/fontkit';
 import { promises as fs } from 'fs';
 import path from 'path';
+import { sanitizeFileName, setContentDispositionHeader } from '~/server/utils/contentDisposition';
 
 const FONT_PATHS = {
   regular: path.join(process.cwd(), 'public', 'fonts', 'DejaVuSans.ttf'),
@@ -83,15 +84,9 @@ export default defineEventHandler(async (event) => {
     // Устанавливаем заголовки для скачивания
     const safeTitle = sanitizeFileName(documentTitle);
     const fileName = `protocols_and_document_${safeTitle}_${formatDate(new Date().toISOString())}.pdf`;
-    const disposition = buildContentDispositionHeader(fileName);
 
     setHeader(event, 'Content-Type', 'application/pdf');
-    try {
-      setHeader(event, 'Content-Disposition', disposition);
-    } catch (headerError) {
-      console.warn('⚠️ Invalid Content-Disposition header detected, using safe fallback', headerError);
-      setHeader(event, 'Content-Disposition', 'attachment; filename="protocol.pdf"');
-    }
+    setContentDispositionHeader(event, fileName, 'protocol.pdf');
     setHeader(event, 'Content-Length', combinedPdfBytes.length.toString());
 
     return combinedPdfBytes;
@@ -126,7 +121,22 @@ async function generateCombinedPDF(signatures: any[], documentTitle: string, sig
 
     const A4_WIDTH = 595;
     const A4_HEIGHT = 842;
-    const margin = 50;
+    const layout = {
+      margin: 24,
+      titleSize: 11,
+      subtitleSize: 9,
+      labelSize: 7,
+      valueSize: 7,
+      smallSize: 6,
+      lineSpacing: 1,
+      sectionGap: 3,
+      blockGap: 5
+    };
+    const margin = layout.margin;
+    const pageBreak = {
+      section: margin + 60,
+      item: margin + 26
+    };
 
     // ЧАСТЬ 1: Сначала добавляем подписанный документ
     if (signedDocumentBytes) {
@@ -147,127 +157,160 @@ async function generateCombinedPDF(signatures: any[], documentTitle: string, sig
     }
 
     // ЧАСТЬ 2: Затем добавляем все протоколы
-    for (let index = 0; index < signatures.length; index++) {
-      const signature = signatures[index];
-      const protocolNumber = index + 1;
+    let page = pdfDoc.addPage([A4_WIDTH, A4_HEIGHT]);
+    let currentY = A4_HEIGHT - margin;
 
-      // Добавляем новую страницу для каждого протокола
-      const page = pdfDoc.addPage([A4_WIDTH, A4_HEIGHT]);
-      let currentY = A4_HEIGHT - margin;
+    const addText = (text: string, x: number, y: number, options: any = {}) => {
+      const size = options.size ?? layout.valueSize;
+      const color = options.color || rgb(0, 0, 0);
+      const useFont = options.bold ? boldFont : font;
+      const lineSpacing = options.lineSpacing ?? layout.lineSpacing;
+      const maxWidth = options.maxWidth ?? (A4_WIDTH - margin - x);
 
-      const addText = (text: string, x: number, y: number, options: any = {}) => {
-        const size = options.size || 12;
-        const color = options.color || rgb(0, 0, 0);
-        const useFont = options.bold ? boldFont : font;
+      const lines = wrapText(text, useFont, size, maxWidth);
+      let yPos = y;
 
-        page.drawText(text, {
+      for (const line of lines) {
+        page.drawText(line, {
           x,
-          y,
+          y: yPos,
           size,
           color,
           font: useFont,
         });
+        yPos -= size + lineSpacing;
+      }
 
-        return y - size - (options.lineSpacing || 5);
-      };
+      return yPos;
+    };
+    const addPage = () => {
+      page = pdfDoc.addPage([A4_WIDTH, A4_HEIGHT]);
+      currentY = A4_HEIGHT - margin;
+    };
+    const wrapText = (text: string, textFont: any, size: number, maxWidth: number) => {
+      if (!text) return [''];
 
-      // Заголовок протокола
-      currentY = addText('Protokol elektronnoho pidpysu', margin, currentY, {
-        size: 18,
-        color: rgb(0.1, 0.3, 0.6),
-        bold: true
-      });
+      const words = text.split(' ');
+      const lines: string[] = [];
+      let currentLine = '';
 
-      currentY = addText(`#${protocolNumber}`, margin, currentY, { size: 14, bold: true });
-      currentY -= 10;
+      for (const word of words) {
+        const testLine = currentLine ? `${currentLine} ${word}` : word;
+        const testWidth = textFont.widthOfTextAtSize(testLine, size);
+
+        if (testWidth <= maxWidth) {
+          currentLine = testLine;
+          continue;
+        }
+
+        if (currentLine) {
+          lines.push(currentLine);
+          currentLine = '';
+        }
+
+        const wordWidth = textFont.widthOfTextAtSize(word, size);
+        if (wordWidth <= maxWidth) {
+          currentLine = word;
+          continue;
+        }
+
+        let chunk = '';
+        for (const char of word) {
+          const chunkTest = chunk + char;
+          if (textFont.widthOfTextAtSize(chunkTest, size) <= maxWidth) {
+            chunk = chunkTest;
+          } else {
+            if (chunk) {
+              lines.push(chunk);
+            }
+            chunk = char;
+          }
+        }
+
+        currentLine = chunk;
+      }
+
+      if (currentLine) {
+        lines.push(currentLine);
+      }
+
+      return lines;
+    };
+    const protocolStartMin = margin + 100;
+
+    for (let index = 0; index < signatures.length; index++) {
+      const signature = signatures[index];
+      const protocolNumber = index + 1;
+
+      if (index > 0) {
+        if (currentY < protocolStartMin) {
+          addPage();
+        } else {
+          currentY -= layout.blockGap;
+        }
+      } else if (currentY < protocolStartMin) {
+        addPage();
+      }
 
       currentY = addText(`Data stvorennia: ${formatFullDate(new Date().toISOString())}`,
-        margin, currentY, { size: 10 }
+        margin, currentY, { size: layout.smallSize }
       );
-      currentY -= 20;
+      currentY -= layout.blockGap;
 
       // Информация о документе
-      currentY = addText('Dokument:', margin, currentY, { size: 12, bold: true });
-      currentY = addText(`  ${documentTitle}`, margin + 10, currentY, { size: 10 });
-      currentY -= 20;
+      currentY = addText(`${documentTitle || 'Без назви'}`, margin, currentY, {
+        size: layout.valueSize,
+        maxWidth: A4_WIDTH - margin * 2
+      });
+      currentY -= layout.blockGap;
 
       // Информация о подписанте
       if (signature.User) {
-        currentY = addText('Informatsiia pro pidpysanta:', margin, currentY, { size: 12, bold: true });
-        currentY = addText(`  Korystuvach: ${signature.User.name}`,
-          margin + 10, currentY, { size: 10 }
+        currentY = addText(`Korystuvach: ${signature.User.name}`,
+          margin, currentY, { size: layout.valueSize }
         );
       }
 
       if (signature.createdAt) {
-        currentY = addText(`  Data pidpysu: ${formatFullDate(signature.createdAt)}`,
-          margin + 10, currentY, { size: 10 }
+        currentY = addText(`Data pidpysu: ${formatFullDate(signature.createdAt)}`,
+          margin, currentY, { size: layout.valueSize }
         );
       }
-      currentY -= 20;
+      currentY -= layout.blockGap;
 
       // Информация о сертификате
       if (signature.info) {
         const sections = parseSignatureInfo(signature.info);
 
         for (const section of sections) {
-          if (currentY < margin + 150) {
-            const newPage = pdfDoc.addPage([A4_WIDTH, A4_HEIGHT]);
-            currentY = A4_HEIGHT - margin;
+          if (currentY < pageBreak.section) {
+            addPage();
           }
-
-          currentY = addText(section.title, margin, currentY, {
-            size: 12,
-            bold: true
-          });
 
           for (const item of section.items) {
-            if (currentY < margin + 50) {
-              const newPage = pdfDoc.addPage([A4_WIDTH, A4_HEIGHT]);
-              currentY = A4_HEIGHT - margin;
+            if (currentY < pageBreak.item) {
+              addPage();
             }
 
-            currentY = addText(`- ${item.key}:`, margin + 10, currentY, { size: 10 });
-            currentY = addText(`  ${item.value}`, margin + 20, currentY, { size: 9 });
+            currentY = addText(`- ${item.key}: ${item.value}`, margin, currentY, {
+              size: layout.valueSize,
+              maxWidth: A4_WIDTH - margin * 2
+            });
           }
 
-          currentY -= 15;
+          currentY -= layout.sectionGap;
         }
       }
 
-      // Файлы подписи
-      if (currentY < margin + 100) {
-        const newPage = pdfDoc.addPage([A4_WIDTH, A4_HEIGHT]);
-        currentY = A4_HEIGHT - margin;
-      }
-
-      currentY -= 10;
-      currentY = addText('Faily pidpysu:', margin, currentY, { size: 12, bold: true });
-
-      if (signature.signature) {
-        currentY = addText('- Fail elektronnoho pidpysu (.p7s)',
-          margin, currentY, { size: 11 }
-        );
-        currentY = addText(`  ${signature.signature}`,
-          margin + 10, currentY, { size: 9 }
-        );
-      }
-
-      if (signature.stampedFile) {
-        currentY = addText('- Pidpysanyi dokument z pechatkoiu',
-          margin, currentY, { size: 11 }
-        );
-        currentY = addText(`  ${signature.stampedFile}`,
-          margin + 10, currentY, { size: 9 }
-        );
-      }
-
-      currentY -= 20;
+      currentY -= layout.blockGap;
 
       // Подвал
+      if (currentY < margin + layout.smallSize + layout.sectionGap) {
+        addPage();
+      }
       addText('Protokol zgenerovano avtomatychno systemoiu elektronnoho dokumentoobihu',
         margin, currentY, {
-        size: 10,
+        size: layout.smallSize,
         color: rgb(0.5, 0.5, 0.5)
       });
 
@@ -590,55 +633,10 @@ function formatFullDate(dateString: string): string {
   return date.toLocaleString('uk-UA');
 }
 
-function sanitizeFileName(filename: string | undefined | null): string {
-  if (!filename || typeof filename !== 'string') {
-    return 'document';
-  }
-
-  const normalized = filename
-    .normalize('NFKD')
-    .replace(/\r|\n|\t/g, ' ')
-    .replace(/[^a-zA-Z0-9а-яА-ЯіІїЇєЄ\s\-_\.]/g, '')
-    .replace(/\s+/g, '_')
-    .replace(/_+/g, '_')
-    .replace(/^_+|_+$/g, '')
-    .substring(0, 50);
-
-  return normalized || 'document';
-}
-
-function buildContentDispositionHeader(filename: string): string {
-  const asciiFallback = filename
-    .normalize('NFKD')
-    .replace(/[^\x20-\x7E]/g, '_')
-    .replace(/_+/g, '_')
-    .replace(/^_+|_+$/g, '') || 'protocol.pdf';
-
-  const encoded = encodeRFC5987ValueChars(filename);
-  const candidate = `attachment; filename="${asciiFallback}"; filename*=UTF-8''${encoded}`;
-  return ensureAsciiHeaderValue(candidate) || 'attachment; filename="protocol.pdf"';
-}
-
-function ensureAsciiHeaderValue(value: string): string | null {
-  if (!value) {
-    return null;
-  }
-
-  const cleaned = value
-    .replace(/[\r\n]/g, '')
-    .replace(/[^\x20-\x7E]/g, '')
-    .trim();
-
-  return cleaned || null;
-}
-
-function encodeRFC5987ValueChars(str: string): string {
-  return encodeURIComponent(str)
-    .replace(/['()*]/g, (char) => `%${char.charCodeAt(0).toString(16).toUpperCase()}`)
-    .replace(/%(7C|60|5E)/g, (match) => match.toLowerCase());
-}
 
 function parseSignatureInfo(info: string) {
+  if (!info) return [];
+
   const sections: Array<{
     title: string;
     items: Array<{ key: string; value: string }>;
@@ -652,31 +650,49 @@ function parseSignatureInfo(info: string) {
   try {
     const normalized = info.replace(/\\n/g, "\n");
     const lines = normalized.split("\n").map(line => line.trim()).filter(line => line);
+    let subjectValue: string | null = null;
+    let issuerValue: string | null = null;
 
     for (const line of lines) {
       if (line.includes(":")) {
         const [key, ...valueParts] = line.split(":");
         const value = valueParts.join(":").trim();
+        const cleanKey = key?.trim();
 
-        if (key && value && key.trim() === 'Subject') {
-          const subjectItems = parseSubjectData(value);
-          sections[0].items.push(...subjectItems);
-          break;
+        if (cleanKey === 'Subject' && value) {
+          subjectValue = value;
+        }
+
+        if (cleanKey === 'Issuer' && value) {
+          issuerValue = value;
         }
       }
+    }
+
+    if (issuerValue) {
+      const issuerItems = parseSubjectData(issuerValue);
+      const issuerName = pickIssuerName(issuerItems, issuerValue);
+      if (issuerName) {
+        sections[0].items.push({ key: 'АЦСК', value: issuerName });
+      }
+    }
+
+    if (subjectValue) {
+      const subjectItems = parseSubjectData(subjectValue);
+      sections[0].items.push(...subjectItems);
     }
   } catch (error) {
     console.error('Помилка парсингу сертифіката:', error);
   }
 
-  return sections;
+  return sections.filter(section => section.items.length > 0);
 }
 
 function parseSubjectData(data: string): Array<{ key: string; value: string }> {
   const items: Array<{ key: string; value: string }> = [];
 
   try {
-    const cleanData = data.replace(/^Subject:\s*/, '');
+    const cleanData = data.replace(/^(Subject|Issuer):\s*/, '');
     const parts = [];
     let current = '';
     let inQuotes = false;
@@ -697,32 +713,31 @@ function parseSubjectData(data: string): Array<{ key: string; value: string }> {
     if (current.trim()) parts.push(current.trim());
 
     for (const part of parts) {
-      if (part.includes('=')) {
-        const [key, ...valueParts] = part.split('=');
-        let value = valueParts.join('=').trim();
+      if (!part.includes('=')) continue;
 
-        if (key && value) {
-          const cleanKey = key.trim();
-          let cleanValue = decodeHexString(value);
+      const [key, ...valueParts] = part.split('=');
+      const value = valueParts.join('=').trim();
+      if (!key || !value) continue;
 
-          if (cleanValue.includes('/serialNumber=')) {
-            const [mainValue, serialPart] = cleanValue.split('/serialNumber=');
-            items.push({
-              key: formatCertificateFieldName(cleanKey),
-              value: mainValue.trim()
-            });
-            if (serialPart) {
-              items.push({
-                key: 'ІПН / Серійний номер',
-                value: serialPart.trim()
-              });
-            }
-          } else {
-            items.push({
-              key: formatCertificateFieldName(cleanKey),
-              value: cleanValue
-            });
-          }
+      const cleanKey = formatCertificateFieldName(decodeHexString(key.trim()));
+      const cleanValue = decodeHexString(value);
+      const splitValue = splitSlashValue(cleanValue);
+
+      if (splitValue.mainValue) {
+        items.push({
+          key: cleanKey,
+          value: splitValue.mainValue
+        });
+      }
+
+      for (const extra of splitValue.extras) {
+        const extraKey = formatCertificateFieldName(decodeHexString(extra.key));
+        const extraValue = decodeHexString(extra.value);
+        if (extraKey && extraValue) {
+          items.push({
+            key: extraKey,
+            value: extraValue
+          });
         }
       }
     }
@@ -731,6 +746,60 @@ function parseSubjectData(data: string): Array<{ key: string; value: string }> {
   }
 
   return items;
+}
+
+function splitSlashValue(value: string) {
+  const extras: Array<{ key: string; value: string }> = [];
+  if (!value) {
+    return { mainValue: '', extras };
+  }
+
+  const parts = value.split('/').filter(part => part.trim() !== '');
+  if (parts.length === 0) {
+    return { mainValue: value.trim(), extras };
+  }
+
+  let mainValue = parts.shift()!.trim();
+  for (const part of parts) {
+    const eqIndex = part.indexOf('=');
+    if (eqIndex === -1) {
+      const leftover = part.trim();
+      if (!leftover) continue;
+      if (extras.length > 0) {
+        extras[extras.length - 1].value = `${extras[extras.length - 1].value} ${leftover}`.trim();
+      } else {
+        mainValue = `${mainValue} ${leftover}`.trim();
+      }
+      continue;
+    }
+    const key = part.slice(0, eqIndex).trim();
+    const extraValue = part.slice(eqIndex + 1).trim();
+    if (key && extraValue) {
+      extras.push({ key, value: extraValue });
+    }
+  }
+
+  return { mainValue, extras };
+}
+
+function pickIssuerName(items: Array<{ key: string; value: string }>, fallback: string) {
+  const preferredKeys = [
+    'CN',
+    'O',
+    'OU',
+    'Повне ім\'я / Назва організації',
+    'Організація',
+    'Підрозділ організації'
+  ];
+
+  for (const key of preferredKeys) {
+    const match = items.find(item => item.key === key && item.value);
+    if (match) {
+      return match.value;
+    }
+  }
+
+  return items[0]?.value || fallback;
 }
 
 function decodeHexString(hexStr: string): string {
@@ -761,10 +830,20 @@ function formatCertificateFieldName(fieldName: string): string {
     'L': 'Місто',
     'ST': 'Область',
     'C': 'Країна',
+    'street': 'Адреса',
+    'postalCode': 'Поштовий індекс',
+    'title': 'Посада',
+    'organizationIdentifier': 'Ідентифікатор організації',
+    'UID': 'Унікальний ідентифікатор',
+    'businessCategory': 'Категорія діяльності',
     'SN': 'Прізвище',
     'GN': 'Ім\'я та по батькові',
+    'givenName': 'Ім\'я',
+    'surname': 'Прізвище',
     'serialNumber': 'ІПН / Серійний номер',
     'emailAddress': 'Електронна пошта',
+    'telephoneNumber': 'Номер телефону',
+    'description': 'Опис',
   };
   return map[fieldName] || fieldName;
 }

@@ -3,6 +3,7 @@ import fontkit from '@pdf-lib/fontkit';
 import { defineEventHandler, readBody, createError, setHeader } from 'h3';
 import fs from 'fs';
 import path from 'path';
+import { setContentDispositionHeader } from '~/server/utils/contentDisposition';
 
 export default defineEventHandler(async (event) => {
   try {
@@ -367,7 +368,7 @@ export default defineEventHandler(async (event) => {
     const fileName = `protocols_all_${new Date().toLocaleDateString('uk-UA').replace(/\./g, '-')}.pdf`;
 
     setHeader(event, 'Content-Type', 'application/pdf');
-    setHeader(event, 'Content-Disposition', `attachment; filename="${fileName}"`);
+    setContentDispositionHeader(event, fileName, 'protocols.pdf');
     setHeader(event, 'Content-Length', pdfBytes.length);
 
     return pdfBytes;

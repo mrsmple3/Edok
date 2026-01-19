@@ -97,10 +97,10 @@ const handleFileChange = (event: Event) => {
 
 const formSchema = toTypedSchema(
 	z.object({
-		name: z.string().min(2).max(120),
-		type: z.string().min(2).max(50).default(typeOfLead.value),
-		moderator: z.number().min(1).max(50),
-		counterparty: z.number().min(1).max(50),
+		name: z.string().min(2).max(150),
+		type: z.string().min(2).default(typeOfLead.value),
+		moderator: z.number().min(1),
+		counterparty: z.number().min(1),
 	})
 );
 

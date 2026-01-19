@@ -3,6 +3,18 @@ export const DOCUMENT_TYPES_WITHOUT_SIGNATURE = [
 	"Товарно-транспортна накладна",
 ] as const;
 
+export const DOCUMENT_TYPES_COUNTERPARTY_ONLY = [
+	"Гарантійний лист",
+] as const;
+
+export const documentRequiresCounterpartySignature = (type?: string | null) => {
+	if (!type) {
+		return false;
+	}
+
+	return DOCUMENT_TYPES_COUNTERPARTY_ONLY.includes(type as (typeof DOCUMENT_TYPES_COUNTERPARTY_ONLY)[number]);
+};
+
 export const documentRequiresSignature = (type?: string | null) => {
 	if (!type) {
 		return true;
