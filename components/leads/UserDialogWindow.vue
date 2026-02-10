@@ -52,6 +52,27 @@
 						<FormMessage />
 					</FormItem>
 				</FormField>
+				<FormField v-slot="{ componentField }" name="organization">
+					<FormItem>
+						<Select v-bind="componentField">
+							<FormControl>
+								<SelectTrigger>
+									<SelectValue placeholder="Оберіть організацію" />
+								</SelectTrigger>
+							</FormControl>
+							<SelectContent>
+								<SelectGroup>
+									<SelectLabel>Організації</SelectLabel>
+									<SelectItem v-for="organization in adminStore.organizationsGetter" :key="organization.id"
+										:value="organization.id">
+										{{ organization.name }}
+									</SelectItem>
+								</SelectGroup>
+							</SelectContent>
+						</Select>
+						<FormMessage />
+					</FormItem>
+				</FormField>
 			</div>
 			<DialogFooter> <Button @click="createLead">Створити</Button> </DialogFooter>
 		</DialogContent>
@@ -96,6 +117,7 @@ const formSchema = toTypedSchema(
 		name: z.string().min(2).max(120),
 		type: z.string().min(2).max(50).default(typeOfLead.value),
 		moderator: z.number().min(1).max(50),
+		organization: z.number().min(1),
 	})
 );
 
@@ -118,6 +140,7 @@ const createLead = form.handleSubmit(async (values) => {
 			authorId: userStore.userGetter.id,
 			counterpartyId: props.counterpartyId,
 			moderatorsId: values.moderator,
+			organizationId: values.organization,
 			documents: documentsToLeads.value.map(doc => doc.id),
 		});
 		props.getFunction();
@@ -154,6 +177,7 @@ watch(isDialogOpen, async (newVal) => {
 			isDialogOpen.value = false;
 			return;
 		}
+		await adminStore.getOrganizations();
 		await userStore.getModerators();
 	}
 });

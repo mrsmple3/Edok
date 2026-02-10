@@ -153,6 +153,13 @@ onBeforeMount(async () => {
     async ([newVal, changedRoute]) => {
       if (newVal && userStore.$state.user.role !== 'counterparty') {
         console.log(userStore.$state.user, sidebarLinks.value);
+        if (!sidebarLinks.value.find(link => link.title === 'Організації')) {
+          sidebarLinks.value.push({
+            title: 'Організації',
+            icon: '/icons/Document%20Writer.svg',
+            route: '/organizations'
+          });
+        }
         if (sidebarLinks.value.find(link => link.title === 'Контакти')) {
           return;
         }

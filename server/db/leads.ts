@@ -9,6 +9,7 @@ export const getAllLeads = async () => {
 			documents: true,
 			moderators: true,
 			counterparty: true,
+			organization: true,
 		},
 	});
 };
@@ -21,6 +22,7 @@ export const getLeadById = async (id: any) => {
 			counterparty: true,
 			moderators: true,
 			documents: true,
+			organization: true,
 		},
 	});
 };
@@ -37,6 +39,7 @@ export const getLeadsByAuthorId = async (authorId: number) => {
 			documents: true,
 			moderators: true,
 			counterparty: true,
+			organization: true,
 		},
 	});
 
@@ -55,6 +58,7 @@ export const getLeadsByCounterpartyId = async (counterpartyId: number) => {
 			documents: true,
 			moderators: true,
 			counterparty: true,
+			organization: true,
 		},
 	});
 
@@ -75,6 +79,7 @@ export const getLeadsByRole = async (role: string, id: number) => {
 					documents: true,
 					moderators: true,
 					counterparty: true,
+					organization: true,
 				},
 			});
 			break;
@@ -90,6 +95,7 @@ export const getLeadsByRole = async (role: string, id: number) => {
 					documents: true,
 					moderators: true,
 					counterparty: true,
+					organization: true,
 				},
 			});
 			break;
@@ -105,6 +111,7 @@ export const getLeadsByRole = async (role: string, id: number) => {
 					documents: true,
 					moderators: true,
 					counterparty: true,
+					organization: true,
 				},
 			});
 			break;
@@ -120,6 +127,7 @@ export const getLeadsByRole = async (role: string, id: number) => {
 					documents: true,
 					moderators: true,
 					counterparty: true,
+					organization: true,
 				},
 			});
 			break;
@@ -138,6 +146,7 @@ export const getLeadsByModeratorId = async (moderatorId: number) => {
 			documents: true,
 			moderators: true,
 			counterparty: true,
+			organization: true,
 		},
 	});
 
@@ -152,6 +161,7 @@ export const createLead = async (event: H3Event<EventHandlerRequest>, data: any)
 			author: { connect: { id: data.authorId } },
 			counterparty: data.counterpartyId ? { connect: { id: data.counterpartyId } } : undefined,
 			moderators: data.moderatorsId ? { connect: { id: data.moderatorsId } } : undefined,
+			organization: data.organizationId ? { connect: { id: data.organizationId } } : undefined,
 			documents: {
 				connect: data.documents.map((documentId: number) => ({ id: documentId })),
 			},
@@ -161,6 +171,7 @@ export const createLead = async (event: H3Event<EventHandlerRequest>, data: any)
 			counterparty: true,
 			moderators: true,
 			documents: true,
+			organization: true,
 		},
 	});
 };
@@ -173,6 +184,7 @@ export const updateLead = async (id: number, data: any) => {
 			type: data.type,
 			counterparty: data.counterpartyId ? { connect: { id: data.counterpartyId } } : undefined,
 			moderators: data.moderatorsId ? { connect: { id: data.moderatorsId } } : undefined,
+			organization: data.organizationId ? { connect: { id: data.organizationId } } : undefined,
 			documents: {
 				connect: data.documents ? data.documents.map((documentId: number) => ({ id: documentId })) : undefined,
 			},
@@ -182,6 +194,7 @@ export const updateLead = async (id: number, data: any) => {
 			counterparty: true,
 			moderators: true,
 			documents: true,
+			organization: true,
 		},
 	});
 };

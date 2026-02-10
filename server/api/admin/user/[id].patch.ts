@@ -1,4 +1,5 @@
 import { getUserById, updateUser } from "~/server/db/users";
+import { findOrCreateOrganization } from "~/server/db/organizations";
 
 export default defineEventHandler(async (event) => {
   const { id } = event.context.params;
@@ -40,8 +41,21 @@ export default defineEventHandler(async (event) => {
     if (body.hasOwnProperty('organization_INN')) {
       updateData.organization_INN = body.organization_INN;
     }
+    if (body.hasOwnProperty('organizationId')) {
+      updateData.organizationId = body.organizationId;
+    }
     if (body.hasOwnProperty('name')) {
       updateData.name = body.name;
+    }
+
+    if (!updateData.organizationId && (updateData.organization_name || updateData.organization_INN)) {
+      const organization = await findOrCreateOrganization({
+        name: updateData.organization_name,
+        inn: updateData.organization_INN,
+      });
+      if (organization) {
+        updateData.organizationId = organization.id;
+      }
     }
 
     const user = await updateUser(parseInt(id), updateData);

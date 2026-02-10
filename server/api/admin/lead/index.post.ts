@@ -1,18 +1,25 @@
 import { createLead } from "~/server/db/leads";
 import { getUserById } from "~/server/db/users";
+import { getOrganizationById } from "~/server/db/organizations";
 
 export default defineEventHandler(async (event) => {
 	const body = await readBody(event);
 
-	const { type, name, moderatorsId, counterpartyId, authorId, documents } = body;
+	const { type, name, moderatorsId, counterpartyId, authorId, documents, organizationId } = body;
 
-	if (!type || !name || !authorId || !documents) {
+	if (!type || !name || !authorId || !documents || !organizationId) {
 		event.res.statusCode = 400;
 		return {
 			code: 400,
 			body: {
 				error: "Необхідно вказати всі поля",
-				missingFields: [!type ? "type" : null, !authorId ? "authorId" : null, !documents ? "documents" : null, !name ? "name" : null].filter(Boolean),
+				missingFields: [
+					!type ? "type" : null,
+					!authorId ? "authorId" : null,
+					!documents ? "documents" : null,
+					!name ? "name" : null,
+					!organizationId ? "organizationId" : null,
+				].filter(Boolean),
 			},
 		};
 	}
@@ -66,6 +73,15 @@ export default defineEventHandler(async (event) => {
 					},
 				};
 			}
+		}
+
+		const organization = await getOrganizationById(Number(organizationId));
+		if (!organization) {
+			event.res.statusCode = 404;
+			return {
+				code: 404,
+				body: { error: "Організацію не знайдено" },
+			};
 		}
 
 		const lead = await createLead(event, body);

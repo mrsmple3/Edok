@@ -25,8 +25,17 @@ export interface User {
 	password_hash: string; // Nullable
 	organization_name?: string; // Nullable
 	organization_INN?: string; // Nullable
+	organizationId?: number | null;
+	organization?: Organization | null;
 	company_type?: string; // Nullable
 	canDeleterDocuments: boolean;
+	createdAt: Date;
+}
+
+export interface Organization {
+	id: number;
+	name: string;
+	inn?: string | null;
 	createdAt: Date;
 }
 
@@ -62,6 +71,8 @@ export interface Lead {
 	status: string;
 	createdAt: Date;
 	author: User;
+	organizationId?: number | null;
+	organization?: Organization | null;
 }
 export interface Message {
 	id: number;
@@ -110,6 +121,8 @@ const defaultValue: {
 		company_type: "",
 		organization_name: "",
 		organization_INN: "",
+		organizationId: null,
+		organization: null,
 		isActive: false,
 		role: "",
 		canDeleterDocuments: false,

@@ -8,10 +8,9 @@
     </TableCell>
     <TableCell class="w-[114px] t-cell">{{ invoice.type }} </TableCell>
     <TableCell class="t-cell">{{ invoice.documents && invoice.documents.length }}</TableCell>
-    <TableCell class="t-cell">{{ invoice.moderators ? invoice.moderators.name : "Не вибрано" }} </TableCell>
+    <TableCell class="t-cell">{{ invoice.moderators ? invoice.moderators.name : "Не вибрано" }}</TableCell>
     <TableCell class="t-cell">{{ new Date(invoice.createdAt).toLocaleDateString("uk-UA") }}</TableCell>
-    <TableCell class="t-cell">{{ invoice.counterparty ? invoice.counterparty.organization_name : "Не вибрано" }}
-    </TableCell>
+    <TableCell class="t-cell">{{ invoice.counterparty?.organization_name || "Не вибрано" }}</TableCell>
     <TableCell class="t-cell">{{ invoice.author.email }}</TableCell>
     <LeadsDropDown :invoice="invoice" />
   </TableRow>

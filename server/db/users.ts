@@ -1,34 +1,63 @@
 import { prisma } from "~/server/db/index";
 import bcrypt from "bcrypt";
 import { User } from "@prisma/client";
+import { findOrCreateOrganization } from "~/server/db/organizations";
 
-export const createUser = (userData: { role: any; phone: any; password_hash: any; email: any }) => {
+export const createUser = async (userData: { role: any; phone: any; password_hash: any; email: any }) => {
 	const finalUserData = { ...userData, password_hash: bcrypt.hashSync(userData.password_hash, 10), isActive: userData.role === "counterparty" ? false : true };
+	let organizationId = userData.organizationId;
+
+	if (!organizationId && userData.role !== "counterparty" && (userData.organization_name || userData.organization_INN)) {
+		const org = await findOrCreateOrganization({
+			name: userData.organization_name,
+			inn: userData.organization_INN,
+		});
+		organizationId = org?.id;
+	}
 
 	return prisma.user.create({
-		data: finalUserData,
+		data: {
+			...finalUserData,
+			organizationId,
+		},
+		include: {
+			organization: true,
+		},
 	});
 };
 
 export const getAllUsers = () => {
-	return prisma.user.findMany();
+	return prisma.user.findMany({
+		include: {
+			organization: true,
+		},
+	});
 };
 
 export const getUserByUsername = (email: string) => {
 	return prisma.user.findUnique({
 		where: { email },
+		include: {
+			organization: true,
+		},
 	});
 };
 
 export const getUserByEmail = (email: string) => {
 	return prisma.user.findUnique({
 		where: { email },
+		include: {
+			organization: true,
+		},
 	});
 };
 
 export const getUserByPhone = (phone: string) => {
 	return prisma.user.findUnique({
 		where: { phone },
+		include: {
+			organization: true,
+		},
 	});
 };
 
@@ -36,12 +65,18 @@ export const updateUser = (id: number, userData: any) => {
 	return prisma.user.update({
 		where: { id },
 		data: userData,
+		include: {
+			organization: true,
+		},
 	});
 };
 
 export const getUserById = (id: number) => {
 	return prisma.user.findUnique({
-		where: { id }
+		where: { id },
+		include: {
+			organization: true,
+		},
 	});
 };
 
@@ -49,6 +84,9 @@ export const updateUserPassword = (id: number, password: string) => {
 	return prisma.user.update({
 		where: { id },
 		data: { password_hash: bcrypt.hashSync(password, 10) },
+		include: {
+			organization: true,
+		},
 	});
 };
 
@@ -56,6 +94,9 @@ export const updateUserRole = (id: number, role: string) => {
 	return prisma.user.update({
 		where: { id },
 		data: { role },
+		include: {
+			organization: true,
+		},
 	});
 };
 
@@ -85,6 +126,9 @@ export const getUserByRole = (role: string) => {
 	return prisma.user.findMany({
 		where: {
 			role: role,
+		},
+		include: {
+			organization: true,
 		},
 	});
 };

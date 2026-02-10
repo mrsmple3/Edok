@@ -1,6 +1,6 @@
 import { useFetchApi } from "~/utils/api";
 import { handleApiError } from "~/utils/errorHandler";
-import type { Lead, Document, UserResponse } from "~/store/user.store"; // Предположим, что у вас есть тип Lead
+import type { Lead, Document, Organization, UserResponse } from "~/store/user.store"; // Предположим, что у вас есть тип Lead
 import type { User } from "@prisma/client";
 import { updateUser } from "~/server/db/users";
 
@@ -8,6 +8,7 @@ const defaultValue: {
 	leads: Lead[];
 	documents: Document[];
 	users: User[];
+	organizations: Organization[];
 	filteredDocuments: Document[];
 	filteredLeads: Lead[];
 	unsignedDocuments: Document[];
@@ -17,6 +18,7 @@ const defaultValue: {
 	leads: [],
 	documents: [],
 	users: [],
+	organizations: [],
 	filteredDocuments: [],
 	filteredLeads: [],
 	unsignedDocuments: [],
@@ -29,6 +31,7 @@ export const useAdminStore = defineStore("admin", {
 	getters: {
 		leadsGetter: (state): Lead[] => state.leads,
 		documentsGetter: (state): Document[] => state.documents,
+		organizationsGetter: (state): Organization[] => state.organizations,
 		getDocumentById: (state) => {
 			return (id: number) => {
 				if (state.unsignedDocuments.length !== 0) {
@@ -107,6 +110,38 @@ export const useAdminStore = defineStore("admin", {
 				const response: any = await useFetchApi(`/api/admin/lead/user/${userId}`);
 				this.$patch({ leads: response.body.leads });
 				return response.body.lead;
+			} catch (error) {
+				handleApiError(error);
+			}
+		},
+		async getOrganizations() {
+			try {
+				const response: any = await useFetchApi("/api/admin/organization");
+				this.$patch({ organizations: response.body.organizations });
+				return response.body.organizations;
+			} catch (error) {
+				handleApiError(error);
+			}
+		},
+		async createOrganization(data: { name: string; inn?: string | null }) {
+			try {
+				const response: any = await useFetchApi("/api/admin/organization", {
+					method: "POST",
+					body: data,
+				});
+				this.$patch({ organizations: [...this.organizationsGetter, response.body.organization] });
+				return response.body.organization;
+			} catch (error) {
+				handleApiError(error);
+			}
+		},
+		async deleteOrganization(id: number) {
+			try {
+				const response: any = await useFetchApi(`/api/admin/organization/${id}`, {
+					method: "DELETE",
+				});
+				this.$patch({ organizations: this.organizationsGetter.filter((org) => org.id !== id) });
+				return response.body.organization;
 			} catch (error) {
 				handleApiError(error);
 			}

@@ -1,4 +1,5 @@
 import { changePassword, checkRoleUser, getUserByEmail, getUserById, getUserByPhone, updateUser, updateUserRole } from "~/server/db/users";
+import { findOrCreateOrganization } from "~/server/db/organizations";
 
 export default defineEventHandler(async (event) => {
 	const { id } = event.context.params;
@@ -60,11 +61,17 @@ export default defineEventHandler(async (event) => {
 			};
 		}
 
+		const resolvedOrganizationId = body.organizationId || (await findOrCreateOrganization({
+			name: body.organization_name,
+			inn: body.organization_INN,
+		}))?.id;
+
 		const user = await updateUser(parseInt(id), {
 			email: body.email || null,
 			phone: body.phone || null,
 			organization_name: body.organization_name || null,
 			organization_INN: body.organization_INN || null,
+			organizationId: resolvedOrganizationId || null,
 			name: body.name || null,
 			isActive: body.isActive,
 		});

@@ -13,6 +13,7 @@ export default defineEventHandler(async (event) => {
 			include: {
 				author: true,
 				documents: true,
+				organization: true,
 			},
 		});
 

@@ -22,6 +22,8 @@ model User {
   patronymic           String?
   organization_name    String?
   organization_INN     String?
+  organizationId       Int?
+  organization         Organization?        @relation(fields: [organizationId], references: [id], onDelete: SetNull)
   company_type         String?
   canDeleterDocuments  Boolean?             @default(false)
   RefreshToken         RefreshToken[]
@@ -35,6 +37,8 @@ model User {
   LeadCounterparty     Lead[]               @relation("LeadCounterparty")
   DocumentDeleteSign   DocumentDeleteSign[]
   createdAt            DateTime             @default(now())
+
+  @@index([organizationId])
 }
 
 model RefreshToken {
@@ -99,12 +103,24 @@ model Lead {
   counterparty   User?      @relation("LeadCounterparty", fields: [counterpartyId], references: [id])
   authorId       Int
   author         User       @relation("LeadAuthor", fields: [authorId], references: [id])
+  organizationId Int?
+  organization   Organization? @relation(fields: [organizationId], references: [id], onDelete: SetNull)
   documents      Document[]
   createdAt      DateTime   @default(now())
 
   @@index([authorId])
   @@index([moderatorsId])
   @@index([counterpartyId])
+  @@index([organizationId])
+}
+
+model Organization {
+  id        Int      @id @default(autoincrement())
+  name      String
+  inn       String?  @unique
+  users     User[]
+  leads     Lead[]
+  createdAt DateTime @default(now())
 }
 
 model Message {

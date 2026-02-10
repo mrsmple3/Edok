@@ -62,6 +62,18 @@
 						</FormControl>
 					</FormItem>
 				</FormField>
+				<FormField v-slot="{ componentField }" name="organization">
+					<FormItem class="grid grid-cols-4 items-center gap-4">
+						<FormControl>
+							<Label class="text-[12px] text-start">Організація</Label>
+							<div class="col-span-3 flex flex-col gap-2">
+								<SearchableSelect :users="adminStore.organizationsGetter" placeholder="Оберіть організацію..."
+									display-field="name" v-bind="componentField" />
+								<FormMessage />
+							</div>
+						</FormControl>
+					</FormItem>
+				</FormField>
 			</div>
 			<DialogFooter> <Button @click="createLead">Створити</Button> </DialogFooter>
 		</DialogContent>
@@ -101,6 +113,7 @@ const formSchema = toTypedSchema(
 		type: z.string().min(2).default(typeOfLead.value),
 		moderator: z.number().min(1),
 		counterparty: z.number().min(1),
+		organization: z.number().min(1),
 	})
 );
 
@@ -136,6 +149,7 @@ const createLead = form.handleSubmit(async (values) => {
 			authorId: userStore.userGetter.id,
 			counterpartyId: values.counterparty,
 			moderatorsId: values.moderator,
+			organizationId: values.organization,
 			documents: response.value.map((doc: Document) => doc.id),
 		});
 		isDialogOpen.value = false;
@@ -161,6 +175,7 @@ const createLead = form.handleSubmit(async (values) => {
 
 watch(isDialogOpen, async (newVal) => {
 	if (newVal) {
+		await adminStore.getOrganizations();
 		await userStore.getModerators();
 		await userStore.getCounterparties();
 	}

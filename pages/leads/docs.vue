@@ -61,6 +61,16 @@
                 @change="(event) => handleFileUpload(event, 'Акт виконаних робіт/акт наданих послуг')" />
             </div>
             <div class="cursor-pointer">
+              <label for="reestr">Реєстр</label>
+              <input id="reestr" type="file" accept="application/pdf" class="hidden"
+                @change="(event) => handleFileUpload(event, 'Реєстр')" />
+            </div>
+            <div class="cursor-pointer">
+              <label for="zayavka">Заявка</label>
+              <input id="zayavka" type="file" accept="application/pdf" class="hidden"
+                @change="(event) => handleFileUpload(event, 'Заявка')" />
+            </div>
+            <div class="cursor-pointer">
               <label for="animal">АКТ ЗВІРКИ</label>
               <input id="animal" type="file" accept="application/pdf" class="hidden"
                 @change="(event) => handleFileUpload(event, 'АКТ ЗВІРКИ')" />
@@ -142,7 +152,7 @@ const windowHeight = ref(0); // Высота окна
 
 // Динамическое определение количества элементов на странице в зависимости от высоты экрана
 const itemsPerPage = computed(() => {
-  return 7;
+  return 12;
   if (windowHeight.value === 0) return 6; // Значение по умолчанию
 
   // Приблизительная высота одного элемента документа (включая отступы)

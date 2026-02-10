@@ -186,7 +186,9 @@ const applyFilters = () => {
 
     let matchesInn = true;
     if (normalizedInn) {
-      const leadInn = normalizeString(lead?.counterparty?.organization_INN || lead?.counterparty?.organization_inn);
+      const leadInn = normalizeString(
+        lead?.organization?.inn || lead?.counterparty?.organization_INN || lead?.counterparty?.organization_inn
+      );
       matchesInn = leadInn.includes(normalizedInn);
     }
 

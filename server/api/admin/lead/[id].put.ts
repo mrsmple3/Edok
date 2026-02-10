@@ -1,6 +1,7 @@
 import { getDocumentsByLead } from "~/server/db/document";
 import { getLeadById, updateLead } from "~/server/db/leads";
 import { getUserById } from "~/server/db/users";
+import { getOrganizationById } from "~/server/db/organizations";
 
 export default defineEventHandler(async (event) => {
 	const { id } = event.context.params;
@@ -23,6 +24,17 @@ export default defineEventHandler(async (event) => {
 				return {
 					code: 404,
 					body: { error: "Контрагент не знайдено" },
+				};
+			}
+		}
+
+		if (body.organizationId) {
+			const organization = await getOrganizationById(Number(body.organizationId));
+			if (!organization) {
+				event.res.statusCode = 404;
+				return {
+					code: 404,
+					body: { error: "Організацію не знайдено" },
 				};
 			}
 		}

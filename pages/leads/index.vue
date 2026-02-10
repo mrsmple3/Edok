@@ -153,6 +153,11 @@ const getLead = async () => {
 	} else {
 		await adminStore.getLeadByUserId(userStore.userGetter.id);
 	}
+	const organizationId = Number(route.query.organizationId);
+	if (Number.isFinite(organizationId) && organizationId > 0) {
+		adminStore.$state.filteredLeads = adminStore.$state.leads.filter((lead: any) => lead.organizationId === organizationId);
+		return;
+	}
 	adminStore.$state.filteredLeads = adminStore.$state.leads;
 }
 </script>
