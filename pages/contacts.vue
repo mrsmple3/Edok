@@ -53,8 +53,8 @@
 			<ContactTable ref="contactTableRef" :tableData="paginatedUsers" />
 		</div>
 		<Pagination class="pagination-class" v-slot="{ page }" :items-per-page="itemsPerPage"
-			:total="adminStore.$state.users.length" :sibling-count="1" show-edges :default-page="1"
-			@update:page="(newPage) => (currentPage = newPage)">
+			:total="adminStore.$state.users.length" :sibling-count="1" show-edges :default-page="currentPage"
+			@update:page="onPageChange">
 			<PaginationList v-slot="{ items }" class="flex items-center gap-1">
 				<PaginationFirst />
 				<PaginationPrev />
@@ -95,19 +95,51 @@ const { withLoader } = usePageLoader();
 
 const contactTableRef = ref(null);
 
-const selectedRole = ref("counterparty");
+const getRoleFromQuery = (value: string | string[] | undefined) => {
+	const roleValue = Array.isArray(value) ? value[0] : value;
+	return typeof roleValue === "string" && roleValue.length > 0 ? roleValue : "counterparty";
+};
+
+const selectedRole = ref(getRoleFromQuery(route.query.role));
 
 const onSelectUser = async (role: string) => {
 	await withLoader(async () => {
 		await adminStore.getUserByRole(role).then(() => {
 			selectedRole.value = role;
+			currentPage.value = 1;
 			router.push({ path: '/contacts', query: { role: selectedRole.value } });
 		})
 	});
 };
 
-const currentPage = ref(1); // Текущая страница
+const getPageFromQuery = (value: string | string[] | undefined) => {
+	const pageValue = Array.isArray(value) ? value[0] : value;
+	const parsed = Number(pageValue);
+	return Number.isInteger(parsed) && parsed > 0 ? parsed : 1;
+};
+
+const currentPage = ref(getPageFromQuery(route.query.page)); // Текущая страница
 const windowHeight = ref(0); // Высота окна
+
+watch(
+	() => route.query.page,
+	(value) => {
+		currentPage.value = getPageFromQuery(value);
+	}
+);
+
+const onPageChange = async (newPage: number) => {
+	currentPage.value = newPage;
+	const query = { ...route.query };
+
+	if (newPage <= 1) {
+		delete query.page;
+	} else {
+		query.page = String(newPage);
+	}
+
+	await router.replace({ query });
+};
 
 // Динамическое определение количества элементов на странице в зависимости от высоты экрана
 const itemsPerPage = computed(() => {
@@ -176,19 +208,23 @@ onBeforeMount(() => {
 	// }
 
 	watch(
-		() => [userStore.isAuthInitialized, route.fullPath],
-		async ([newVal, changedRoute]) => {
-			if (newVal) {
+		() => [userStore.isAuthInitialized, route.path, route.query.role],
+		async ([isAuthInitialized]) => {
+			if (isAuthInitialized) {
+				selectedRole.value = getRoleFromQuery(route.query.role);
+
 				await withLoader(async () => {
 					await adminStore.getUserByRole(selectedRole.value);
 
-					router.replace({
-						path: route.path,
-						query: {
-							...route.query,
-							role: selectedRole.value,
-						},
-					});
+					if (route.query.role !== selectedRole.value) {
+						router.replace({
+							path: route.path,
+							query: {
+								...route.query,
+								role: selectedRole.value,
+							},
+						});
+					}
 				});
 				callOnce(async () => {
 					if (!userStore.$state.isAuth) {

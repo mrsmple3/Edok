@@ -19,8 +19,8 @@
 			<NotFoundLead v-else />
 		</div>
 		<Pagination class="pagination-class" v-slot="{ page }" :items-per-page="itemsPerPage"
-			:total="adminStore.$state.filteredLeads.length" :sibling-count="1" show-edges :default-page="1"
-			@update:page="(newPage) => (currentPage = newPage)">
+			:total="adminStore.$state.filteredLeads.length" :sibling-count="1" show-edges :default-page="currentPage"
+			@update:page="onPageChange">
 			<PaginationList v-slot="{ items }" class="flex items-center gap-1">
 				<PaginationFirst />
 				<PaginationPrev />
@@ -44,6 +44,7 @@
 <script lang="ts" setup>
 import { useAdminStore } from "~/store/admin.store"
 import { useUserStore } from "~/store/user.store"
+import { filterLeads, type LeadFilters } from "~/lib/leads"
 
 definePageMeta({
 	layout: "page",
@@ -52,14 +53,52 @@ definePageMeta({
 const chatState = useState("isChat")
 
 const route = useRoute()
+const router = useRouter()
 
 const adminStore = useAdminStore()
 const userStore = useUserStore()
 const { withLoader } = usePageLoader()
+const leadFiltersState = useState<LeadFilters | null>("lead-filters", () => null);
 
 const counterparties = ref<{ value: number; label: string }[]>([]);
-const currentPage = ref(1); // Текущая страница
+const getPageFromQuery = (value: string | string[] | undefined) => {
+	const pageValue = Array.isArray(value) ? value[0] : value;
+	const parsed = Number(pageValue);
+	return Number.isInteger(parsed) && parsed > 0 ? parsed : 1;
+};
+
+const currentPage = ref(getPageFromQuery(route.query.page)); // Текущая страница
 const windowHeight = ref(0); // Высота окна
+
+watch(
+	() => route.query.page,
+	(value) => {
+		currentPage.value = getPageFromQuery(value);
+	}
+);
+
+watch(
+	() => adminStore.$state.filteredLeads.length,
+	async (totalLeads) => {
+		const maxPage = Math.max(1, Math.ceil(totalLeads / itemsPerPage.value));
+		if (currentPage.value > maxPage) {
+			await onPageChange(maxPage);
+		}
+	}
+);
+
+const onPageChange = async (newPage: number) => {
+	currentPage.value = newPage;
+	const query = { ...route.query };
+
+	if (newPage <= 1) {
+		delete query.page;
+	} else {
+		query.page = String(newPage);
+	}
+
+	await router.replace({ query });
+};
 
 // Динамическое определение количества элементов на странице в зависимости от высоты экрана
 const itemsPerPage = computed(() => {
@@ -127,9 +166,9 @@ onBeforeMount(async () => {
 	// }
 
 	watch(
-		() => [userStore.isAuthInitialized, route.fullPath],
-		async ([newVal, changedRoute]) => {
-			if (newVal) {
+		() => [userStore.isAuthInitialized, route.path, route.query.organizationId],
+		async ([isAuthInitialized]) => {
+			if (isAuthInitialized) {
 				await withLoader(async () => {
 					await getLead();
 					await userStore.getCounterparties().then(() => {
@@ -153,12 +192,18 @@ const getLead = async () => {
 	} else {
 		await adminStore.getLeadByUserId(userStore.userGetter.id);
 	}
+
+	let filteredLeads = adminStore.$state.leads;
 	const organizationId = Number(route.query.organizationId);
 	if (Number.isFinite(organizationId) && organizationId > 0) {
-		adminStore.$state.filteredLeads = adminStore.$state.leads.filter((lead: any) => lead.organizationId === organizationId);
-		return;
+		filteredLeads = filteredLeads.filter((lead: any) => lead.organizationId === organizationId);
 	}
-	adminStore.$state.filteredLeads = adminStore.$state.leads;
+
+	if (leadFiltersState.value) {
+		filteredLeads = filterLeads(filteredLeads, leadFiltersState.value);
+	}
+
+	adminStore.$state.filteredLeads = filteredLeads;
 }
 </script>
 

@@ -88,7 +88,7 @@
 			<NotFoundDocument v-else />
 		</div>
 		<Pagination class="pagination-class" v-slot="{ page }" :items-per-page="itemsPerPage" :total="totalDocuments"
-			:sibling-count="1" show-edges :default-page="1" @update:page="(newPage) => (currentPage = newPage)">
+			:sibling-count="1" show-edges :default-page="currentPage" @update:page="onPageChange">
 			<PaginationList v-slot="{ items }" class="flex items-center gap-1">
 				<PaginationFirst />
 				<PaginationPrev />
@@ -120,6 +120,7 @@ definePageMeta({
 })
 
 const route = useRoute();
+const router = useRouter();
 const userStore = useUserStore();
 const adminStore = useAdminStore();
 const { withLoader } = usePageLoader();
@@ -131,10 +132,36 @@ const bulkSignButtonClass = computed(() => {
 	const base = "page-button";
 	return selectedDocumentIds.value.length === 0 ? `${base} opacity-50 cursor-not-allowed` : `${base} hover:active`;
 });
-const currentPage = ref(1); // Текущая страница
+const getPageFromQuery = (value: string | string[] | undefined) => {
+	const pageValue = Array.isArray(value) ? value[0] : value;
+	const parsed = Number(pageValue);
+	return Number.isInteger(parsed) && parsed > 0 ? parsed : 1;
+};
+
+const currentPage = ref(getPageFromQuery(route.query.page)); // Текущая страница
 const windowHeight = ref(0); // Высота окна
 const totalDocuments = ref(0); // Общее количество документов
 const isLoading = ref(false); // Состояние загрузки
+
+watch(
+	() => route.query.page,
+	(value) => {
+		currentPage.value = getPageFromQuery(value);
+	}
+);
+
+const onPageChange = async (newPage: number) => {
+	currentPage.value = newPage;
+	const query = { ...route.query };
+
+	if (newPage <= 1) {
+		delete query.page;
+	} else {
+		query.page = String(newPage);
+	}
+
+	await router.replace({ query });
+};
 
 // Динамическое определение количества элементов на странице в зависимости от высоты экрана
 const itemsPerPage = computed(() => {
@@ -183,9 +210,9 @@ onBeforeMount(async () => {
 	// }
 
 	watch(
-		() => [userStore.isAuthInitialized, route.fullPath],
-		async (newVal, routeFull) => {
-			if (newVal) {
+		() => [userStore.isAuthInitialized, route.path, route.query.id],
+		async ([isAuthInitialized]) => {
+			if (isAuthInitialized) {
 				await withLoader(async () => {
 					await getDocument();
 					await userStore.getCounterparties().then(() => {

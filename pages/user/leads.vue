@@ -21,8 +21,8 @@
       <NotFoundLead v-else />
     </div>
     <Pagination class="pagination-class" v-slot="{ page }" :items-per-page="itemsPerPage"
-      :total="adminStore.$state.leads.length" :sibling-count="1" show-edges :default-page="1"
-      @update:page="(newPage) => (currentPage = newPage)">
+      :total="adminStore.$state.leads.length" :sibling-count="1" show-edges :default-page="currentPage"
+      @update:page="onPageChange">
       <PaginationList v-slot="{ items }" class="flex items-center gap-1">
         <PaginationFirst />
         <PaginationPrev />
@@ -54,14 +54,41 @@ definePageMeta({
 const chatState = useState("isChat")
 
 const route = useRoute()
+const router = useRouter()
 
 const adminStore = useAdminStore()
 const userStore = useUserStore()
 const { withLoader } = usePageLoader()
 
 
-const currentPage = ref(1); // Текущая страница
+const getPageFromQuery = (value: string | string[] | undefined) => {
+  const pageValue = Array.isArray(value) ? value[0] : value;
+  const parsed = Number(pageValue);
+  return Number.isInteger(parsed) && parsed > 0 ? parsed : 1;
+};
+
+const currentPage = ref(getPageFromQuery(route.query.page)); // Текущая страница
 const windowHeight = ref(0); // Высота окна
+
+watch(
+  () => route.query.page,
+  (value) => {
+    currentPage.value = getPageFromQuery(value);
+  }
+);
+
+const onPageChange = async (newPage: number) => {
+  currentPage.value = newPage;
+  const query = { ...route.query };
+
+  if (newPage <= 1) {
+    delete query.page;
+  } else {
+    query.page = String(newPage);
+  }
+
+  await router.replace({ query });
+};
 
 // Динамическое определение количества элементов на странице в зависимости от высоты экрана
 const itemsPerPage = computed(() => {
@@ -130,7 +157,7 @@ onBeforeMount(async () => {
   // }
 
   watch(
-    () => [userStore.isAuthInitialized, route.fullPath],
+    () => [userStore.isAuthInitialized, route.path, route.query.id],
     async ([newVal, changedRoute]) => {
       if (newVal) {
         await withLoader(async () => {

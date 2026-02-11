@@ -106,6 +106,7 @@
 import { ref, watch, computed, type Ref } from "vue";
 import { today, getLocalTimeZone } from "@internationalized/date";
 import { useAdminStore } from "~/store/admin.store";
+import { filterLeads, getDefaultLeadFilters, type LeadFilters } from "~/lib/leads";
 import type { DateRange } from "radix-vue";
 
 const props = defineProps({
@@ -116,26 +117,27 @@ const props = defineProps({
 });
 
 const adminStore = useAdminStore();
+const route = useRoute();
 const counterpartiesList = computed(() => props.counterparties ?? []);
+const leadFiltersState = useState<LeadFilters | null>("lead-filters", () => null);
 
 const isDialogOpen = ref(false);
 const todayDate = today(getLocalTimeZone());
 
-const value = ref<DateRange>({
-  start: today(getLocalTimeZone()).subtract({ days: 30 }),
-  end: today(getLocalTimeZone()),
-}) as Ref<DateRange>;
+const value = ref<DateRange>(
+  (leadFiltersState.value?.dateRange ?? {
+    start: today(getLocalTimeZone()).subtract({ days: 30 }),
+    end: today(getLocalTimeZone()),
+  }) as DateRange
+) as Ref<DateRange>;
 
-const filters = ref({
-  dateRange: null as DateRange | null,
-  counterparty: null as any,
-  inn: "",
-  name: "",
-  type: "",
-  status: "",
-  moderator: "",
-  leadId: "",
+const cloneFilters = (source: LeadFilters): LeadFilters => ({
+  ...source,
+  dateRange: source.dateRange ? { ...source.dateRange } : null,
+  counterparty: source.counterparty ? { ...source.counterparty } : null,
 });
+
+const filters = ref<LeadFilters>(leadFiltersState.value ? cloneFilters(leadFiltersState.value) : getDefaultLeadFilters());
 
 watch(value, (newValue: DateRange) => {
   filters.value.dateRange = newValue;
@@ -151,91 +153,20 @@ const leadStatuses = computed(() => {
   return Array.from(statuses);
 });
 
-const normalizeString = (str?: string | null) => (str ?? "").toLowerCase();
+const getBaseLeads = () => {
+  const organizationId = Number(route.query.organizationId);
+  const leads = adminStore.$state.leads || [];
+  if (Number.isFinite(organizationId) && organizationId > 0) {
+    return leads.filter((lead: any) => lead.organizationId === organizationId);
+  }
+  return leads;
+};
 
 const applyFilters = () => {
-  const { dateRange, counterparty, inn, name, type, status, moderator, leadId } = filters.value;
-  const normalizedInn = inn.trim().toLowerCase();
-  const normalizedName = name.trim().toLowerCase();
-  const normalizedType = type.trim().toLowerCase();
-  const normalizedModerator = moderator.trim().toLowerCase();
-  const numericLeadId = leadId.trim() ? Number(leadId) : null;
-
-  const filteredLeads = (adminStore.$state.leads || []).filter((lead: any) => {
-    let matchesCreationDate = true;
-    if (dateRange && (dateRange.start || dateRange.end)) {
-      const leadDate = new Date(lead?.createdAt || lead?.updatedAt || lead?.date || 0);
-
-      if (dateRange.start) {
-        const startDate = new Date(dateRange.start.toString());
-        startDate.setHours(0, 0, 0, 0);
-        matchesCreationDate = matchesCreationDate && leadDate >= startDate;
-      }
-
-      if (dateRange.end) {
-        const endDate = new Date(dateRange.end.toString());
-        endDate.setHours(23, 59, 59, 999);
-        matchesCreationDate = matchesCreationDate && leadDate <= endDate;
-      }
-    }
-
-    let matchesCounterparty = true;
-    if (counterparty && (counterparty as any).value) {
-      matchesCounterparty = lead?.counterpartyId === (counterparty as any).value;
-    }
-
-    let matchesInn = true;
-    if (normalizedInn) {
-      const leadInn = normalizeString(
-        lead?.organization?.inn || lead?.counterparty?.organization_INN || lead?.counterparty?.organization_inn
-      );
-      matchesInn = leadInn.includes(normalizedInn);
-    }
-
-    let matchesName = true;
-    if (normalizedName) {
-      const leadName = normalizeString(lead?.name);
-      matchesName = leadName.includes(normalizedName);
-    }
-
-    let matchesType = true;
-    if (normalizedType) {
-      const leadType = normalizeString(lead?.type);
-      matchesType = leadType.includes(normalizedType);
-    }
-
-    let matchesStatus = true;
-    if (status) {
-      matchesStatus = lead?.status === status;
-    }
-
-    let matchesModerator = true;
-    if (normalizedModerator) {
-      const moderatorFullName = [
-        lead?.moderators?.surname,
-        lead?.moderators?.name,
-        lead?.moderators?.patronymic,
-      ].filter(Boolean).join(" ");
-      const moderatorSearchTarget = `${moderatorFullName} ${lead?.moderators?.email ?? ""}`.toLowerCase();
-      matchesModerator = moderatorSearchTarget.includes(normalizedModerator);
-    }
-
-    let matchesLeadId = true;
-    if (numericLeadId !== null && !Number.isNaN(numericLeadId)) {
-      matchesLeadId = lead?.id === numericLeadId;
-    }
-
-    return matchesCreationDate &&
-      matchesCounterparty &&
-      matchesInn &&
-      matchesName &&
-      matchesType &&
-      matchesStatus &&
-      matchesModerator &&
-      matchesLeadId;
-  });
+  const filteredLeads = filterLeads(getBaseLeads(), filters.value);
 
   adminStore.$state.filteredLeads = filteredLeads;
+  leadFiltersState.value = cloneFilters(filters.value);
 
   console.log("Застосовано фільтри до угод:", {
     totalLeads: adminStore.$state.leads.length,
@@ -250,23 +181,15 @@ const handleApplyFilters = () => {
 };
 
 const resetFilters = () => {
-  filters.value = {
-    dateRange: null,
-    counterparty: null,
-    inn: "",
-    name: "",
-    type: "",
-    status: "",
-    moderator: "",
-    leadId: "",
-  };
+  filters.value = getDefaultLeadFilters();
 
   value.value = {
     start: today(getLocalTimeZone()).subtract({ days: 30 }),
     end: today(getLocalTimeZone()),
   };
 
-  adminStore.$state.filteredLeads = adminStore.$state.leads;
+  leadFiltersState.value = null;
+  adminStore.$state.filteredLeads = getBaseLeads();
   console.log("Фільтр угод скинуто");
   isDialogOpen.value = false;
 };
