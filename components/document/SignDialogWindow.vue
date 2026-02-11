@@ -67,33 +67,6 @@
           </div>
         </div>
 
-        <div
-          class="sign-dropzone sign-dropzone-secondary"
-          @dragover.prevent
-          @drop.prevent="handleCertDrop"
-          @click="certInputRef?.click()"
-        >
-          <input
-            ref="certInputRef"
-            type="file"
-            class="hidden"
-            accept=".cer,.crt,.pem,.p7b"
-            @change="handleCertFileChange"
-          />
-          <div v-if="!certFile" class="sign-dropzone-text">
-            <div class="sign-dropzone-title">
-              Додайте файл сертифіката (опціонально)
-            </div>
-            <div class="sign-dropzone-hint">
-              Формати: *.cer, *.crt, *.pem, *.p7b
-            </div>
-          </div>
-          <div v-else class="sign-dropzone-file">
-            <div class="sign-dropzone-file-name">{{ certFile.name }}</div>
-            <div class="sign-dropzone-file-size">{{ formatFileSize(certFile.size) }}</div>
-          </div>
-        </div>
-
         <div class="sign-password">
           <input
             v-model="keyPassword"
@@ -176,8 +149,6 @@ const keyPassword = ref("");
 const providerMode = ref("auto");
 const keyInputRef = ref<HTMLInputElement | null>(null);
 const tslLoaded = ref(false);
-const certFile = ref<File | null>(null);
-const certInputRef = ref<HTMLInputElement | null>(null);
 
 const queueDocuments = computed(() => {
   if (props.documents?.length) {
@@ -839,23 +810,6 @@ async function readPrivateKey() {
 
   try {
     await ensureTSLLoaded();
-    if (certFile.value) {
-      const certBytes = await readCertificateBytes(certFile.value);
-      const certName = certFile.value.name.toLowerCase();
-      try {
-        if (certName.endsWith(".p7b")) {
-          euSign.value.SaveCertificates(certBytes);
-        } else {
-          euSign.value.SaveCertificate(certBytes);
-        }
-      } catch (certError) {
-        try {
-          euSign.value.SaveCertificates(certBytes);
-        } catch (fallbackError) {
-          console.warn("Certificate load failed:", fallbackError);
-        }
-      }
-    }
     const keyBytes = new Uint8Array(await keyFile.value.arrayBuffer());
     try {
       euSign.value.ReadPrivateKeyBinary(keyBytes, keyPassword.value);
@@ -918,22 +872,6 @@ function handleKeyFileChange(event: Event) {
   }
 }
 
-function handleCertDrop(event: DragEvent) {
-  const files = event.dataTransfer?.files;
-  if (files && files.length > 0) {
-    certFile.value = files[0];
-    keyReadStatus.value = "";
-  }
-}
-
-function handleCertFileChange(event: Event) {
-  const files = (event.target as HTMLInputElement).files;
-  if (files && files.length > 0) {
-    certFile.value = files[0];
-    keyReadStatus.value = "";
-  }
-}
-
 function resetKeyState() {
   try {
     if (euSign.value) {
@@ -943,7 +881,6 @@ function resetKeyState() {
     console.warn("EUSignCP reset warning:", e);
   }
   keyFile.value = null;
-  certFile.value = null;
   keyPassword.value = "";
   hasLoadedPrivateKey.value = false;
   keyReadStatus.value = "";
@@ -957,27 +894,6 @@ function formatFileSize(bytes: number) {
   return `${(bytes / Math.pow(k, i)).toFixed(1)} ${sizes[i]}`;
 }
 
-function decodePemToBytes(pem: string) {
-  const cleaned = pem
-    .replace(/-----BEGIN [^-]+-----/g, "")
-    .replace(/-----END [^-]+-----/g, "")
-    .replace(/\s+/g, "");
-  const binary = atob(cleaned);
-  const bytes = new Uint8Array(binary.length);
-  for (let i = 0; i < binary.length; i++) {
-    bytes[i] = binary.charCodeAt(i);
-  }
-  return bytes;
-}
-
-async function readCertificateBytes(file: File) {
-  const buffer = await file.arrayBuffer();
-  const text = new TextDecoder().decode(new Uint8Array(buffer));
-  if (text.includes("BEGIN CERTIFICATE") || text.includes("BEGIN PKCS7")) {
-    return decodePemToBytes(text);
-  }
-  return new Uint8Array(buffer);
-}
 
 async function ensureTSLLoaded() {
   if (tslLoaded.value) return;
@@ -1125,12 +1041,6 @@ function getCmpServers(mode: string) {
   text-align: center;
   cursor: pointer;
   background: #fafafa;
-}
-
-.sign-dropzone-secondary {
-  padding: 20px;
-  background: #ffffff;
-  border-color: #d1d5db;
 }
 
 .sign-dropzone-title {
