@@ -22,17 +22,80 @@
         </p>
       </div>
 
-      <div class="iframe-sign">
-        <div id="sign-widget-parent" class="h-full w-full min-w-[1368px]">
+      <div class="sign-key">
+        <div class="sign-tabs">
+          <button class="sign-tab sign-tab-active" type="button">Файловий</button>
+          <button class="sign-tab sign-tab-disabled" type="button" disabled>Токен</button>
+          <button class="sign-tab sign-tab-disabled" type="button" disabled>Хмарний</button>
+        </div>
+
+        <div class="sign-provider">
+          <div class="sign-provider-label">
+            Кваліфікований надавач електронних довірчих послуг
+          </div>
+          <select class="sign-provider-select" v-model="providerMode">
+            <option value="auto">Визначити автоматично</option>
+          </select>
+        </div>
+
+        <div
+          class="sign-dropzone"
+          @dragover.prevent
+          @drop.prevent="handleKeyDrop"
+          @click="keyInputRef?.click()"
+        >
+          <input
+            ref="keyInputRef"
+            type="file"
+            class="hidden"
+            accept=".pfx,.pk8,.zs2,.jks,.dat"
+            @change="handleKeyFileChange"
+          />
+          <div v-if="!keyFile" class="sign-dropzone-text">
+            <div class="sign-dropzone-title">
+              Перетягніть сюди файл ключа
+              або <span class="sign-dropzone-link">завантажте його зі свого носія</span>
+            </div>
+            <div class="sign-dropzone-hint">
+              (зазвичай його назва "Key-6.dat" або *.pfx, *.pk8, *.zs2, *.jks)
+            </div>
+          </div>
+          <div v-else class="sign-dropzone-file">
+            <div class="sign-dropzone-file-name">{{ keyFile.name }}</div>
+            <div class="sign-dropzone-file-size">{{ formatFileSize(keyFile.size) }}</div>
+          </div>
+        </div>
+
+        <div class="sign-password">
+          <input
+            v-model="keyPassword"
+            type="password"
+            class="sign-password-input"
+            placeholder="Пароль захисту ключа"
+            autocomplete="current-password"
+          />
+        </div>
+
+        <div class="sign-read-actions">
+          <Button
+            @click="handleReadPrivateKey"
+            :disabled="!canReadKey || isKeyReading || isLoading"
+          >
+            <Loader2 v-if="isKeyReading" class="mr-2 h-4 w-4 animate-spin" />
+            {{ isKeyReading ? "Зчитуємо..." : "Зчитати" }}
+          </Button>
+          <div v-if="keyReadStatus" class="sign-read-status">
+            {{ keyReadStatus }}
+          </div>
         </div>
       </div>
 
       <DialogFooter class="dialog-footer">
-        <Button @click="signDocument" :disabled="isLoading">
+        <Button @click="signDocument" :disabled="isLoading || !hasLoadedPrivateKey">
           <Loader2 v-if="isLoading" class="mr-2 h-4 w-4 animate-spin" />
           {{ isLoading ? 'Підписання...' : 'Підписати' }}
         </Button>
-        <Button variant="outline" @click="isDialogOpen = false">Скасувати</Button>
+        <Button variant="outline" @click="isDialogOpen = false">Назад</Button>
       </DialogFooter>
     </DialogContent>
   </Dialog>
@@ -73,11 +136,17 @@ const { toast } = useToast();
 const euSign = ref<any>(null);
 
 const isLoading = ref(false);
+const isKeyReading = ref(false);
+const keyReadStatus = ref("");
 const MAX_SIGNATURES_PER_ORG = 2;
 
 const signQueue = ref<number[]>([]);
 const currentDocumentIndex = ref(0);
 const hasLoadedPrivateKey = ref(false);
+const keyFile = ref<File | null>(null);
+const keyPassword = ref("");
+const providerMode = ref("auto");
+const keyInputRef = ref<HTMLInputElement | null>(null);
 
 const queueDocuments = computed(() => {
   if (props.documents?.length) {
@@ -114,12 +183,14 @@ const currentDocumentPosition = computed(() => {
 });
 
 const isTriggerDisabled = computed(() => props.disabled || isLoading.value);
+const canReadKey = computed(() => Boolean(keyFile.value) && Boolean(keyPassword.value));
 
 watch(isDialogOpen, async (newVal) => {
   if (newVal) {
     signQueue.value = [...queueDocuments.value];
     currentDocumentIndex.value = 0;
     hasLoadedPrivateKey.value = false;
+    keyReadStatus.value = "";
 
     if (!signQueue.value.length) {
       toast({
@@ -132,25 +203,20 @@ watch(isDialogOpen, async (newVal) => {
     }
 
     await nextTick();
-
-    if (typeof EndUser !== "undefined") {
-      euSign.value = new EndUser(
-        "sign-widget-parent",
-        "sign-widget",
-        "https://id.gov.ua/sign-widget/v20220527/",
-        EndUser.FormType.ReadPKey
-      );
-    } else {
-      console.error("EndUser не загружен");
+    try {
+      await initEUSign();
+    } catch (error: any) {
+      console.error("EUSignCP init error:", error);
       toast({
         title: "Помилка",
-        description: "Віджет підпису не завантажено. Спробуйте ще раз.",
+        description: "Модуль підпису не завантажено. Спробуйте ще раз.",
         variant: "destructive",
       });
       isDialogOpen.value = false;
     }
   } else {
     signQueue.value = [];
+    resetKeyState();
   }
 });
 
@@ -247,21 +313,7 @@ async function processDocument(docId: number) {
   await ensurePrivateKeyLoaded();
 
   const binary = new Uint8Array(originalArrayBuffer);
-  const base64data = arrayBufferToBase64(binary);
-
-  const external = false;
-  const asBase64String = true;
-  const signAlgo = EndUser.SignAlgo.DSTU4145WithGOST34311;
-  const signType = EndUser.SignType.CAdES_X_Long_Trusted;
-
-  console.log("📝 Параметри підписання:", {
-    external,
-    asBase64String,
-    dataSize: base64data.length,
-    docId,
-  });
-
-  const sign = await euSign.value.SignData(base64data, external, asBase64String, signAlgo, null, signType);
+  const sign = await euSign.value.SignData(binary, true);
 
   const blob = base64ToBlob(sign, "application/pkcs7-signature");
   const signedFile = new File([blob], `${file.name}`, { type: "application/pkcs7-signature" });
@@ -278,13 +330,14 @@ async function processDocument(docId: number) {
 
 async function ensurePrivateKeyLoaded() {
   if (!euSign.value) {
-    throw new Error("Віджет підпису не ініціалізовано");
+    throw new Error("Модуль підпису не ініціалізовано");
   }
 
   if (!hasLoadedPrivateKey.value) {
-    await euSign.value.ReadPrivateKey();
-    hasLoadedPrivateKey.value = true;
-    console.log("🔑 Ключ успішно прочитано, можна підписувати документи");
+    if (!keyFile.value || !keyPassword.value) {
+      throw new Error("Спочатку завантажте ключ і введіть пароль");
+    }
+    await readPrivateKey();
   }
 }
 
@@ -683,21 +736,217 @@ async function fetchFile(filePath: string) {
     console.error('Ошибка загрузки файла:', e);
   }
 }
+
+async function initEUSign() {
+  const w = window as any;
+  if (!w.__eusignReady) {
+    throw new Error("EUSignCP loader not initialized");
+  }
+
+  euSign.value = await w.__eusignReady;
+
+  try {
+    if (w.EU_STRING_ENCODING_PARAMETER && w.EU_UTF8_ENCODING) {
+      euSign.value.SetRuntimeParameter(w.EU_STRING_ENCODING_PARAMETER, w.EU_UTF8_ENCODING);
+    }
+    if (w.EU_SIGN_TYPE_PARAMETER && w.EU_SIGN_TYPE_CADES_X_LONG_TRUSTED) {
+      euSign.value.SetRuntimeParameter(w.EU_SIGN_TYPE_PARAMETER, w.EU_SIGN_TYPE_CADES_X_LONG_TRUSTED);
+    }
+  } catch (e) {
+    console.warn("EUSignCP runtime params warning:", e);
+  }
+}
+
+async function handleReadPrivateKey() {
+  try {
+    await readPrivateKey();
+  } catch (error: any) {
+    toast({
+      title: "Помилка",
+      description: error?.message || "Не вдалося зчитати ключ",
+      variant: "destructive",
+    });
+  }
+}
+
+async function readPrivateKey() {
+  if (!euSign.value) {
+    throw new Error("Модуль підпису не ініціалізовано");
+  }
+  if (!keyFile.value || !keyPassword.value) {
+    throw new Error("Оберіть файл ключа та введіть пароль");
+  }
+
+  isKeyReading.value = true;
+  keyReadStatus.value = "";
+
+  try {
+    const keyBytes = new Uint8Array(await keyFile.value.arrayBuffer());
+    euSign.value.ReadPrivateKeyBinary(keyBytes, keyPassword.value);
+    hasLoadedPrivateKey.value = true;
+    keyReadStatus.value = "Ключ успішно зчитано";
+  } catch (e: any) {
+    hasLoadedPrivateKey.value = false;
+    keyReadStatus.value = e?.message || "Не вдалося зчитати ключ";
+    throw e;
+  } finally {
+    isKeyReading.value = false;
+  }
+}
+
+function handleKeyDrop(event: DragEvent) {
+  const files = event.dataTransfer?.files;
+  if (files && files.length > 0) {
+    keyFile.value = files[0];
+    hasLoadedPrivateKey.value = false;
+    keyReadStatus.value = "";
+  }
+}
+
+function handleKeyFileChange(event: Event) {
+  const files = (event.target as HTMLInputElement).files;
+  if (files && files.length > 0) {
+    keyFile.value = files[0];
+    hasLoadedPrivateKey.value = false;
+    keyReadStatus.value = "";
+  }
+}
+
+function resetKeyState() {
+  try {
+    if (euSign.value) {
+      euSign.value.ResetPrivateKey();
+    }
+  } catch (e) {
+    console.warn("EUSignCP reset warning:", e);
+  }
+  keyFile.value = null;
+  keyPassword.value = "";
+  hasLoadedPrivateKey.value = false;
+  keyReadStatus.value = "";
+}
+
+function formatFileSize(bytes: number) {
+  if (!bytes) return "0 B";
+  const k = 1024;
+  const sizes = ["B", "KB", "MB", "GB"];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return `${(bytes / Math.pow(k, i)).toFixed(1)} ${sizes[i]}`;
+}
 </script>
 
 <style lang="scss">
-.iframe-sign {
-  display: flex;
-  justify-content: flex-start;
-  align-items: start;
-  width: 100%;
-  height: calc(26.6666666667 * (1vw + 1vh));
-  overflow: auto;
-}
-
 .dialog-footer {
   position: absolute;
   bottom: 20px;
   right: 20px
+}
+
+.sign-key {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 8px 4px 80px;
+}
+
+.sign-tabs {
+  display: flex;
+  gap: 24px;
+  font-size: 18px;
+}
+
+.sign-tab {
+  background: transparent;
+  border: none;
+  font-weight: 600;
+  padding: 6px 0;
+  cursor: pointer;
+}
+
+.sign-tab-active {
+  border-bottom: 2px solid #111827;
+  color: #111827;
+}
+
+.sign-tab-disabled {
+  color: #9ca3af;
+}
+
+.sign-provider {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.sign-provider-label {
+  color: #6b7280;
+  font-size: 14px;
+}
+
+.sign-provider-select {
+  border: none;
+  border-bottom: 2px solid #111827;
+  font-size: 18px;
+  padding: 6px 0;
+  background: transparent;
+  outline: none;
+}
+
+.sign-dropzone {
+  border: 2px dashed #9ca3af;
+  border-radius: 12px;
+  padding: 28px;
+  text-align: center;
+  cursor: pointer;
+  background: #fafafa;
+}
+
+.sign-dropzone-title {
+  font-weight: 600;
+  font-size: 18px;
+  color: #111827;
+}
+
+.sign-dropzone-link {
+  text-decoration: underline;
+}
+
+.sign-dropzone-hint {
+  margin-top: 8px;
+  color: #6b7280;
+  font-size: 14px;
+}
+
+.sign-dropzone-file {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 16px;
+  color: #111827;
+}
+
+.sign-dropzone-file-size {
+  color: #6b7280;
+  font-size: 14px;
+}
+
+.sign-password-input {
+  width: 100%;
+  border: none;
+  border-bottom: 2px solid #9ca3af;
+  font-size: 18px;
+  padding: 8px 0;
+  outline: none;
+}
+
+.sign-read-actions {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.sign-read-status {
+  color: #111827;
+  font-size: 14px;
 }
 </style>
