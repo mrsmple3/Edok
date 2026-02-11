@@ -746,6 +746,17 @@ async function initEUSign() {
   euSign.value = await w.__eusignReady;
 
   try {
+    if (w.FS?.analyzePath && w.FS?.mkdir) {
+      const exists = w.FS.analyzePath("/certificates")?.exists;
+      if (!exists) {
+        w.FS.mkdir("/certificates");
+      }
+    }
+
+    if (euSign.value.DoesNeedSetSettings && euSign.value.DoesNeedSetSettings()) {
+      euSign.value.InitializeMandatorySettings();
+    }
+
     if (w.EU_STRING_ENCODING_PARAMETER && w.EU_UTF8_ENCODING) {
       euSign.value.SetRuntimeParameter(w.EU_STRING_ENCODING_PARAMETER, w.EU_UTF8_ENCODING);
     }
