@@ -147,6 +147,7 @@ const keyFile = ref<File | null>(null);
 const keyPassword = ref("");
 const providerMode = ref("auto");
 const keyInputRef = ref<HTMLInputElement | null>(null);
+const tslLoaded = ref(false);
 
 const queueDocuments = computed(() => {
   if (props.documents?.length) {
@@ -757,11 +758,16 @@ async function initEUSign() {
       euSign.value.InitializeMandatorySettings();
     }
 
+    await ensureTSLLoaded();
+
     if (w.EU_STRING_ENCODING_PARAMETER && w.EU_UTF8_ENCODING) {
       euSign.value.SetRuntimeParameter(w.EU_STRING_ENCODING_PARAMETER, w.EU_UTF8_ENCODING);
     }
     if (w.EU_SIGN_TYPE_PARAMETER && w.EU_SIGN_TYPE_CADES_X_LONG_TRUSTED) {
       euSign.value.SetRuntimeParameter(w.EU_SIGN_TYPE_PARAMETER, w.EU_SIGN_TYPE_CADES_X_LONG_TRUSTED);
+    }
+    if (w.EU_SIGN_INCLUDE_CA_CERTIFICATES_PARAMETER) {
+      euSign.value.SetRuntimeParameter(w.EU_SIGN_INCLUDE_CA_CERTIFICATES_PARAMETER, true);
     }
   } catch (e) {
     console.warn("EUSignCP runtime params warning:", e);
@@ -792,6 +798,7 @@ async function readPrivateKey() {
   keyReadStatus.value = "";
 
   try {
+    await ensureTSLLoaded();
     const keyBytes = new Uint8Array(await keyFile.value.arrayBuffer());
     euSign.value.ReadPrivateKeyBinary(keyBytes, keyPassword.value);
     hasLoadedPrivateKey.value = true;
@@ -843,6 +850,53 @@ function formatFileSize(bytes: number) {
   const sizes = ["B", "KB", "MB", "GB"];
   const i = Math.floor(Math.log(bytes) / Math.log(k));
   return `${(bytes / Math.pow(k, i)).toFixed(1)} ${sizes[i]}`;
+}
+
+async function ensureTSLLoaded() {
+  if (tslLoaded.value) return;
+
+  const w = window as any;
+  if (w.__eusignTSLLoaded) {
+    tslLoaded.value = true;
+    return;
+  }
+
+  if (!euSign.value) {
+    throw new Error("Модуль підпису не ініціалізовано");
+  }
+
+  keyReadStatus.value = "Завантаження сертифікатів...";
+
+  try {
+    const [dstuRes, etsiRes] = await Promise.all([
+      fetch("/api/sign/tsl?type=dstu"),
+      fetch("/api/sign/tsl?type=etsi"),
+    ]);
+
+    if (dstuRes.ok) {
+      const dstuBytes = new Uint8Array(await dstuRes.arrayBuffer());
+      euSign.value.SaveTSL(dstuBytes);
+    }
+
+    if (etsiRes.ok) {
+      const etsiBytes = new Uint8Array(await etsiRes.arrayBuffer());
+      euSign.value.SaveTSL(etsiBytes);
+    }
+
+    if (w.EndUserTSLSettings && euSign.value.SetTSLSettings) {
+      const settings = new w.EndUserTSLSettings(true, false, "");
+      euSign.value.SetTSLSettings(settings);
+    }
+
+    tslLoaded.value = true;
+    w.__eusignTSLLoaded = true;
+  } catch (error) {
+    console.warn("TSL load failed:", error);
+  } finally {
+    if (!hasLoadedPrivateKey.value) {
+      keyReadStatus.value = "";
+    }
+  }
 }
 </script>
 
