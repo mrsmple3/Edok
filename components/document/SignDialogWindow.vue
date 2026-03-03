@@ -967,7 +967,7 @@ async function tryLoadCertificatesByKeyInfo(
 }
 
 function getCmpServers(mode: string) {
-  const uakey = ["uakey.com.ua:2560", "uakey.com.ua"];
+  const uakey = ["uakey.com.ua:80"];
 
   if (mode === "uakey") {
     return uakey;
