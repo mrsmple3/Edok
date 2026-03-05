@@ -1,4 +1,4 @@
-import { defineEventHandler, getMethod, getQuery, readRawBody, setHeader, setResponseStatus } from "h3";
+import { defineEventHandler, getMethod, getQuery, setHeader, setResponseStatus } from "h3";
 
 function parseList(value: unknown): string[] {
   if (!value) return [];
@@ -27,9 +27,9 @@ function extractTargetFromQuery(query: Record<string, unknown>) {
   return typeof address === "string" ? address : "";
 }
 
-function extractTargetFromBody(body: Buffer | string | null) {
+function extractTargetFromBody(body: Buffer | null) {
   if (!body) return "";
-  const text = Buffer.isBuffer(body) ? body.toString("utf8") : String(body);
+  const text = body.toString("utf8");
   const params = new URLSearchParams(text);
   return params.get("address") || params.get("url") || params.get("target") || "";
 }
@@ -48,9 +48,9 @@ function normalizeTarget(value: string) {
   return trimmed;
 }
 
-function stripAddressFromBody(body: Buffer | string | null) {
+function stripAddressFromBody(body: Buffer | null) {
   if (!body) return body;
-  const text = Buffer.isBuffer(body) ? body.toString("utf8") : String(body);
+  const text = body.toString("utf8");
   const params = new URLSearchParams(text);
   if (!params.has("address") && !params.has("url") && !params.has("target")) return body;
   params.delete("address");
@@ -60,10 +60,88 @@ function stripAddressFromBody(body: Buffer | string | null) {
   return next ? Buffer.from(next, "utf8") : Buffer.alloc(0);
 }
 
+async function readBodyBuffer(event: any) {
+  const chunks: Buffer[] = [];
+  for await (const chunk of event.node.req) {
+    chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
+  }
+  return chunks.length ? Buffer.concat(chunks) : null;
+}
+
+function buildForwardHeaders(headers: Record<string, string | string[] | undefined>) {
+  const result = new Headers();
+  const skip = new Set([
+    "host",
+    "connection",
+    "content-length",
+    "transfer-encoding",
+    "accept-encoding",
+    "x-forwarded-for",
+    "x-forwarded-proto",
+    "x-forwarded-host",
+  ]);
+
+  Object.entries(headers).forEach(([key, value]) => {
+    if (skip.has(key.toLowerCase())) return;
+    if (typeof value === "undefined") return;
+    if (Array.isArray(value)) {
+      result.set(key, value.join(", "));
+    } else {
+      result.set(key, value);
+    }
+  });
+
+  return result;
+}
+
+function tryDecodeWrappedPayload(body: Buffer | null, contentType: string) {
+  if (!body || !contentType.includes("application/x-www-form-urlencoded")) return null;
+
+  const text = body.toString("utf8");
+  const params = new URLSearchParams(text);
+  const keys = ["requestData", "data", "request", "body", "content"];
+
+  for (const key of keys) {
+    const value = params.get(key);
+    if (!value) continue;
+    const normalized = value.replace(/\s+/g, "");
+    if (!/^[A-Za-z0-9+/=]+$/.test(normalized)) continue;
+    try {
+      const decoded = Buffer.from(normalized, "base64");
+      if (decoded.length > 0) {
+        return decoded;
+      }
+    } catch {
+      // Ignore invalid base64 candidate.
+    }
+  }
+
+  return null;
+}
+
+async function forwardRequest(
+  targetUrl: URL,
+  method: string,
+  headers: Headers,
+  body: Buffer | null
+) {
+  const response = await fetch(targetUrl.toString(), {
+    method,
+    headers,
+    body: method === "GET" || method === "HEAD" ? undefined : (body as any),
+  });
+
+  return {
+    status: response.status,
+    headers: response.headers,
+    buffer: Buffer.from(await response.arrayBuffer()),
+  };
+}
+
 export default defineEventHandler(async (event) => {
   const method = getMethod(event);
   const query = getQuery(event);
-  const body = method === "GET" || method === "HEAD" ? null : await readRawBody(event, false);
+  const body = method === "GET" || method === "HEAD" ? null : await readBodyBuffer(event);
 
   let target = extractTargetFromQuery(query);
   if (!target) {
@@ -99,24 +177,25 @@ export default defineEventHandler(async (event) => {
     return { error: "Target host is not allowed" };
   }
 
-  const headers = new Headers();
-  const contentType = event.node.req.headers["content-type"];
-  if (contentType) {
-    headers.set("content-type", contentType);
-  }
+  const headers = buildForwardHeaders(event.node.req.headers);
+  const contentType = String(event.node.req.headers["content-type"] || "");
 
   const forwardBody = target === extractTargetFromBody(body) ? stripAddressFromBody(body) : body;
+  let result = await forwardRequest(targetUrl, method, headers, forwardBody);
 
-  const response = await fetch(targetUrl.toString(), {
-    method,
-    headers,
-    body: method === "GET" || method === "HEAD" ? undefined : (forwardBody as any),
-  });
+  const upstreamText = result.buffer.toString("utf8");
+  const isReqCorrupt = result.status === 400 && upstreamText.includes("ReqCorrupt");
+  if (isReqCorrupt) {
+    const decodedBody = tryDecodeWrappedPayload(forwardBody, contentType);
+    if (decodedBody) {
+      const retryHeaders = new Headers(headers);
+      retryHeaders.set("content-type", "application/octet-stream");
+      result = await forwardRequest(targetUrl, method, retryHeaders, decodedBody);
+    }
+  }
 
-  setResponseStatus(event, response.status);
-  setHeader(event, "content-type", response.headers.get("content-type") || "application/octet-stream");
+  setResponseStatus(event, result.status);
+  setHeader(event, "content-type", result.headers.get("content-type") || "application/octet-stream");
   setHeader(event, "cache-control", "no-store");
-
-  const buffer = Buffer.from(await response.arrayBuffer());
-  return buffer;
+  return result.buffer;
 });
