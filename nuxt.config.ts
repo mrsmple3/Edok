@@ -47,8 +47,11 @@ export default defineNuxtConfig({
   runtimeConfig: {
     jwtAccessSecret: process.env.JWT_ACCESS_TOKEN_SECRET,
     jwtRefreshSecret: process.env.JWT_REFRESH_TOKEN_SECRET,
+    eusignProxyAllowedHosts: process.env.EUSIGN_PROXY_ALLOWED_HOSTS || '',
     public: {
-      apiBase: 'http://localhost:3001' // Основное API
+      apiBase: 'http://localhost:3001', // Основное API
+      eusignCmpServers: process.env.NUXT_PUBLIC_EUSIGN_CMP_SERVERS || '',
+      eusignProxyService: process.env.NUXT_PUBLIC_EUSIGN_PROXY_SERVICE || ''
     }
   }
 })

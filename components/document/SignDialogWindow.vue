@@ -131,6 +131,7 @@ const props = defineProps({
 
 const adminStore = useAdminStore();
 const route = useRoute();
+const runtimeConfig = useRuntimeConfig();
 const userStore = useUserStore();
 const isDialogOpen = ref(false);
 const { toast } = useToast();
@@ -149,6 +150,24 @@ const keyPassword = ref("");
 const providerMode = ref("auto");
 const keyInputRef = ref<HTMLInputElement | null>(null);
 const tslLoaded = ref(false);
+const cmpServersFromEnv = computed(() => {
+  const raw = (runtimeConfig.public as any)?.eusignCmpServers;
+  if (!raw) return [];
+  if (Array.isArray(raw)) {
+    return raw.map((value) => String(value).trim()).filter(Boolean);
+  }
+  return String(raw)
+    .split(",")
+    .map((value) => value.trim())
+    .filter(Boolean);
+});
+const cmpProxyService = computed(() => {
+  const raw = (runtimeConfig.public as any)?.eusignProxyService;
+  if (raw === false || raw === "false" || raw === "0") return "";
+  const value = typeof raw === "string" ? raw.trim() : "";
+  if (value) return value;
+  return "/api/eusign/proxy?address=";
+});
 
 const queueDocuments = computed(() => {
   if (props.documents?.length) {
@@ -771,15 +790,27 @@ async function initEUSign() {
       euSign.value.SetRuntimeParameter(w.EU_SIGN_INCLUDE_CA_CERTIFICATES_PARAMETER, true);
     }
 
-    if (euSign.value.SetXMLHTTPDirectAccess) {
-      euSign.value.SetXMLHTTPDirectAccess(true);
-      const hosts = getCmpServers(providerMode.value).map((item) => item.split(":")[0]);
-      hosts.forEach((host) => {
-        if (euSign.value.AddXMLHTTPDirectAccessAddress) {
-          euSign.value.AddXMLHTTPDirectAccessAddress(host);
-        }
-      });
+    const cmpServers = getCmpServers(providerMode.value);
+    const proxyService = cmpProxyService.value;
+
+    if (proxyService && euSign.value.SetXMLHTTPProxyService) {
+      euSign.value.SetXMLHTTPProxyService(proxyService);
     }
+
+    if (euSign.value.SetXMLHTTPDirectAccess) {
+      const enableDirectAccess = !proxyService;
+      euSign.value.SetXMLHTTPDirectAccess(enableDirectAccess);
+      if (enableDirectAccess) {
+        const directAccessAddresses = getDirectAccessAddresses(cmpServers);
+        directAccessAddresses.forEach((address) => {
+          if (euSign.value.AddXMLHTTPDirectAccessAddress) {
+            euSign.value.AddXMLHTTPDirectAccessAddress(address);
+          }
+        });
+      }
+    }
+
+    configureCmpSettings(cmpServers);
   } catch (e) {
     console.warn("EUSignCP runtime params warning:", e);
   }
@@ -837,6 +868,10 @@ async function readPrivateKey() {
         if (loaded) {
           euSign.value.ReadPrivateKeyBinary(keyBytes, keyPassword.value);
         } else {
+          const details = describeEuError(readError);
+          if (details.code || details.message) {
+            console.warn("CMP read error:", details);
+          }
           throw readError;
         }
       } else {
@@ -960,20 +995,81 @@ async function tryLoadCertificatesByKeyInfo(
       return true;
     }
   } catch (error) {
-    console.warn("CMP certificate fetch failed:", error);
+    const details = describeEuError(error);
+    console.warn("CMP certificate fetch failed:", { error, ...details });
   }
 
   return false;
 }
 
+function describeEuError(error: any) {
+  return {
+    code: typeof error?.GetErrorCode === "function" ? error.GetErrorCode() : error?.errorCode,
+    message: typeof error?.GetMessage === "function" ? error.GetMessage() : error?.message,
+    messageEx: typeof error?.GetMessageEx === "function" ? error.GetMessageEx() : error?.messageEx,
+  };
+}
+
+function normalizeCmpServer(value: string) {
+  const trimmed = value.trim();
+  if (!trimmed) return "";
+  const withoutProto = trimmed.replace(/^https?:\/\//i, "");
+  return withoutProto.split("/")[0];
+}
+
+function splitCmpServer(value: string) {
+  const normalized = normalizeCmpServer(value);
+  if (!normalized) return { host: "", port: "80" };
+
+  const [host, port] = normalized.split(":");
+  return {
+    host,
+    port: port || "80",
+  };
+}
+
+function getDirectAccessAddresses(servers: string[]) {
+  const addresses = new Set<string>();
+  servers.forEach((server) => {
+    const { host, port } = splitCmpServer(server);
+    if (!host) return;
+    addresses.add(host);
+    if (port) {
+      addresses.add(`${host}:${port}`);
+    }
+  });
+  return Array.from(addresses);
+}
+
+function configureCmpSettings(servers: string[]) {
+  if (!euSign.value?.CreateCMPSettings || !euSign.value?.SetCMPSettings) return;
+  if (!servers.length) return;
+
+  const { host, port } = splitCmpServer(servers[0]);
+  if (!host) return;
+
+  try {
+    const cmpSettings = euSign.value.CreateCMPSettings();
+    cmpSettings.SetUseCMP(true);
+    cmpSettings.SetAddress(host);
+    cmpSettings.SetPort(port);
+    euSign.value.SetCMPSettings(cmpSettings);
+  } catch (error) {
+    const details = describeEuError(error);
+    console.warn("CMP settings warning:", { error, ...details });
+  }
+}
+
 function getCmpServers(mode: string) {
+  const envServers = cmpServersFromEnv.value.map(normalizeCmpServer).filter(Boolean);
   const uakey = ["uakey.com.ua:80"];
+  const effectiveServers = envServers.length ? envServers : uakey;
 
   if (mode === "uakey") {
-    return uakey;
+    return effectiveServers;
   }
 
-  return uakey;
+  return effectiveServers;
 }
 </script>
 
