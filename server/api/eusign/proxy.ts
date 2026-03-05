@@ -34,6 +34,20 @@ function extractTargetFromBody(body: Buffer | string | null) {
   return params.get("address") || params.get("url") || params.get("target") || "";
 }
 
+function normalizeTarget(value: string) {
+  const trimmed = value.trim();
+  if (!trimmed) return "";
+
+  // Some clients may pass nested `?address=http...` in the address value.
+  if (trimmed.startsWith("?")) {
+    const nested = new URLSearchParams(trimmed.slice(1));
+    const next = nested.get("address") || nested.get("url") || nested.get("target");
+    return next ? normalizeTarget(next) : "";
+  }
+
+  return trimmed;
+}
+
 function stripAddressFromBody(body: Buffer | string | null) {
   if (!body) return body;
   const text = Buffer.isBuffer(body) ? body.toString("utf8") : String(body);
@@ -55,6 +69,7 @@ export default defineEventHandler(async (event) => {
   if (!target) {
     target = extractTargetFromBody(body);
   }
+  target = normalizeTarget(target);
 
   if (!target) {
     setResponseStatus(event, 400);

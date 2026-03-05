@@ -166,7 +166,7 @@ const cmpProxyService = computed(() => {
   if (raw === false || raw === "false" || raw === "0") return "";
   const value = typeof raw === "string" ? raw.trim() : "";
   if (value) return value;
-  return "/api/eusign/proxy?address=";
+  return "/api/eusign/proxy";
 });
 
 const queueDocuments = computed(() => {
