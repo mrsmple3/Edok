@@ -20,7 +20,7 @@ export const getDefaultLeadFilters = (): LeadFilters => ({
   leadId: "",
 });
 
-const normalizeString = (str?: string | null) => (str ?? "").toLowerCase();
+const normalizeString = (str?: string | null) => (str ?? "").trim().toLowerCase();
 
 export const filterLeads = (leads: any[], filters: LeadFilters) => {
   const { dateRange, counterparty, inn, name, type, status, moderator, leadId } = filters;
@@ -55,10 +55,16 @@ export const filterLeads = (leads: any[], filters: LeadFilters) => {
 
     let matchesInn = true;
     if (normalizedInn) {
-      const leadInn = normalizeString(
-        lead?.organization?.inn || lead?.counterparty?.organization_INN || lead?.counterparty?.organization_inn
-      );
-      matchesInn = leadInn.includes(normalizedInn);
+      const innCandidates = [
+        lead?.organization?.inn,
+        lead?.counterparty?.organization?.inn,
+        lead?.counterparty?.organization_INN,
+        lead?.counterparty?.organization_inn,
+      ]
+        .map((value) => normalizeString(value))
+        .filter(Boolean);
+
+      matchesInn = innCandidates.some((value) => value.includes(normalizedInn));
     }
 
     let matchesName = true;
