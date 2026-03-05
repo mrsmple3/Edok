@@ -1,29 +1,28 @@
 import { prisma } from "~/server/db/index";
 import { EventHandlerRequest, H3Event } from "h3";
-import { Lead } from "@prisma/client";
+
+const leadInclude = {
+	author: true,
+	documents: true,
+	moderators: true,
+	counterparty: {
+		include: {
+			organization: true,
+		},
+	},
+	organization: true,
+} as const;
 
 export const getAllLeads = async () => {
 	return prisma.lead.findMany({
-		include: {
-			author: true,
-			documents: true,
-			moderators: true,
-			counterparty: true,
-			organization: true,
-		},
+		include: leadInclude,
 	});
 };
 
 export const getLeadById = async (id: any) => {
 	return prisma.lead.findUnique({
 		where: { id },
-		include: {
-			author: true,
-			counterparty: true,
-			moderators: true,
-			documents: true,
-			organization: true,
-		},
+		include: leadInclude,
 	});
 };
 
@@ -34,13 +33,7 @@ export const getLeadsByAuthorId = async (authorId: number) => {
 				equals: authorId,
 			},
 		},
-		include: {
-			author: true,
-			documents: true,
-			moderators: true,
-			counterparty: true,
-			organization: true,
-		},
+		include: leadInclude,
 	});
 
 	return leads;
@@ -53,13 +46,7 @@ export const getLeadsByCounterpartyId = async (counterpartyId: number) => {
 				equals: counterpartyId,
 			},
 		},
-		include: {
-			author: true,
-			documents: true,
-			moderators: true,
-			counterparty: true,
-			organization: true,
-		},
+		include: leadInclude,
 	});
 
 	return leads;
@@ -74,15 +61,8 @@ export const getLeadsByRole = async (role: string, id: number) => {
 						equals: id,
 					},
 				},
-				include: {
-					author: true,
-					documents: true,
-					moderators: true,
-					counterparty: true,
-					organization: true,
-				},
+				include: leadInclude,
 			});
-			break;
 		case "moderator":
 			return await prisma.lead.findMany({
 				where: {
@@ -90,15 +70,8 @@ export const getLeadsByRole = async (role: string, id: number) => {
 						equals: id,
 					},
 				},
-				include: {
-					author: true,
-					documents: true,
-					moderators: true,
-					counterparty: true,
-					organization: true,
-				},
+				include: leadInclude,
 			});
-			break;
 		case "author":
 			return await prisma.lead.findMany({
 				where: {
@@ -106,15 +79,8 @@ export const getLeadsByRole = async (role: string, id: number) => {
 						equals: id,
 					},
 				},
-				include: {
-					author: true,
-					documents: true,
-					moderators: true,
-					counterparty: true,
-					organization: true,
-				},
+				include: leadInclude,
 			});
-			break;
 		default:
 			return await prisma.lead.findMany({
 				where: {
@@ -122,17 +88,10 @@ export const getLeadsByRole = async (role: string, id: number) => {
 						equals: id,
 					},
 				},
-				include: {
-					author: true,
-					documents: true,
-					moderators: true,
-					counterparty: true,
-					organization: true,
-				},
+				include: leadInclude,
 			});
-			break;
 	}
-}
+};
 
 export const getLeadsByModeratorId = async (moderatorId: number) => {
 	const leads = await prisma.lead.findMany({
@@ -141,13 +100,7 @@ export const getLeadsByModeratorId = async (moderatorId: number) => {
 				equals: moderatorId,
 			},
 		},
-		include: {
-			author: true,
-			documents: true,
-			moderators: true,
-			counterparty: true,
-			organization: true,
-		},
+		include: leadInclude,
 	});
 
 	return leads;
@@ -166,13 +119,7 @@ export const createLead = async (event: H3Event<EventHandlerRequest>, data: any)
 				connect: data.documents.map((documentId: number) => ({ id: documentId })),
 			},
 		},
-		include: {
-			author: true,
-			counterparty: true,
-			moderators: true,
-			documents: true,
-			organization: true,
-		},
+		include: leadInclude,
 	});
 };
 
@@ -189,21 +136,14 @@ export const updateLead = async (id: number, data: any) => {
 				connect: data.documents ? data.documents.map((documentId: number) => ({ id: documentId })) : undefined,
 			},
 		},
-		include: {
-			author: true,
-			counterparty: true,
-			moderators: true,
-			documents: true,
-			organization: true,
-		},
+		include: leadInclude,
 	});
 };
 
 export const deleteLead = async (id: number) => {
-
 	await prisma.document.updateMany({
 		where: { leadId: id },
-		data: { leadId: null }
+		data: { leadId: null },
 	});
 
 	return prisma.lead.delete({
