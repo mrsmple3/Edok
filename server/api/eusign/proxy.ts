@@ -94,26 +94,110 @@ function buildForwardHeaders(headers: Record<string, string | string[] | undefin
   return result;
 }
 
+function isProxyDebugEnabled() {
+  const value = String(process.env.EUSIGN_PROXY_DEBUG || "")
+    .trim()
+    .toLowerCase();
+  return value === "1" || value === "true" || value === "yes";
+}
+
+function logProxyDebug(enabled: boolean, requestId: string, message: string, details?: unknown) {
+  if (!enabled) return;
+  if (typeof details === "undefined") {
+    console.log(`[eusign-proxy][${requestId}] ${message}`);
+    return;
+  }
+  console.log(`[eusign-proxy][${requestId}] ${message}`, details);
+}
+
+function safeDecode(value: string) {
+  try {
+    return decodeURIComponent(value);
+  } catch {
+    return value;
+  }
+}
+
+function parseFormUrlEncodedRaw(text: string) {
+  if (!text) return [] as Array<{ key: string; value: string }>;
+
+  return text
+    .split("&")
+    .map((pair) => {
+      const index = pair.indexOf("=");
+      const rawKey = index >= 0 ? pair.slice(0, index) : pair;
+      const rawValue = index >= 0 ? pair.slice(index + 1) : "";
+      return {
+        key: safeDecode(rawKey.replace(/\+/g, "%20")),
+        // Preserve "+" symbols that are valid base64 characters.
+        value: safeDecode(rawValue.replace(/\+/g, "%2B")),
+      };
+    })
+    .filter((entry) => Boolean(entry.key));
+}
+
+function isBase64ProxyContentType(contentType: string) {
+  const normalized = contentType.toLowerCase();
+  return (
+    normalized.includes("x-user/base64-data") ||
+    normalized.includes("application/base64") ||
+    normalized.includes("application/x-base64")
+  );
+}
+
+function decodeBase64Candidate(value: string) {
+  const normalized = value.replace(/\s+/g, "");
+  if (!normalized) return null;
+  if (!/^[A-Za-z0-9+/=]+$/.test(normalized)) return null;
+  try {
+    const decoded = Buffer.from(normalized, "base64");
+    return decoded.length > 0 ? decoded : null;
+  } catch {
+    return null;
+  }
+}
+
+function tryDecodeRawBase64Payload(body: Buffer | null, contentType: string) {
+  if (!body) return null;
+
+  const normalizedContentType = contentType.toLowerCase();
+  const isLikelyBase64ContentType = isBase64ProxyContentType(contentType) || normalizedContentType.includes("text/plain");
+
+  const text = body.toString("utf8").trim();
+  if (!text) return null;
+  if (text.includes("&") && text.includes("=")) return null;
+
+  const decoded = decodeBase64Candidate(text);
+  if (!decoded) return null;
+
+  if (!isLikelyBase64ContentType && decoded.length === body.length) {
+    // Prevent accidental decode for non-base64 payloads.
+    return null;
+  }
+
+  return decoded;
+}
+
 function tryDecodeWrappedPayload(body: Buffer | null, contentType: string) {
   if (!body || !contentType.includes("application/x-www-form-urlencoded")) return null;
 
   const text = body.toString("utf8");
-  const params = new URLSearchParams(text);
-  const keys = ["requestData", "data", "request", "body", "content"];
+  const keysPriority = ["requestData", "requestdata", "data", "request", "body", "content", "message"];
+  const entries = parseFormUrlEncodedRaw(text);
 
-  for (const key of keys) {
-    const value = params.get(key);
-    if (!value) continue;
-    const normalized = value.replace(/\s+/g, "");
-    if (!/^[A-Za-z0-9+/=]+$/.test(normalized)) continue;
-    try {
-      const decoded = Buffer.from(normalized, "base64");
-      if (decoded.length > 0) {
-        return decoded;
-      }
-    } catch {
-      // Ignore invalid base64 candidate.
-    }
+  const sortedEntries = entries.sort((left, right) => {
+    const leftPriority = keysPriority.indexOf(left.key);
+    const rightPriority = keysPriority.indexOf(right.key);
+
+    if (leftPriority === -1 && rightPriority === -1) return right.value.length - left.value.length;
+    if (leftPriority === -1) return 1;
+    if (rightPriority === -1) return -1;
+    return leftPriority - rightPriority;
+  });
+
+  for (const entry of sortedEntries) {
+    const decoded = decodeBase64Candidate(entry.value);
+    if (decoded) return { decoded, key: entry.key };
   }
 
   return null;
@@ -139,9 +223,24 @@ async function forwardRequest(
 }
 
 export default defineEventHandler(async (event) => {
+  const requestId = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+  const debug = isProxyDebugEnabled();
   const method = getMethod(event);
   const query = getQuery(event);
   const body = method === "GET" || method === "HEAD" ? null : await readBodyBuffer(event);
+  const contentType = String(event.node.req.headers["content-type"] || "");
+
+  if (debug) {
+    const parsedForm = body && contentType.includes("application/x-www-form-urlencoded")
+      ? parseFormUrlEncodedRaw(body.toString("utf8"))
+      : [];
+    logProxyDebug(debug, requestId, "incoming request", {
+      method,
+      contentType,
+      bodyLength: body?.length || 0,
+      formKeys: parsedForm.map((entry) => `${entry.key}:${entry.value.length}`),
+    });
+  }
 
   let target = extractTargetFromQuery(query);
   if (!target) {
@@ -178,20 +277,84 @@ export default defineEventHandler(async (event) => {
   }
 
   const headers = buildForwardHeaders(event.node.req.headers);
-  const contentType = String(event.node.req.headers["content-type"] || "");
 
   const forwardBody = target === extractTargetFromBody(body) ? stripAddressFromBody(body) : body;
-  let result = await forwardRequest(targetUrl, method, headers, forwardBody);
+  const rawBase64Payload = tryDecodeRawBase64Payload(forwardBody, contentType);
+
+  if (rawBase64Payload) {
+    headers.set("content-type", "application/octet-stream");
+    logProxyDebug(debug, requestId, "detected raw base64 payload", {
+      originalContentType: contentType,
+      originalBytes: forwardBody?.length || 0,
+      decodedBytes: rawBase64Payload.length,
+    });
+  }
+
+  const upstreamBody = rawBase64Payload || forwardBody;
+  logProxyDebug(debug, requestId, "forwarding to upstream", {
+    method,
+    target: targetUrl.toString(),
+    bodyLength: upstreamBody?.length || 0,
+    contentType: headers.get("content-type") || contentType,
+  });
+
+  let result = await forwardRequest(targetUrl, method, headers, upstreamBody);
 
   const upstreamText = result.buffer.toString("utf8");
   const isReqCorrupt = result.status === 400 && upstreamText.includes("ReqCorrupt");
+  logProxyDebug(debug, requestId, "upstream response", {
+    status: result.status,
+    responseContentType: result.headers.get("content-type") || "",
+    responseSize: result.buffer.length,
+    isReqCorrupt,
+  });
+
   if (isReqCorrupt) {
-    const decodedBody = tryDecodeWrappedPayload(forwardBody, contentType);
-    if (decodedBody) {
+    let decodedBody = null as null | { decoded: Buffer; key?: string };
+
+    if (!rawBase64Payload) {
+      const rawDecoded = tryDecodeRawBase64Payload(forwardBody, contentType);
+      if (rawDecoded) {
+        decodedBody = { decoded: rawDecoded, key: "rawBody" };
+      }
+    }
+
+    if (!decodedBody) {
+      decodedBody = tryDecodeWrappedPayload(forwardBody, contentType);
+    }
+
+    if (decodedBody?.decoded) {
       const retryHeaders = new Headers(headers);
       retryHeaders.set("content-type", "application/octet-stream");
-      result = await forwardRequest(targetUrl, method, retryHeaders, decodedBody);
+      logProxyDebug(debug, requestId, "retrying with decoded base64 payload", {
+        payloadKey: decodedBody.key,
+        payloadBytes: decodedBody.decoded.length,
+      });
+      result = await forwardRequest(targetUrl, method, retryHeaders, decodedBody.decoded);
+      logProxyDebug(debug, requestId, "retry response", {
+        status: result.status,
+        responseContentType: result.headers.get("content-type") || "",
+        responseSize: result.buffer.length,
+      });
+    } else {
+      logProxyDebug(debug, requestId, "retry skipped: no base64 payload found");
     }
+  }
+
+  const shouldEncodeBase64Response = isBase64ProxyContentType(contentType) && result.status >= 200 && result.status < 300;
+  if (shouldEncodeBase64Response) {
+    const encoded = result.buffer.toString("base64");
+    logProxyDebug(debug, requestId, "encoding upstream response to base64 for proxy client", {
+      sourceBytes: result.buffer.length,
+      encodedChars: encoded.length,
+    });
+
+    result = {
+      ...result,
+      buffer: Buffer.from(encoded, "utf8"),
+      headers: new Headers(result.headers),
+    };
+    result.headers.set("content-type", "X-user/base64-data");
   }
 
   setResponseStatus(event, result.status);

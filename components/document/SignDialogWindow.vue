@@ -880,6 +880,7 @@ async function readPrivateKey() {
     }
     hasLoadedPrivateKey.value = true;
     keyReadStatus.value = "Ключ успішно зчитано";
+    logPrivateKeyReadDebugInfo();
   } catch (e: any) {
     hasLoadedPrivateKey.value = false;
     keyReadStatus.value = e?.message || "Не вдалося зчитати ключ";
@@ -1008,6 +1009,57 @@ function describeEuError(error: any) {
     message: typeof error?.GetMessage === "function" ? error.GetMessage() : error?.message,
     messageEx: typeof error?.GetMessageEx === "function" ? error.GetMessageEx() : error?.messageEx,
   };
+}
+
+function toTransferableEuObject(value: any) {
+  if (!value) return null;
+  if (typeof value?.GetTransferableObject === "function") {
+    return value.GetTransferableObject();
+  }
+  return value;
+}
+
+function getOwnCertificatesInfoFromStore(maxCertificates = 32) {
+  const certificates: any[] = [];
+  if (!euSign.value?.EnumOwnCertificates) return certificates;
+
+  for (let index = 0; index < maxCertificates; index++) {
+    const certInfo = euSign.value.EnumOwnCertificates(index);
+    if (!certInfo) break;
+    certificates.push(toTransferableEuObject(certInfo));
+  }
+
+  return certificates;
+}
+
+function logPrivateKeyReadDebugInfo() {
+  if (!euSign.value) return;
+
+  try {
+    const ownerInfo = euSign.value.GetPrivateKeyOwnerInfo
+      ? euSign.value.GetPrivateKeyOwnerInfo()
+      : null;
+    const ownerInfoData = toTransferableEuObject(ownerInfo);
+    const ownCertificates = getOwnCertificatesInfoFromStore();
+
+    const debugPayload = {
+      ownerInfo: ownerInfoData,
+      ownCertificates,
+      ownCertificatesCount: ownCertificates.length,
+      readAt: new Date().toISOString(),
+    };
+
+    const w = window as any;
+    w.__edokLastKeyReadInfo = debugPayload;
+
+    console.groupCollapsed("[EUSign] Private key loaded");
+    console.log("ownerInfo:", ownerInfoData);
+    console.log("ownCertificates:", ownCertificates);
+    console.log("window.__edokLastKeyReadInfo:", w.__edokLastKeyReadInfo);
+    console.groupEnd();
+  } catch (error) {
+    console.warn("Failed to collect private key debug info:", error);
+  }
 }
 
 function normalizeCmpServer(value: string) {
