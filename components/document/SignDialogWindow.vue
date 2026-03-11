@@ -145,6 +145,7 @@ const MAX_SIGNATURES_PER_ORG = 2;
 const signQueue = ref<number[]>([]);
 const currentDocumentIndex = ref(0);
 const hasLoadedPrivateKey = ref(false);
+const loadedKeyInfo = ref<any>(null);
 const keyFile = ref<File | null>(null);
 const keyPassword = ref("");
 const providerMode = ref("auto");
@@ -363,7 +364,7 @@ async function ensurePrivateKeyLoaded() {
 }
 
 async function extractCertificateData(signedFile: File, currentDoc: any) {
-  let certInfo: any = null;
+  let certInfo: any = loadedKeyInfo.value;
   let stampData = {
     organizationName: "",
     signerINN: "",
@@ -382,10 +383,17 @@ async function extractCertificateData(signedFile: File, currentDoc: any) {
     });
 
     if (certInfoResponse.code === 200) {
-      certInfo = certInfoResponse.body.certInfo;
-      console.log("Извлеченная информация о сертификате:", certInfo);
+      const extractedCertInfo = certInfoResponse.body.certInfo;
+      console.log("Извлеченная информация о сертификате:", extractedCertInfo);
+ 
+      const parsedCertData = typeof extractedCertInfo === 'string'
+        ? parseCertificateInfo(extractedCertInfo)
+        : extractedCertInfo;
+ 
+      if (parsedCertData.fullName && parsedCertData.fullName !== 'Невідомо') {
+        certInfo = parsedCertData;
+      }
 
-      const parsedCertData = parseCertificateInfo(certInfo);
       const currentOrgName = parsedCertData.organizationName || parsedCertData.fullName || "";
       const normalizedCurrentOrgName = normalizeOrganizationName(currentOrgName);
 
@@ -408,8 +416,20 @@ async function extractCertificateData(signedFile: File, currentDoc: any) {
     if (certError instanceof Error && certError.message?.includes("Організація")) {
       throw certError;
     }
-    console.error("Ошибка извлечения информации о сертификате:", certError);
+    console.warn("Не вдалося витягти дані з підпису, використовуємо збережені информации о сертификате:", certError);
   }
+ 
+  const finalCertData = typeof certInfo === 'object' && certInfo !== null
+    ? certInfo
+    : parseCertificateInfo(certInfo);
+ 
+  stampData = {
+    organizationName: finalCertData.organizationName || "",
+    signerINN: finalCertData.inn || "",
+    signerName: finalCertData.fullName || "",
+    signerPosition: finalCertData.position || "",
+    stampCount: currentDoc.Signature?.length || 0,
+  };
 
   return { certInfo, stampData };
 }
@@ -524,6 +544,15 @@ function parseCertificateInfo(certInfo: any) {
     organizationName: '',
     position: 'не видан'
   };
+  if (typeof certInfo === 'object' && certInfo !== null && !Array.isArray(certInfo)) {
+    return {
+      fullName: certInfo.fullName || 'Невідомо',
+      inn: certInfo.inn || 'Невідомо',
+      organizationName: certInfo.organizationName || certInfo.fullName || 'Невідомо',
+      position: certInfo.position || 'не видан'
+    };
+  }
+
 
   try {
     if (!certInfo || typeof certInfo !== 'string') {
@@ -816,6 +845,62 @@ async function initEUSign() {
   }
 }
 
+
+function extractINN(pkInfo: any): string | null {
+  try {
+    const drfo = pkInfo.GetSubjDRFOCode?.();
+    if (drfo && /^\d{8,12}$/.test(drfo)) return drfo;
+
+    const edrpou = pkInfo.GetEDRPOUCode?.();
+    if (edrpou && /^\d{8,12}$/.test(edrpou)) return edrpou;
+
+    const serial = pkInfo.GetSerialNumber?.();
+    if (serial) {
+      const match = serial.match(/\d{8,12}/);
+      if (match) return match[0];
+    }
+
+    return null;
+  } catch (e) {
+    console.error("Помилка витягування ІПН:", e);
+    return null;
+  }
+}
+
+function extractKeyOwnerInfo() {
+  if (!euSign.value) return null;
+  
+  try {
+    const pkInfo = euSign.value.GetPrivateKeyOwnerInfo();
+    if (!pkInfo) {
+      console.warn("GetPrivateKeyOwnerInfo повернув null");
+      return null;
+    }
+
+    const fullName = pkInfo.GetSubjCN?.() || 'Невідомо';
+    const inn = extractINN(pkInfo) || 'Невідомо';
+    const organization = pkInfo.GetSubjOrg?.() || pkInfo.GetSubjCN?.() || 'Невідомо';
+    const position = pkInfo.GetSubjTitle?.() || 'не видан';
+
+    console.log("📋 Витягнуті дані власника ключа:", {
+      fullName,
+      inn,
+      organization,
+      position
+    });
+
+    return {
+      fullName,
+      inn,
+      organizationName: organization,
+      position
+    };
+  } catch (error) {
+    console.error("Помилка отримання даних власника ключа:", error);
+    return null;
+  }
+}
+
 async function handleReadPrivateKey() {
   try {
     await readPrivateKey();
@@ -879,6 +964,7 @@ async function readPrivateKey() {
       }
     }
     hasLoadedPrivateKey.value = true;
+    loadedKeyInfo.value = extractKeyOwnerInfo();
     keyReadStatus.value = "Ключ успішно зчитано";
     logPrivateKeyReadDebugInfo();
   } catch (e: any) {
