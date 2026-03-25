@@ -10,7 +10,7 @@
           Файли для скачування
         </DialogDescription>
         <div class="download-links-container">
-          <a v-if="props.invoice.filePath" :href="props.invoice.filePath" class="underline text-blue-600" download>
+          <a v-if="documentDownloadUrl" :href="documentDownloadUrl" class="underline text-blue-600" download>
             📄 Завантажити документ
           </a>
           <a v-if="props.invoice.Signature.length !== 0" :href="`/api/download/archive/${Number(props.invoice.id)}`"
@@ -24,6 +24,9 @@
 </template>
 
 <script setup lang="ts">
+import { computed } from "vue";
+import { normalizeFileUrl } from "~/utils/fileUrl";
+
 const props = defineProps({
   invoice: {
     type: Object,
@@ -31,6 +34,7 @@ const props = defineProps({
   },
 });
 const isDialogOpen = ref(false);
+const documentDownloadUrl = computed(() => normalizeFileUrl(props.invoice?.filePath));
 </script>
 
 <style scoped lang="scss">

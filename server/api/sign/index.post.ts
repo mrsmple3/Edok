@@ -10,6 +10,15 @@ import { documentRequiresCounterpartySignature } from "~/lib/documents";
 
 const MAX_SIGNATURES_PER_ORGANIZATION = 2;
 
+function normalizeStampCount(value: unknown): number {
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed) || parsed < 0) {
+    return 0;
+  }
+
+  return Math.floor(parsed);
+}
+
 function decodeHexString(hexStr?: string | null): string {
   if (!hexStr) return '';
 
@@ -148,7 +157,6 @@ export default defineEventHandler(async (event) => {
     }
 
     const creatingFile = await createFile(event, signature);
-    console.log('Результат создания файла подписи:', creatingFile);
 
     if (creatingFile.status !== 200) {
       event.res.statusCode = creatingFile.status;
@@ -194,32 +202,33 @@ export default defineEventHandler(async (event) => {
     // Добавляем печать к PDF НА СЕРВЕРЕ
     let finalPdfFile = originalPdfFile;
     if (stampData) {
+      const normalizedStampCount = normalizeStampCount(existingSignsCount);
+
       try {
         const originalArrayBuffer = await originalPdfFile.arrayBuffer();
 
         // Подготавливаем данные для печати с счетчиком
         const stampDataWithCount = {
           ...stampData,
-          stampCount: existingSignsCount // Количество существующих печатей
+          stampCount: normalizedStampCount
         };
-
-        console.log('Добавляем печать с данными:', stampDataWithCount);
 
         const finalPdfBytes = await addVisibleStamp(originalArrayBuffer, stampDataWithCount);
         const finalPdfBlob = new Blob([finalPdfBytes], { type: "application/pdf" });
         finalPdfFile = new File([finalPdfBlob], originalPdfFile.name, { type: "application/pdf" });
-
-        console.log('Печать успешно добавлена на сервере');
-
       } catch (stampError) {
-        console.error('Ошибка добавления печати на сервере:', stampError);
+        console.error('Visible stamp rendering failed', {
+          documentId,
+          userId,
+          stampCount: normalizedStampCount,
+          error: stampError instanceof Error ? stampError.message : String(stampError),
+        });
         // Используем оригинальный файл если печать не удалось добавить
       }
     }
 
 
     const creatingFileSignedPdfFile = await createFile(event, finalPdfFile);
-    console.log('Результат создания PDF файла:', creatingFileSignedPdfFile);
 
     // Сохранение сообщения в базе данных
     const sign = await createSign({
@@ -229,8 +238,6 @@ export default defineEventHandler(async (event) => {
       certInfo: resolvedCertInfo,
       stampedFile: creatingFileSignedPdfFile.body.fileUrl,
     });
-
-    console.log('Созданная подпись в БД:', sign);
 
     await updateDocument(document.id, { status: 'Підписано' });
 

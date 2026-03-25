@@ -35,11 +35,17 @@ export const getDocumentsPaginated = async (params: {
 }) => {
 	const { page, limit, sortBy = 'createdAt', sortOrder = 'desc', userId, leadId, userRole } = params;
 	const skip = (page - 1) * limit;
+	const safeSortBy = sortBy === 'createdAt' ? sortBy : 'createdAt';
+	const safeSortOrder = sortOrder === 'asc' ? 'asc' : 'desc';
 
 	// Формируем условия фильтрации
 	const where: any = {};
 
 	if (userRole === 'counterparty' && userId) {
+		where.counterpartyId = userId;
+	} else if (userRole === 'moderator' && userId) {
+		where.moderatorId = userId;
+	} else if (userId) {
 		where.userId = userId;
 	}
 
@@ -50,23 +56,46 @@ export const getDocumentsPaginated = async (params: {
 	// Получаем общее количество документов
 	const total = await prisma.document.count({ where });
 
-	// Получаем документы с пагинацией
-	const documents = await prisma.document.findMany({
+	// Сначала выбираем только id нужной страницы, чтобы не строить тяжелый include-запрос
+	// на всю отсортированную выборку. Это заметно снижает использование tmp-диска MySQL.
+	const pageDocumentIds = await prisma.document.findMany({
 		where,
 		skip,
 		take: limit,
 		orderBy: {
-			[sortBy]: sortOrder,
+			[safeSortBy]: safeSortOrder,
 		},
-		include: {
-			user: true,
-			counterparty: true,
-			lead: true,
-			deleteSigns: true,
-			Signature: true,
-			moderator: true,
+		select: {
+			id: true,
 		},
 	});
+
+	const orderedDocumentIds = pageDocumentIds.map((document) => document.id);
+
+	let documents = [] as Awaited<ReturnType<typeof prisma.document.findMany>>;
+
+	if (orderedDocumentIds.length > 0) {
+		const pageDocuments = await prisma.document.findMany({
+			where: {
+				id: {
+					in: orderedDocumentIds,
+				},
+			},
+			include: {
+				user: true,
+				counterparty: true,
+				lead: true,
+				deleteSigns: true,
+				Signature: true,
+				moderator: true,
+			},
+		});
+
+		const documentsById = new Map(pageDocuments.map((document) => [document.id, document]));
+		documents = orderedDocumentIds
+			.map((documentId) => documentsById.get(documentId))
+			.filter((document): document is (typeof pageDocuments)[number] => Boolean(document));
+	}
 
 	return {
 		documents,

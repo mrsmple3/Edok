@@ -1,8 +1,8 @@
-import { getAllDocuments, getSignedDocuments } from "~/server/db/document";
+import { getUnsignedDocuments } from "~/server/db/document";
 
 export default defineEventHandler(async (event) => {
   try {
-    const documents = await getSignedDocuments();
+    const documents = await getUnsignedDocuments();
 
     return {
       code: 200,
@@ -14,8 +14,8 @@ export default defineEventHandler(async (event) => {
     return {
       code: 500,
       body: {
-        error: "Помилка при отриманні архіву" + error
-      }
+        error: "Помилка при отриманні документів " + error,
+      },
     };
   }
 });

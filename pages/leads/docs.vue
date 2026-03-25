@@ -84,7 +84,7 @@
 
       <div class="flex-center gap-[15px]">
         <DocumentFilter :counterparties="counterparties" />
-        <RefreshData :refreshFunction="async () => await adminStore.getDocumentsByUserId(route.query.id)" />
+        <RefreshData :refreshFunction="async () => await getDocument()" />
       </div>
     </div>
     <div class="flex-center gap-[5px] mb-[26px]">
@@ -95,7 +95,7 @@
       <NotFoundDocument v-else />
     </div>
     <Pagination class="pagination-class" v-slot="{ page }" :items-per-page="itemsPerPage"
-      :total="adminStore.$state.documents.length" :sibling-count="1" show-edges :default-page="currentPage"
+      :total="totalDocuments" :sibling-count="1" show-edges :default-page="currentPage"
       @update:page="onPageChange">
       <PaginationList v-slot="{ items }" class="flex items-center gap-1">
         <PaginationFirst />
@@ -155,6 +155,7 @@ const getPageFromQuery = (value: string | string[] | undefined) => {
 
 const currentPage = ref(getPageFromQuery(route.query.page)); // Текущая страница
 const windowHeight = ref(0); // Высота окна
+const totalDocuments = ref(0);
 
 watch(
   () => route.query.page,
@@ -199,30 +200,9 @@ const itemsPerPage = computed(() => {
   return result;
 });
 
-// Получаем данные для текущей страницы
+// На этой странице документы уже приходят постранично с сервера.
 const paginatedDocuments = computed(() => {
-  // Сначала сортируем документы по дате (новые сначала)
-  const sortedDocs = [...adminStore.$state.filteredDocuments].sort((a, b) => {
-    const dateA = new Date(a.createdAt);
-    const dateB = new Date(b.createdAt);
-    return dateB.getTime() - dateA.getTime(); // По убыванию (новые сначала)
-  });
-
-  // Затем применяем пагинацию
-  const start = (currentPage.value - 1) * itemsPerPage.value;
-  const end = start + itemsPerPage.value;
-  const result = sortedDocs.slice(start, end);
-
-  console.log('Paginated documents:', {
-    currentPage: currentPage.value,
-    itemsPerPage: itemsPerPage.value,
-    start,
-    end,
-    totalDocuments: adminStore.$state.filteredDocuments.length,
-    resultLength: result.length
-  });
-
-  return result;
+  return adminStore.$state.filteredDocuments || [];
 });
 
 onBeforeMount(async () => {
@@ -248,9 +228,7 @@ onBeforeMount(async () => {
     async (newVal, routeFull) => {
       if (newVal) {
         await withLoader(async () => {
-          await adminStore.getDocumentsByLeadId(route.query.id).then(() => {
-            adminStore.$state.filteredDocuments = adminStore.$state.documents;
-          });
+          await getDocument();
           await userStore.getCounterparties().then(() => {
             counterparties.value = userStore.$state.counterparties.map((counterparty) => ({
               value: counterparty.id,
@@ -265,6 +243,36 @@ onBeforeMount(async () => {
     }
   )
 })
+
+watch(currentPage, async () => {
+  await getDocument();
+});
+
+const getDocument = async () => {
+  if (!route.query.id) {
+    adminStore.$state.documents = [];
+    adminStore.$state.filteredDocuments = [];
+    totalDocuments.value = 0;
+    return;
+  }
+
+  const response = await $fetch('/api/admin/document', {
+    query: {
+      page: currentPage.value,
+      limit: itemsPerPage.value,
+      sortBy: 'createdAt',
+      sortOrder: 'desc',
+      leadId: Number(route.query.id),
+    },
+  });
+
+  if (response.code === 200 && response.body) {
+    const data = response.body as any;
+    adminStore.$state.documents = data.documents || [];
+    adminStore.$state.filteredDocuments = data.documents || [];
+    totalDocuments.value = data.total || 0;
+  }
+};
 
 const handleFileUpload = (event: Event, documentType: string) => {
   const target = event.target as HTMLInputElement;

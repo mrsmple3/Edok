@@ -160,7 +160,7 @@
                       </svg>
                       <div>
                         <p class="text-sm font-medium text-gray-900">Файл електронного підпису</p>
-                        <a :href="signature.signature" target="_blank"
+                        <a :href="getNormalizedSignatureUrl(signature.signature)" target="_blank"
                           class="text-sm text-blue-600 hover:text-blue-800 underline">
                           Завантажити .p7s файл
                         </a>
@@ -177,7 +177,7 @@
                       </svg>
                       <div>
                         <p class="text-sm font-medium text-gray-900">Підписаний документ</p>
-                        <a :href="signature.stampedFile" target="_blank"
+                        <a :href="getNormalizedSignatureUrl(signature.stampedFile)" target="_blank"
                           class="text-sm text-green-600 hover:text-green-800 underline">
                           Переглянути документ з печаткою
                         </a>
@@ -205,6 +205,7 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue';
+import { normalizeFileUrl } from "~/utils/fileUrl";
 
 const props = defineProps({
   invoice: {
@@ -227,6 +228,10 @@ const sortedSignatures = computed(() => {
     return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
   });
 });
+
+function getNormalizedSignatureUrl(filePath?: string | null) {
+  return normalizeFileUrl(filePath);
+}
 
 // Функция для переключения состояния аккордеона
 function toggleSignature(index: number) {

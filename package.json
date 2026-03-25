@@ -3,11 +3,12 @@
 	"private": true,
 	"type": "module",
 	"scripts": {
-		"build": "nuxt build",
+		"build": "nuxt build && node scripts/link-uploads.cjs",
 		"dev": "nuxt dev",
 		"generate": "nuxt generate",
 		"preview": "nuxt preview",
-		"postinstall": "nuxt prepare"
+		"postinstall": "nuxt prepare",
+		"test:stamp": "node --import tsx --test tests/addVisibleStamp.test.ts"
 	},
 	"dependencies": {
 		"@internationalized/date": "^3.8.0",

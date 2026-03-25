@@ -1,4 +1,3 @@
-import * as z from 'zod';
 <template>
 	<div class="document-viewer" @click.self="documentView = false">
 		<div class="document-viewer__content">
@@ -8,6 +7,8 @@ import * as z from 'zod';
 </template>
 
 <script lang="ts" setup>
+	import { normalizeFileUrl } from "~/utils/fileUrl";
+
 	const props = defineProps<{
 		documentUrl: string;
 	}>();
@@ -15,7 +16,7 @@ import * as z from 'zod';
 	const documentView = useState("isDocumentView");
 
 	const getGoogleDocViewerUrl = (url: string) => {
-		return encodeURI(url);
+		return encodeURI(normalizeFileUrl(url));
 	};
 </script>
 

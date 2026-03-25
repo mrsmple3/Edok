@@ -11,20 +11,36 @@ interface StampData {
   stampCount: number;
 }
 
+function normalizeStampCount(value: unknown): number {
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed) || parsed < 0) {
+    return 0;
+  }
+
+  return Math.floor(parsed);
+}
+
 export async function addVisibleStamp(signedPdfBytes: ArrayBuffer, stampData: StampData): Promise<Uint8Array> {
-  // Загружаем подписанный PDF
-  const pdfDoc = await PDFDocument.load(signedPdfBytes);
+  if (!(signedPdfBytes instanceof ArrayBuffer) || signedPdfBytes.byteLength === 0) {
+    throw new Error('Cannot add visible stamp to an empty PDF payload');
+  }
+
+  let pdfDoc: PDFDocument;
+  try {
+    pdfDoc = await PDFDocument.load(signedPdfBytes);
+  } catch (error) {
+    throw new Error(`Cannot load PDF for visible stamp: ${error instanceof Error ? error.message : String(error)}`);
+  }
 
   pdfDoc.registerFontkit(fontkit);
 
   // Загружаем шрифт, который поддерживает кириллицу
-  let font, boldFont;
+  let font;
+  let boldFont;
   try {
     // Попытка загрузить TTF шрифт с поддержкой кириллицы
     const fontPath = path.resolve(process.cwd(), 'public/fonts/DejaVuSans.ttf');
     const boldFontPath = path.resolve(process.cwd(), 'public/fonts/DejaVuSans-Bold.ttf');
-
-    console.log('Попытка загрузки шрифтов из:', fontPath);
 
     // Проверяем существование файлов
     if (!fs.existsSync(fontPath)) {
@@ -32,7 +48,7 @@ export async function addVisibleStamp(signedPdfBytes: ArrayBuffer, stampData: St
     }
 
     if (!fs.existsSync(boldFontPath)) {
-      console.warn(`Жирный шрифт не найден: ${boldFontPath}, используем обычный`);
+      throw new Error(`Файл жирного шрифта не найден: ${boldFontPath}`);
     }
 
     const fontBytes = fs.readFileSync(fontPath);
@@ -41,12 +57,17 @@ export async function addVisibleStamp(signedPdfBytes: ArrayBuffer, stampData: St
     const boldFontBytes = fs.readFileSync(boldFontPath);
     boldFont = await pdfDoc.embedFont(boldFontBytes);
 
-  } catch (error) {
-    console.log('Ошибка загрузки TTF шрифта, используем стандартный:', error);
+  } catch {
+    font = await pdfDoc.embedFont(StandardFonts.Helvetica);
+    boldFont = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
   }
 
   // Получаем все страницы
   const pages = pdfDoc.getPages();
+  if (pages.length === 0) {
+    throw new Error('Cannot add visible stamp to a PDF without pages');
+  }
+
   const firstPage = pages[0];
   const { width, height } = firstPage.getSize();
 
@@ -83,6 +104,107 @@ export async function addVisibleStamp(signedPdfBytes: ArrayBuffer, stampData: St
     return lines;
   };
 
+  const fitTextLines = (
+    text: string,
+    textFont: any,
+    initialSize: number,
+    maxWidth: number,
+    maxLines: number,
+    minSize: number
+  ) => {
+    const normalizedText = (text || '').replace(/\s+/g, ' ').trim();
+    if (!normalizedText) {
+      return { lines: [], fontSize: initialSize };
+    }
+
+    let fontSize = initialSize;
+
+    while (fontSize >= minSize) {
+      const words = normalizedText.split(' ');
+      const lines: string[] = [];
+      let currentLine = '';
+
+      const pushChunkedWord = (word: string) => {
+        let rest = word;
+        while (rest) {
+          let chunk = '';
+
+          for (const char of rest) {
+            const next = `${chunk}${char}`;
+            if (textFont.widthOfTextAtSize(next, fontSize) <= maxWidth || chunk.length === 0) {
+              chunk = next;
+            } else {
+              break;
+            }
+          }
+
+          if (!chunk) {
+            chunk = rest[0];
+          }
+
+          lines.push(chunk);
+          rest = rest.slice(chunk.length);
+        }
+      };
+
+      for (const word of words) {
+        const candidate = currentLine ? `${currentLine} ${word}` : word;
+        if (textFont.widthOfTextAtSize(candidate, fontSize) <= maxWidth) {
+          currentLine = candidate;
+          continue;
+        }
+
+        if (currentLine) {
+          lines.push(currentLine);
+          currentLine = '';
+        }
+
+        if (textFont.widthOfTextAtSize(word, fontSize) <= maxWidth) {
+          currentLine = word;
+        } else {
+          pushChunkedWord(word);
+        }
+      }
+
+      if (currentLine) {
+        lines.push(currentLine);
+      }
+
+      if (lines.length <= maxLines && lines.every((line) => textFont.widthOfTextAtSize(line, fontSize) <= maxWidth)) {
+        return { lines, fontSize };
+      }
+
+      fontSize -= 0.5;
+    }
+
+    return {
+      lines: wrapText(normalizedText, Math.max(6, Math.floor(maxWidth / Math.max(minSize * 0.55, 1)))).slice(0, maxLines),
+      fontSize: minSize,
+    };
+  };
+
+  const drawCenteredLines = (
+    lines: string[],
+    textFont: any,
+    fontSize: number,
+    centerX: number,
+    topY: number,
+    lineHeight: number,
+    color: ReturnType<typeof rgb>
+  ) => {
+    lines.forEach((line, index) => {
+      const textWidth = textFont.widthOfTextAtSize(line, fontSize);
+      targetPage.drawText(line, {
+        x: centerX - (textWidth / 2),
+        y: topY - (index * lineHeight),
+        size: fontSize,
+        color,
+        font: textFont,
+        opacity: 1
+      });
+    });
+  };
+
   // Упрощенная логика размещения печатей
   const stampRadius = 60;
   const margin = 30;
@@ -92,23 +214,19 @@ export async function addVisibleStamp(signedPdfBytes: ArrayBuffer, stampData: St
   // Подсчитываем сколько печатей помещается в строку
   const availableWidth = width - (margin * 2);
   const stampsPerRow = Math.floor((availableWidth + stampSpacing) / (stampDiameter + stampSpacing));
-
-  console.log(`Печатей в строке: ${stampsPerRow}, ширина страницы: ${width}`);
+  if (stampsPerRow < 1) {
+    throw new Error(`Visible stamp cannot fit on the page width ${width}`);
+  }
 
   // Подсчет существующих печатей
-  let existingStampsCount = stampData.stampCount || 0;
-
-  console.log(`Существующих печатей: ${existingStampsCount}, новая печать будет под номером: ${existingStampsCount + 1}`);
+  const existingStampsCount = normalizeStampCount(stampData.stampCount);
 
   // Определяем страницу и позицию
   const targetPageIndex = Math.floor(existingStampsCount / stampsPerRow);
   const positionInRow = existingStampsCount % stampsPerRow;
 
-  console.log(`Целевая страница: ${targetPageIndex + 1}, позиция в строке: ${positionInRow + 1}`);
-
   // Создаем новые страницы если нужно
-  while (pages.length <= targetPageIndex) {
-    console.log(`Создаем новую страницу ${pages.length + 1}`);
+  while (pdfDoc.getPageCount() <= targetPageIndex) {
     pdfDoc.addPage([width, height]);
   }
 
@@ -121,8 +239,6 @@ export async function addVisibleStamp(signedPdfBytes: ArrayBuffer, stampData: St
   const stampCenterX = startX + positionInRow * (stampDiameter + stampSpacing);
   const stampCenterY = stampRadius + margin; // Всегда внизу страницы
   const stampColor = data.signerPosition === 'Директор' ? rgb(0.5490, 0.6863, 0.7216) : rgb(0.8118, 0.7451, 0.5922);
-
-  console.log(`Печать будет размещена на странице ${targetPageIndex + 1} в позиции X: ${stampCenterX}, Y: ${stampCenterY}`);
 
   // Рисуем внешний круг печати
   targetPage.drawCircle({
@@ -139,7 +255,7 @@ export async function addVisibleStamp(signedPdfBytes: ArrayBuffer, stampData: St
   targetPage.drawCircle({
     x: stampCenterX,
     y: stampCenterY,
-    size: stampRadius - 10,
+    size: stampRadius - 9,
     borderColor: stampColor,
     borderWidth: 1,
     opacity: 0.6
@@ -147,29 +263,31 @@ export async function addVisibleStamp(signedPdfBytes: ArrayBuffer, stampData: St
 
   // Обработка названия организации (БЕЗ транслитерации!)
   const orgName = data.signerPosition === 'Директор' ? data.signerName : data.organizationName || data.signerName;
-  const orgLines = wrapText(orgName, 16);
+  const contentMaxWidth = (stampRadius - 14) * 2;
+  const orgBlock = fitTextLines(orgName, boldFont, 7, contentMaxWidth, 2, 5.5);
+  const orgLineHeight = orgBlock.fontSize + 1.5;
+  const orgTopY = stampCenterY + 18 + ((orgBlock.lines.length - 1) * orgLineHeight / 2);
 
-  const orgStartY = stampCenterY + 20 + (orgLines.length - 1) * 4;
-
-  orgLines.forEach((line, index) => {
-    targetPage.drawText(line, {
-      x: stampCenterX - (line.length * 2.5),
-      y: orgStartY - (index * 8),
-      size: 8,
-      color: stampColor,
-      font: boldFont,
-      opacity: 1
-    });
-  });
+  drawCenteredLines(
+    orgBlock.lines,
+    boldFont,
+    orgBlock.fontSize,
+    stampCenterX,
+    orgTopY,
+    orgLineHeight,
+    stampColor
+  );
 
   // Добавляем текст "ЄДРПОУ/ІПН" на украинском
   const edrpouText = "ЄДРПОУ/ІПН";
-  const edrpouY = stampCenterY + 2;
+  const edrpouSize = 5.5;
+  const edrpouWidth = font.widthOfTextAtSize(edrpouText, edrpouSize);
+  const edrpouY = stampCenterY + 1;
 
   targetPage.drawText(edrpouText, {
-    x: stampCenterX - (edrpouText.length * 2),
+    x: stampCenterX - (edrpouWidth / 2),
     y: edrpouY,
-    size: 6,
+    size: edrpouSize,
     color: stampColor,
     font: font,
     opacity: 1
@@ -177,20 +295,19 @@ export async function addVisibleStamp(signedPdfBytes: ArrayBuffer, stampData: St
 
   // Обработка ИНН
   const inn = data.signerINN;
-  const innLines = wrapText(inn, 12);
+  const innBlock = fitTextLines(inn, font, 7, contentMaxWidth - 4, 2, 5.5);
+  const innLineHeight = innBlock.fontSize + 1.5;
+  const innTopY = stampCenterY - 11 + ((innBlock.lines.length - 1) * innLineHeight / 2);
 
-  const innStartY = stampCenterY - 10 - (innLines.length - 1) * 4;
-
-  innLines.forEach((line, index) => {
-    targetPage.drawText(line, {
-      x: stampCenterX - (line.length * 2),
-      y: innStartY - (index * 7),
-      size: 8,
-      color: stampColor,
-      font: font,
-      opacity: 1
-    });
-  });
+  drawCenteredLines(
+    innBlock.lines,
+    font,
+    innBlock.fontSize,
+    stampCenterX,
+    innTopY,
+    innLineHeight,
+    stampColor
+  );
 
   // // Добавляем имя подписанта (если есть) - БЕЗ транслитерации
   // if (data.signerName && data.signerPosition !== 'Директор') {
@@ -232,8 +349,8 @@ export async function addVisibleStamp(signedPdfBytes: ArrayBuffer, stampData: St
 
   // Добавляем уникальный маркер для подсчета печатей в будущем
   targetPage.drawText(`STAMP_${existingStampsCount + 1}`, {
-    x: stampCenterX + stampRadius - 20,
-    y: stampCenterY - stampRadius + 5,
+    x: stampCenterX + stampRadius - 24,
+    y: stampCenterY - stampRadius + 8,
     size: 4,
     color: stampColor,
     font: font,
