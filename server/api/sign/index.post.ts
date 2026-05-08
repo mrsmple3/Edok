@@ -85,6 +85,29 @@ function buildOrganizationCountMap(signatures: Array<{ info: string | null }>) {
   return counts;
 }
 
+function isNorovDocumentOwner(user?: {
+  name?: string | null;
+  surname?: string | null;
+  patronymic?: string | null;
+  organization_name?: string | null;
+  organization?: { name?: string | null } | null;
+} | null) {
+  const ownerText = [
+    user?.organization?.name,
+    user?.organization_name,
+    user?.surname,
+    user?.name,
+    user?.patronymic,
+  ]
+    .filter(Boolean)
+    .join(' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .toLowerCase();
+
+  return ownerText.includes('норов');
+}
+
 export default defineEventHandler(async (event) => {
   try {
     // Чтение данных из тела запроса
@@ -118,6 +141,21 @@ export default defineEventHandler(async (event) => {
 
     const document = await prisma.document.findUnique({
       where: { id: documentId },
+      include: {
+        user: {
+          select: {
+            name: true,
+            surname: true,
+            patronymic: true,
+            organization_name: true,
+            organization: {
+              select: {
+                name: true,
+              },
+            },
+          },
+        },
+      },
     });
 
     if (!document) {
@@ -210,7 +248,8 @@ export default defineEventHandler(async (event) => {
         // Подготавливаем данные для печати с счетчиком
         const stampDataWithCount = {
           ...stampData,
-          stampCount: normalizedStampCount
+          stampCount: normalizedStampCount,
+          compactLayout: isNorovDocumentOwner(document.user),
         };
 
         const finalPdfBytes = await addVisibleStamp(originalArrayBuffer, stampDataWithCount);

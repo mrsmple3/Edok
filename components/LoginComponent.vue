@@ -4,7 +4,21 @@
 			<FormField v-slot="{ componentField }" name="email">
 				<FormItem>
 					<FormControl>
-						<Input class="form__input" placeholder="Адреса електронної пошти" type="text" v-bind="componentField" />
+						<Input
+							v-if="isPhoneLikeInput(componentField.modelValue)"
+							v-mask="PHONE_MASK"
+							class="form__input"
+							placeholder="Email або номер телефону"
+							type="tel"
+							v-bind="componentField"
+						/>
+						<Input
+							v-else
+							class="form__input"
+							placeholder="Email або номер телефону"
+							type="text"
+							v-bind="componentField"
+						/>
 					</FormControl>
 					<FormMessage />
 				</FormItem>
@@ -28,9 +42,9 @@ import { toTypedSchema } from "@vee-validate/zod";
 import * as z from "zod";
 import { useUserStore } from "~/store/user.store";
 import { useToast } from "./ui/toast";
-import ToastAction from "./ui/toast/ToastAction.vue";
 import { useCounterpartyStore } from "~/store/counterparty.store";
 import { useAdminStore } from "~/store/admin.store";
+import { isPhoneLikeInput, isValidEmail, isValidPhone, normalizeEmail, normalizePhone, PHONE_MASK } from "~/lib/authIdentifier";
 
 const authStore = useUserStore();
 const counterpartyStore = useCounterpartyStore();
@@ -46,13 +60,9 @@ const formSchema = toTypedSchema(
 		email: z
 			.string()
 			.min(2)
-			.max(50)
+			.max(55)
 			.refine(
-				(value) => {
-					const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-					const phoneRegex = /^\+?[1-9]\d{1,14}$/;
-					return emailRegex.test(value) || phoneRegex.test(value);
-				},
+				(value) => isValidEmail(value) || isValidPhone(value),
 				{
 					message: "Введите корректный email или телефонный номер",
 				}
@@ -67,23 +77,22 @@ const form = useForm({
 
 const onSubmitLogin = form.handleSubmit(async (values) => {
 	try {
-		// Убираем все пробелы из email/phone и пароля
-		const cleanEmail = values.email.replace(/\s/g, '');
+		const normalizedEmail = normalizeEmail(values.email);
+		const normalizedPhone = normalizePhone(values.email);
 		const cleanPassword = values.password.replace(/\s/g, '');
 
 		let response;
-		const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-		if (emailRegex.test(cleanEmail)) {
-			console.log('Logging in with email:', cleanEmail);
+		if (isValidEmail(normalizedEmail)) {
+			console.log('Logging in with email:', normalizedEmail);
 
 			response = await authStore.login({
-				email: cleanEmail,
+				email: normalizedEmail!,
 				password_hash: cleanPassword,
 			});
 		} else {
-			console.log('Logging in with phone:', cleanEmail);
+			console.log('Logging in with phone:', normalizedPhone);
 			response = await authStore.login({
-				phone: cleanEmail,
+				phone: normalizedPhone!,
 				password_hash: cleanPassword,
 			});
 		}

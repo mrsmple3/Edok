@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { PDFDocument } from 'pdf-lib';
 
-import { addVisibleStamp } from '../server/utils/addVisibleStamp';
+import { addVisibleStamp, getVisiblePageBox } from '../server/utils/addVisibleStamp';
 
 async function createPdf(pageWidth = 595, pageHeight = 842) {
   const pdf = await PDFDocument.create();
@@ -61,6 +61,31 @@ test('keeps four visible stamps on the first page', async () => {
   assert.equal(resultPdf.getPageCount(), 1);
 });
 
+test('uses compact layout to keep four stamps on a cropped Norov-style page', async () => {
+  const pdf = await PDFDocument.create();
+  const page = pdf.addPage([466.674, 645.54]);
+  page.setMediaBox(109.07, 137.43, 466.674, 645.54);
+  page.setCropBox(109.07, 137.43, 466.674, 645.54);
+  const sourcePdf = await pdf.save();
+
+  const defaultStampedPdf = await withTimeout(
+    addVisibleStamp(sourcePdf.buffer as ArrayBuffer, {
+      ...baseStampData,
+      stampCount: 3,
+    })
+  );
+  const compactStampedPdf = await withTimeout(
+    addVisibleStamp(sourcePdf.buffer as ArrayBuffer, {
+      ...baseStampData,
+      stampCount: 3,
+      compactLayout: true,
+    })
+  );
+
+  assert.equal((await PDFDocument.load(defaultStampedPdf)).getPageCount(), 2);
+  assert.equal((await PDFDocument.load(compactStampedPdf)).getPageCount(), 1);
+});
+
 test('sanitizes invalid stampCount values', async () => {
   const sourcePdf = await createPdf();
   const cases = [undefined, -1, Number.NaN, 'junk'];
@@ -75,6 +100,20 @@ test('sanitizes invalid stampCount values', async () => {
     const resultPdf = await PDFDocument.load(stampedPdf);
     assert.equal(resultPdf.getPageCount(), 1);
   }
+});
+
+test('uses crop box offset when resolving the visible stamp area', async () => {
+  const pdf = await PDFDocument.create();
+  const page = pdf.addPage([595, 842]);
+  page.setMediaBox(109.07, 137.43, 466.674, 645.54);
+  page.setCropBox(109.07, 137.43, 466.674, 645.54);
+
+  const visibleBox = getVisiblePageBox(page);
+
+  assert.equal(visibleBox.x, 109.07);
+  assert.equal(visibleBox.y, 137.43);
+  assert.ok(Math.abs(visibleBox.width - 466.674) < 0.001);
+  assert.equal(visibleBox.height, 645.54);
 });
 
 test('throws a handled error for invalid PDF input', async () => {

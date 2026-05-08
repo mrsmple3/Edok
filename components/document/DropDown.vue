@@ -25,7 +25,11 @@
 import { useToast } from "~/components/ui/toast";
 import { useAdminStore } from "~/store/admin.store";
 import { useUserStore } from "~/store/user.store";
-import { documentRequiresCounterpartySignature, documentRequiresSignature } from "~/lib/documents";
+import {
+	documentRequiresCounterpartySignature,
+	documentRequiresSignature,
+	getLatestStampedFilePath,
+} from "~/lib/documents";
 import { normalizeFileUrl } from "~/utils/fileUrl";
 
 const props = defineProps({
@@ -55,7 +59,7 @@ const documentView = useState("isDocumentView");
 const documentUrl = useState("documentUrl");
 const openDocument = (event: Event) => {
 	if (props.invoice.status === "Підписано") {
-		documentUrl.value = normalizeFileUrl(props.invoice.Signature[props.invoice.Signature.length - 1].stampedFile);
+		documentUrl.value = normalizeFileUrl(getLatestStampedFilePath(props.invoice.Signature) || props.invoice.filePath);
 	} else {
 		documentUrl.value = normalizeFileUrl(props.invoice.filePath);
 	}

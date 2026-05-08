@@ -1,10 +1,16 @@
 import { prisma } from "~/server/db/index";
 import bcrypt from "bcrypt";
-import { User } from "@prisma/client";
 import { findOrCreateOrganization } from "~/server/db/organizations";
+import { normalizeEmail, normalizePhone, normalizePhoneForStorage } from "~/lib/authIdentifier";
 
 export const createUser = async (userData: { role: any; phone: any; password_hash: any; email: any }) => {
-	const finalUserData = { ...userData, password_hash: bcrypt.hashSync(userData.password_hash, 10), isActive: userData.role === "counterparty" ? false : true };
+	const finalUserData = {
+		...userData,
+		email: normalizeEmail(userData.email),
+		phone: normalizePhoneForStorage(userData.phone),
+		password_hash: bcrypt.hashSync(userData.password_hash, 10),
+		isActive: userData.role === "counterparty" ? false : true
+	};
 	let organizationId = userData.organizationId;
 
 	if (!organizationId && userData.role !== "counterparty" && (userData.organization_name || userData.organization_INN)) {
@@ -53,18 +59,45 @@ export const getUserByEmail = (email: string) => {
 };
 
 export const getUserByPhone = (phone: string) => {
+	const normalizedPhone = normalizePhone(phone);
+
+	if (!normalizedPhone) {
+		return null;
+	}
+
 	return prisma.user.findUnique({
-		where: { phone },
+		where: { phone: normalizedPhone },
 		include: {
 			organization: true,
 		},
+	}).then(async (directUser) => {
+		if (directUser) {
+			return directUser;
+		}
+
+		const users = await prisma.user.findMany({
+			where: {
+				phone: {
+					not: null,
+				},
+			},
+			include: {
+				organization: true,
+			},
+		});
+
+		return users.find((user) => normalizePhone(user.phone) === normalizedPhone) ?? null;
 	});
 };
 
 export const updateUser = (id: number, userData: any) => {
 	return prisma.user.update({
 		where: { id },
-		data: userData,
+		data: {
+			...userData,
+			email: Object.prototype.hasOwnProperty.call(userData, "email") ? normalizeEmail(userData.email) : userData.email,
+			phone: Object.prototype.hasOwnProperty.call(userData, "phone") ? normalizePhoneForStorage(userData.phone) : userData.phone,
+		},
 		include: {
 			organization: true,
 		},

@@ -3,7 +3,9 @@ import { PDFDocument, rgb } from 'pdf-lib';
 import fontkit from '@pdf-lib/fontkit';
 import { promises as fs } from 'fs';
 import path from 'path';
+import { sortSignaturesByCreatedAt } from '~/lib/documents';
 import { sanitizeFileName, setContentDispositionHeader } from '~/server/utils/contentDisposition';
+import { resolveStoredFilePath } from '~/server/utils/storage';
 
 const FONT_PATHS = {
   regular: path.join(process.cwd(), 'public', 'fonts', 'DejaVuSans.ttf'),
@@ -23,25 +25,26 @@ export default defineEventHandler(async (event) => {
   try {
     const body = await readBody(event);
     const { signatures, documentTitle, documentFilePath } = body;
+    const sortedSignatures = sortSignaturesByCreatedAt(signatures);
 
     console.log('📦 Создание единого PDF с протоколами и документом:', {
-      signaturesCount: signatures?.length,
+      signaturesCount: sortedSignatures.length,
       documentTitle,
       hasFilePath: !!documentFilePath
     });
 
-    if (!signatures || signatures.length === 0) {
+    if (sortedSignatures.length === 0) {
       throw new Error('Немає підписів для створення файлу');
     }
 
     // Создаем ОДИН PDF со всеми протоколами и документом
-    console.log(`📄 Генерация единого PDF со всеми протоколами (${signatures.length} шт.) + документ`);
+    console.log(`📄 Генерация единого PDF со всеми протоколами (${sortedSignatures.length} шт.) + документ`);
 
     let signedDocumentBytes: Uint8Array | null = null;
 
     // Загружаем подписанный документ
-    if (signatures.length > 0) {
-      const lastSignature = signatures[signatures.length - 1];
+    if (sortedSignatures.length > 0) {
+      const lastSignature = sortedSignatures[sortedSignatures.length - 1];
 
       if (lastSignature.stampedFile) {
         try {
@@ -67,7 +70,7 @@ export default defineEventHandler(async (event) => {
         }
       } else if (documentFilePath) {
         try {
-          const fullPath = path.join(process.cwd(), 'public', documentFilePath);
+          const fullPath = resolveStoredFilePath(documentFilePath);
           signedDocumentBytes = await fs.readFile(fullPath);
           console.log('✅ Оригинальный документ загружен');
         } catch (error) {
@@ -77,7 +80,7 @@ export default defineEventHandler(async (event) => {
     }
 
     // Генерируем единый PDF с протоколами и документом
-    const combinedPdfBytes = await generateCombinedPDF(signatures, documentTitle, signedDocumentBytes);
+    const combinedPdfBytes = await generateCombinedPDF(sortedSignatures, documentTitle, signedDocumentBytes);
 
     console.log(`✅ Единый PDF создан, размер: ${combinedPdfBytes.length} байт`);
 

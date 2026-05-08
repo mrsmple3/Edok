@@ -1,4 +1,4 @@
-import { PDFDocument, rgb, StandardFonts } from 'pdf-lib';
+import { PDFDocument, PDFPage, rgb, StandardFonts } from 'pdf-lib';
 import fontkit from '@pdf-lib/fontkit';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -9,6 +9,7 @@ interface StampData {
   signerName: string;
   signerPosition: string;
   stampCount: number;
+  compactLayout?: boolean;
 }
 
 function normalizeStampCount(value: unknown): number {
@@ -18,6 +19,18 @@ function normalizeStampCount(value: unknown): number {
   }
 
   return Math.floor(parsed);
+}
+
+export function getVisiblePageBox(page: PDFPage) {
+  const cropBox = page.getCropBox();
+  const { width, height } = page.getSize();
+
+  return {
+    x: Number.isFinite(cropBox.x) ? cropBox.x : 0,
+    y: Number.isFinite(cropBox.y) ? cropBox.y : 0,
+    width: Number.isFinite(cropBox.width) && cropBox.width > 0 ? cropBox.width : width,
+    height: Number.isFinite(cropBox.height) && cropBox.height > 0 ? cropBox.height : height,
+  };
 }
 
 export async function addVisibleStamp(signedPdfBytes: ArrayBuffer, stampData: StampData): Promise<Uint8Array> {
@@ -70,6 +83,7 @@ export async function addVisibleStamp(signedPdfBytes: ArrayBuffer, stampData: St
 
   const firstPage = pages[0];
   const { width, height } = firstPage.getSize();
+  const firstVisibleBox = getVisiblePageBox(firstPage);
 
   const data = stampData;
 
@@ -206,13 +220,13 @@ export async function addVisibleStamp(signedPdfBytes: ArrayBuffer, stampData: St
   };
 
   // Упрощенная логика размещения печатей
-  const stampRadius = 60;
-  const margin = 30;
+  const stampRadius = stampData.compactLayout ? 45 : 60;
+  const margin = stampData.compactLayout ? 20 : 30;
   const stampDiameter = stampRadius * 2;
-  const stampSpacing = 10;
+  const stampSpacing = stampData.compactLayout ? 8 : 10;
 
   // Подсчитываем сколько печатей помещается в строку
-  const availableWidth = width - (margin * 2);
+  const availableWidth = firstVisibleBox.width - (margin * 2);
   const stampsPerRow = Math.floor((availableWidth + stampSpacing) / (stampDiameter + stampSpacing));
   if (stampsPerRow < 1) {
     throw new Error(`Visible stamp cannot fit on the page width ${width}`);
@@ -233,11 +247,12 @@ export async function addVisibleStamp(signedPdfBytes: ArrayBuffer, stampData: St
   // Обновляем массив страниц после добавления новых
   const allPages = pdfDoc.getPages();
   const targetPage = allPages[targetPageIndex];
+  const targetVisibleBox = getVisiblePageBox(targetPage);
 
   // Вычисляем позицию печати
-  const startX = margin + stampRadius;
+  const startX = targetVisibleBox.x + margin + stampRadius;
   const stampCenterX = startX + positionInRow * (stampDiameter + stampSpacing);
-  const stampCenterY = stampRadius + margin; // Всегда внизу страницы
+  const stampCenterY = targetVisibleBox.y + stampRadius + margin; // Внизу видимой области страницы
   const stampColor = data.signerPosition === 'Директор' ? rgb(0.5490, 0.6863, 0.7216) : rgb(0.8118, 0.7451, 0.5922);
 
   // Рисуем внешний круг печати

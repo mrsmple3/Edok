@@ -2,7 +2,9 @@ const fs = require("fs");
 const path = require("path");
 
 const projectRoot = process.cwd();
-const sourceDir = path.join(projectRoot, "public", "uploads");
+const sourceDir = process.env.UPLOADS_DIR
+  ? path.resolve(process.env.UPLOADS_DIR)
+  : path.resolve(projectRoot, "..", "uploads");
 const targetDir = path.join(projectRoot, ".output", "public", "uploads");
 
 function main() {
@@ -13,9 +15,7 @@ function main() {
     process.exit(1);
   }
 
-  if (!fs.existsSync(sourceDir)) {
-    fs.mkdirSync(sourceDir, { recursive: true });
-  }
+  fs.mkdirSync(sourceDir, { recursive: true });
 
   fs.rmSync(targetDir, { recursive: true, force: true });
   fs.symlinkSync(path.relative(outputPublicDir, sourceDir), targetDir, "dir");

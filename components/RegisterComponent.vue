@@ -20,8 +20,21 @@
 			<FormField v-slot="{ componentField }" name="email">
 				<FormItem>
 					<FormControl>
-						<Input class="form__input" placeholder="Адреса електронної пошти или телефонный номер" type="text"
-							v-bind="componentField" />
+						<Input
+							v-if="isPhoneLikeInput(componentField.modelValue)"
+							v-mask="PHONE_MASK"
+							class="form__input"
+							placeholder="Адреса електронної пошти або номер телефону"
+							type="tel"
+							v-bind="componentField"
+						/>
+						<Input
+							v-else
+							class="form__input"
+							placeholder="Адреса електронної пошти або номер телефону"
+							type="text"
+							v-bind="componentField"
+						/>
 					</FormControl>
 					<FormMessage />
 				</FormItem>
@@ -51,9 +64,10 @@
 import { useForm } from "vee-validate";
 import { toTypedSchema } from "@vee-validate/zod";
 import * as z from "zod";
-import { useUserStore, type Document } from "~/store/user.store";
+import { useUserStore } from "~/store/user.store";
 import { useToast } from "./ui/toast";
 import { useCounterpartyStore } from "~/store/counterparty.store";
+import { isPhoneLikeInput, isValidEmail, isValidPhone, normalizeEmail, normalizePhone, PHONE_MASK } from "~/lib/authIdentifier";
 
 const authStore = useUserStore();
 const counterpartyStore = useCounterpartyStore();
@@ -77,11 +91,7 @@ const formSchema = toTypedSchema(
 			.min(2)
 			.max(50)
 			.refine(
-				(value) => {
-					const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-					const phoneRegex = /^\+?[1-9]\d{1,14}$/;
-					return emailRegex.test(value) || phoneRegex.test(value);
-				},
+				(value) => isValidEmail(value) || isValidPhone(value),
 				{
 					message: "Введіть коректний email або номер телефону",
 				}
@@ -99,12 +109,13 @@ const form = useForm({
 const onSubmitRegister = form.handleSubmit(async (values) => {
 	try {
 		let response = ref();
-		const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-		if (emailRegex.test(values.email)) {
+		const normalizedEmail = normalizeEmail(values.email);
+		const normalizedPhone = normalizePhone(values.email);
+		if (isValidEmail(normalizedEmail)) {
 			response.value = await authStore.register({
 				organization_INN: values.orgIIN,
 				organization_name: values.orgName,
-				email: values.email.trim(),
+				email: normalizedEmail!,
 				password_hash: values.password,
 				role: "counterparty",
 			});
@@ -112,7 +123,7 @@ const onSubmitRegister = form.handleSubmit(async (values) => {
 			response.value = await authStore.register({
 				organization_INN: values.orgIIN,
 				organization_name: values.orgName,
-				phone: values.email.trim(),
+				phone: normalizedPhone!,
 				password_hash: values.password,
 				role: "counterparty",
 			});

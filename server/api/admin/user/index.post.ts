@@ -3,13 +3,16 @@ import { userTransformer } from "~/server/transformers/user";
 import { generateTokens, sendRefreshToken } from "~/server/utils/jwt";
 import { createOrUpdateRefreshToken } from "~/server/db/refreshTokens";
 import { prisma } from "~/server/db";
+import { normalizeEmail, normalizePhone } from "~/lib/authIdentifier";
 
 export default defineEventHandler(async (event) => {
 	try {
 		const body = await readBody(event);
 
 		// Validate required fields
-		const { name, email, phone, password_hash, role } = body;
+		const email = normalizeEmail(body.email);
+		const phone = normalizePhone(body.phone);
+		const { password_hash, role } = body;
 		if (!password_hash || (!email && !phone) || !role) {
 			event.res.statusCode = 400;
 			return {
@@ -48,7 +51,7 @@ export default defineEventHandler(async (event) => {
 		}
 
 		// Create user
-		const user = await createUser(body);
+		const user = await createUser({ ...body, email, phone });
 
 		const { accessToken, refreshToken } = generateTokens(user);
 

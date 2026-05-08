@@ -44,7 +44,11 @@ import { useToast } from "~/components/ui/toast";
 import { useAdminStore } from "~/store/admin.store";
 import { useUserStore } from "~/store/user.store";
 import { Loader2 } from "lucide-vue-next";
-import { documentRequiresCounterpartySignature, documentRequiresSignature } from "~/lib/documents";
+import {
+  documentRequiresCounterpartySignature,
+  documentRequiresSignature,
+  getLatestStampedFilePath,
+} from "~/lib/documents";
 
 const props = defineProps({
   documents: {
@@ -228,10 +232,7 @@ async function processDocument(docId: number) {
     }
   }
 
-  const filePath =
-    currentDoc.Signature?.length && currentDoc.Signature[currentDoc.Signature.length - 1]?.stampedFile
-      ? currentDoc.Signature[currentDoc.Signature.length - 1].stampedFile
-      : currentDoc.filePath;
+  const filePath = getLatestStampedFilePath(currentDoc.Signature) || currentDoc.filePath;
 
   if (!filePath) {
     throw new Error("Файл для підпису не знайдено");

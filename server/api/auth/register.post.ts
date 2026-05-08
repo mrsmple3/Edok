@@ -3,12 +3,16 @@ import { userTransformer } from "~/server/transformers/user";
 import { sendError } from "h3";
 import { generateTokens, sendRefreshToken } from "~/server/utils/jwt";
 import { createOrUpdateRefreshToken } from "~/server/db/refreshTokens";
+import { normalizeEmail, normalizePhone } from "~/lib/authIdentifier";
 
 export default defineEventHandler(async (event) => {
 	try {
 		const body = await readBody(event);
 
-		const { name, email, phone, password_hash, role, organization_name, organization_INN } = body;
+		const name = body.name;
+		const email = normalizeEmail(body.email);
+		const phone = normalizePhone(body.phone);
+		const { password_hash, role, organization_name, organization_INN } = body;
 
 		if (!password_hash || (!email && !phone) || !role) {
 			event.res.statusCode = 400;

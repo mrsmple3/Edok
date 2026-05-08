@@ -1,9 +1,16 @@
 import { getUserById, updateUser } from "~/server/db/users";
 import { findOrCreateOrganization } from "~/server/db/organizations";
+import { normalizeEmail, normalizePhone } from "~/lib/authIdentifier";
 
 export default defineEventHandler(async (event) => {
   const { id } = event.context.params;
   const body = await readBody(event);
+  if (body.hasOwnProperty('email')) {
+    body.email = normalizeEmail(body.email);
+  }
+  if (body.hasOwnProperty('phone')) {
+    body.phone = normalizePhone(body.phone);
+  }
 
   try {
     const existUser = await getUserById(parseInt(id));

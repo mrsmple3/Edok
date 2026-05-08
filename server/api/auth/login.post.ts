@@ -3,13 +3,16 @@ import bcrypt from "bcrypt";
 import {generateTokens, sendRefreshToken} from "~/server/utils/jwt";
 import {userTransformer} from "~/server/transformers/user";
 import {createOrUpdateRefreshToken} from "~/server/db/refreshTokens";
+import { normalizeEmail, normalizePhone } from "~/lib/authIdentifier";
 
 export default defineEventHandler(async (event) => {
     try {
         const body = await readBody(event);
-        const {email, phone, password_hash} = body;
+        const email = normalizeEmail(body.email);
+        const phone = normalizePhone(body.phone);
+        const {password_hash} = body;
 
-        if ((!email || !phone) && !password_hash) {
+        if ((!email && !phone) || !password_hash) {
             event.res.statusCode = 400;
             return {
                 code: 400,

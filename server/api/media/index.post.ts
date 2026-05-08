@@ -1,7 +1,7 @@
 import mime from "mime";
-import { join } from "path";
 import { mkdir, stat, writeFile } from "fs/promises";
 import { createSafeFileName } from "~/server/utils/transliterate";
+import { resolveUploadDir } from "~/server/utils/storage";
 
 
 export default defineEventHandler(async (event) => {
@@ -25,7 +25,7 @@ export default defineEventHandler(async (event) => {
         })
         .replace(/\//g, "-")}`;
 
-    const uploadDir = join(process.cwd(), "public", relativeUploadDir);
+    const uploadDir = resolveUploadDir(relativeUploadDir);
     try {
         await stat(uploadDir);
     } catch (e: any) {

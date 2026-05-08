@@ -205,6 +205,7 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue';
+import { sortSignaturesByCreatedAt } from "~/lib/documents";
 import { normalizeFileUrl } from "~/utils/fileUrl";
 
 const props = defineProps({
@@ -223,10 +224,7 @@ const openSignatures = ref<{ [key: number]: boolean }>({});
 
 // Сортированные подписи по дате
 const sortedSignatures = computed(() => {
-  if (!props.invoice.Signature) return [];
-  return [...props.invoice.Signature].sort((a, b) => {
-    return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
-  });
+  return sortSignaturesByCreatedAt(props.invoice.Signature);
 });
 
 function getNormalizedSignatureUrl(filePath?: string | null) {

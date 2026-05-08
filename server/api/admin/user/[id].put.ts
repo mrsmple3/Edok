@@ -1,9 +1,12 @@
 import { changePassword, checkRoleUser, getUserByEmail, getUserById, getUserByPhone, updateUser, updateUserRole } from "~/server/db/users";
 import { findOrCreateOrganization } from "~/server/db/organizations";
+import { normalizeEmail, normalizePhone } from "~/lib/authIdentifier";
 
 export default defineEventHandler(async (event) => {
 	const { id } = event.context.params;
 	const body = await readBody(event);
+	body.email = normalizeEmail(body.email);
+	body.phone = normalizePhone(body.phone);
 
 	//check required fields
 

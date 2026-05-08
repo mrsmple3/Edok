@@ -6,10 +6,17 @@ import mime from "mime";
 import { createSafeFileName } from "~/server/utils/transliterate";
 import { Buffer } from "buffer";
 import { DOCUMENT_TYPES_COUNTERPARTY_ONLY, DOCUMENT_TYPES_WITHOUT_SIGNATURE } from "~/lib/documents";
+import { resolveStoredFilePath, resolveUploadDir } from "~/server/utils/storage";
 
 const NON_SIGNABLE_DOCUMENT_TYPES = [...DOCUMENT_TYPES_WITHOUT_SIGNATURE];
 const COUNTERPARTY_ONLY_DOCUMENT_TYPES = [...DOCUMENT_TYPES_COUNTERPARTY_ONLY];
 const NON_TASK_DOCUMENT_TYPES = [...NON_SIGNABLE_DOCUMENT_TYPES, ...COUNTERPARTY_ONLY_DOCUMENT_TYPES];
+const ORDERED_SIGNATURE_INCLUDE = {
+	orderBy: [
+		{ createdAt: 'asc' as const },
+		{ id: 'asc' as const },
+	],
+} as const;
 
 export const getAllDocuments = () => {
 	return prisma.document.findMany({
@@ -18,7 +25,7 @@ export const getAllDocuments = () => {
 			counterparty: true,
 			lead: true,
 			deleteSigns: true,
-			Signature: true,
+			Signature: ORDERED_SIGNATURE_INCLUDE,
 			moderator: true,
 		},
 	});
@@ -86,7 +93,7 @@ export const getDocumentsPaginated = async (params: {
 				counterparty: true,
 				lead: true,
 				deleteSigns: true,
-				Signature: true,
+				Signature: ORDERED_SIGNATURE_INCLUDE,
 				moderator: true,
 			},
 		});
@@ -114,7 +121,7 @@ export const getDocumentById = (id: number) => {
 			counterparty: true,
 			lead: true,
 			deleteSigns: true,
-			Signature: true,
+			Signature: ORDERED_SIGNATURE_INCLUDE,
 			moderator: true,
 		},
 	});
@@ -142,7 +149,7 @@ export const createDocument = (data: any) => {
 			counterparty: true,
 			lead: true,
 			deleteSigns: true,
-			Signature: true,
+			Signature: ORDERED_SIGNATURE_INCLUDE,
 			moderator: true,
 		},
 	});
@@ -157,7 +164,7 @@ export const updateDocument = (id: number, data: any) => {
 			counterparty: true,
 			lead: true,
 			deleteSigns: true,
-			Signature: true,
+			Signature: ORDERED_SIGNATURE_INCLUDE,
 			moderator: true,
 		},
 	});
@@ -172,7 +179,7 @@ export const updateDocumentStatusById = (id: number, status: string) => {
 			counterparty: true,
 			lead: true,
 			deleteSigns: true,
-			Signature: true,
+			Signature: ORDERED_SIGNATURE_INCLUDE,
 		},
 	});
 };
@@ -190,7 +197,7 @@ export const updateDocumentModeratorById = (id: number, moderatorId: number) => 
 			counterparty: true,
 			lead: true,
 			deleteSigns: true,
-			Signature: true,
+			Signature: ORDERED_SIGNATURE_INCLUDE,
 			moderator: true
 		},
 	});
@@ -262,7 +269,7 @@ export const deleteDocumentById = async (event: H3Event<EventHandlerRequest>, id
 };
 
 export const deleteFileOnDocument = async (event: H3Event<EventHandlerRequest> | null, document: any) => {
-	const filePath = path.join(process.cwd(), "public", document.filePath);
+	const filePath = resolveStoredFilePath(document.filePath);
 
 	try {
 		await fs.unlink(filePath);
@@ -314,7 +321,7 @@ export const resetDocumentDeletionRequest = async (documentId: number) => {
 			counterparty: true,
 			lead: true,
 			deleteSigns: true,
-			Signature: true,
+			Signature: ORDERED_SIGNATURE_INCLUDE,
 			moderator: true,
 		},
 	});
@@ -377,7 +384,7 @@ export const createFile = async (
 		})
 		.replace(/\//g, "-")}`;
 
-	const uploadDir = join(process.cwd(), "public", relativeUploadDir);
+	const uploadDir = resolveUploadDir(relativeUploadDir);
 
 	try {
 		await stat(uploadDir);
@@ -458,7 +465,7 @@ export const getDocumentsByLead = (leadId: number) => {
 			counterparty: true,
 			lead: true,
 			deleteSigns: true,
-			Signature: true,
+			Signature: ORDERED_SIGNATURE_INCLUDE,
 		},
 	});
 };
@@ -471,7 +478,7 @@ export const getDocumentsByUserId = (userId: number) => {
 			counterparty: true,
 			lead: true,
 			deleteSigns: true,
-			Signature: true,
+			Signature: ORDERED_SIGNATURE_INCLUDE,
 		},
 	});
 };
@@ -493,7 +500,7 @@ export const getUnsignedDocuments = () => {
 			counterparty: true,
 			lead: true,
 			deleteSigns: true,
-			Signature: true,
+			Signature: ORDERED_SIGNATURE_INCLUDE,
 		},
 	});
 }
@@ -516,7 +523,7 @@ export const getUnsignedDocumentsByUserId = (id: number) => {
 			counterparty: true,
 			lead: true,
 			deleteSigns: true,
-			Signature: true,
+			Signature: ORDERED_SIGNATURE_INCLUDE,
 		},
 	});
 }
@@ -533,7 +540,7 @@ export const getSignedDocuments = () => {
 			counterparty: true,
 			lead: true,
 			deleteSigns: true,
-			Signature: true,
+			Signature: ORDERED_SIGNATURE_INCLUDE,
 		},
 	});
 }
@@ -549,7 +556,7 @@ export const getSignedDocumentsByUserId = (id: number) => {
 			counterparty: true,
 			lead: true,
 			deleteSigns: true,
-			Signature: true,
+			Signature: ORDERED_SIGNATURE_INCLUDE,
 		},
 	});
 }
@@ -573,7 +580,7 @@ export const getDocumentsMarkedForDeletion = () => {
 					user: true,
 				},
 			},
-			Signature: true,
+			Signature: ORDERED_SIGNATURE_INCLUDE,
 			moderator: true,
 		},
 	});
@@ -603,7 +610,7 @@ export const getDocumentsMarkedForDeletionByUserId = (userId: number) => {
 					user: true,
 				},
 			},
-			Signature: true,
+			Signature: ORDERED_SIGNATURE_INCLUDE,
 			moderator: true,
 		},
 	});
@@ -622,7 +629,7 @@ export const getDocumentByUserRole = (userId: number, role: string) => {
 				counterparty: true,
 				lead: true,
 				deleteSigns: true,
-				Signature: true,
+				Signature: ORDERED_SIGNATURE_INCLUDE,
 			},
 		});
 	}
@@ -638,7 +645,7 @@ export const getDocumentByUserRole = (userId: number, role: string) => {
 				counterparty: true,
 				lead: true,
 				deleteSigns: true,
-				Signature: true,
+				Signature: ORDERED_SIGNATURE_INCLUDE,
 			},
 		});
 	}
@@ -651,7 +658,7 @@ export const getDocumentByUserRole = (userId: number, role: string) => {
 			counterparty: true,
 			lead: true,
 			deleteSigns: true,
-			Signature: true,
+			Signature: ORDERED_SIGNATURE_INCLUDE,
 		},
 	});
 };
