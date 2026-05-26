@@ -114,6 +114,7 @@ import { useToast } from "~/components/ui/toast"
 import { useUserStore } from "~/store/user.store"
 import { useAdminStore } from "~/store/admin.store"
 import { getInitialDocumentStatus } from "~/lib/documents"
+import { useFetchApi } from "~/utils/api"
 
 definePageMeta({
 	layout: "page",
@@ -258,7 +259,7 @@ const getDocument = async () => {
 		}
 
 		// Загружаем пагинированные данные с сервера
-		const response = await $fetch('/api/admin/document', {
+		const response = await useFetchApi('/api/admin/document', {
 			query: params,
 		});
 

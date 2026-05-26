@@ -1,6 +1,6 @@
 import {useUserStore} from "~/store/user.store";
 
-export async function useFetchApi(url: string, options: RequestInit = {}) {
+export async function useFetchApi(url: string, options: Record<string, any> = {}) {
     const userStore = useUserStore();
 
     return await $fetch(url, {

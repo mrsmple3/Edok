@@ -207,6 +207,7 @@
 import { ref, computed } from 'vue';
 import { sortSignaturesByCreatedAt } from "~/lib/documents";
 import { normalizeFileUrl } from "~/utils/fileUrl";
+import { useUserStore } from "~/store/user.store";
 
 const props = defineProps({
   invoice: {
@@ -215,6 +216,7 @@ const props = defineProps({
   },
 });
 
+const userStore = useUserStore();
 const isDialogOpen = ref(false);
 const isGeneratingPDF = ref(false);
 const isGeneratingAllPDF = ref(false);
@@ -277,6 +279,7 @@ async function downloadProtocolPDF(signature: any, protocolNumber: number) {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        'Authorization': `Bearer ${userStore.tokenGetter}`,
       },
       body: JSON.stringify({
         signature,
@@ -329,6 +332,7 @@ async function downloadAllProtocolsPDF() {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        'Authorization': `Bearer ${userStore.tokenGetter}`,
       },
       body: JSON.stringify({
         signatures: props.invoice.Signature,

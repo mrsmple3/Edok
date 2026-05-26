@@ -7,10 +7,17 @@ const PORT = process.env.PORT || 3000;
 // Создаем простой HTTP сервер для Socket.IO
 const httpServer = createServer();
 
+// Set CORS_ORIGIN in .env or ecosystem.config.cjs (comma-separated for multiple origins)
+// Example: CORS_ORIGIN=https://yourdomain.com
+// Falls back to "*" if not set — set this in production!
+const corsOrigin = process.env.CORS_ORIGIN
+	? process.env.CORS_ORIGIN.split(',').map(o => o.trim())
+	: "*";
+
 const io = new Server(httpServer, {
 	path: "/socket.io",
 	cors: {
-		origin: "*",
+		origin: corsOrigin,
 		methods: ["GET", "POST"],
 	},
 });

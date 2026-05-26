@@ -124,6 +124,7 @@ import { useUserStore } from "~/store/user.store"
 import { useAdminStore } from "~/store/admin.store"
 import { useToast } from "~/components/ui/toast"
 import { getInitialDocumentStatus } from "~/lib/documents"
+import { useFetchApi } from "~/utils/api"
 
 definePageMeta({
   layout: "page",
@@ -257,7 +258,7 @@ const getDocument = async () => {
     return;
   }
 
-  const response = await $fetch('/api/admin/document', {
+  const response = await useFetchApi('/api/admin/document', {
     query: {
       page: currentPage.value,
       limit: itemsPerPage.value,

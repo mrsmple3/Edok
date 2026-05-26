@@ -223,7 +223,7 @@ export const useUserStore = defineStore("auth", {
 		},
 		async updateUser(user: any) {
 			try {
-				const response = await $fetch<any>(`api/admin/user/${user.id}`, {
+				const response = await useFetchApi(`/api/admin/user/${user.id}`, {
 					method: "PUT",
 					body: user,
 				});
@@ -236,7 +236,7 @@ export const useUserStore = defineStore("auth", {
 		},
 		async getUserByRole(role: string) {
 			try {
-				const response = await $fetch<UserResponse>(`/api/user/role/${role}`);
+				const response = await useFetchApi(`/api/user/role/${role}`);
 				return response.body.user;
 			} catch (error: any) {
 				handleApiError(error);
@@ -244,7 +244,7 @@ export const useUserStore = defineStore("auth", {
 		},
 		async getModerators() {
 			try {
-				const response = await $fetch<ModeratorsResponse>(`/api/user/role/moderator`);
+				const response = await useFetchApi(`/api/user/role/moderator`);
 				this.$patch({ moderators: response.body.user });
 				return response.body.user;
 			} catch (error: any) {
@@ -253,7 +253,7 @@ export const useUserStore = defineStore("auth", {
 		},
 		async getCounterparties() {
 			try {
-				const response = await $fetch<ModeratorsResponse>(`/api/user/role/counterparty`);
+				const response = await useFetchApi(`/api/user/role/counterparty`);
 				this.$patch({ counterparties: response.body.user });
 			} catch (error: any) {
 				handleApiError(error);
@@ -261,7 +261,7 @@ export const useUserStore = defineStore("auth", {
 		},
 		async getUserById(id: number) {
 			try {
-				const response = await $fetch<UserResponse>(`/api/user/${id}`);
+				const response = await useFetchApi(`/api/user/${id}`);
 				return response.body.user;
 			} catch (error: any) {
 				handleApiError(error);
@@ -281,7 +281,7 @@ export const useUserStore = defineStore("auth", {
 		},
 		async toSign(document: Document) {
 			try {
-				const response = await $fetch<DocumentResponse>(`/api/sign`, {
+				const response = await useFetchApi(`/api/sign`, {
 					method: "POST",
 					body: document,
 				});

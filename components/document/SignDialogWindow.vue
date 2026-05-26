@@ -306,6 +306,9 @@ async function extractCertificateData(signedFile: File, currentDoc: any) {
     const certInfoResponse = await $fetch("/api/sign/extractCertInfo", {
       method: "POST",
       body: tempFormData,
+      headers: {
+        'Authorization': `Bearer ${userStore.tokenGetter}`,
+      },
     });
 
     if (certInfoResponse.code === 200) {
