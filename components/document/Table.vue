@@ -131,21 +131,21 @@ const getStatusText = (invoice: any) => {
 };
 
 // Получение информации об отправителе
-const getSenderInfo = (invoice: any) => {
-  const user = invoice.user;
+const getUserDisplayName = (user: any) => {
   if (!user) return '-';
+  return user.organization?.name || user.organization_name || user.name || user.email || '-';
+};
 
-  return user.organization_name || user.name || user.email || '-';
+const getSenderInfo = (invoice: any) => {
+  const leadOrganizationName = invoice.lead?.organization?.name;
+  if (leadOrganizationName) return leadOrganizationName;
+
+  return getUserDisplayName(invoice.user);
 };
 
 // Получение информации об авторе
 const getAuthorInfo = (invoice: any) => {
-  // const lead = invoice.lead;
-  // if (lead && lead.authorId) {
-  //   // Можно добавить логику для получения автора договора
-  //   return 'Автор договору';
-  // }
-  return getSenderInfo(invoice);
+  return getUserDisplayName(invoice.user);
 };
 
 // Получение имени подписанта

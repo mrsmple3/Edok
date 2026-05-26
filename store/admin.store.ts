@@ -150,12 +150,12 @@ export const useAdminStore = defineStore("admin", {
 			try {
 				const formData = new FormData();
 				formData.append("title", document.title);
-				formData.append("userId", document.userId);
-				formData.append("counterpartyId", document.counterpartyId);
+				formData.append("userId", String(document.userId));
+				if (document.counterpartyId != null) formData.append("counterpartyId", String(document.counterpartyId));
 				formData.append("file", file);
 				formData.append("type", document.type);
-				formData.append("leadId", document.leadId);
-				formData.append("moderatorId", document.moderatorId);
+				if (document.leadId != null) formData.append("leadId", String(document.leadId));
+				if (document.moderatorId != null) formData.append("moderatorId", String(document.moderatorId));
 				formData.append("status", document.status);
 
 				const response: any = await useFetchApi("/api/admin/document", {

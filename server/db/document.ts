@@ -17,13 +17,18 @@ const ORDERED_SIGNATURE_INCLUDE = {
 		{ id: 'asc' as const },
 	],
 } as const;
+const LEAD_INCLUDE = {
+	include: {
+		organization: true,
+	},
+} as const;
 
 export const getAllDocuments = () => {
 	return prisma.document.findMany({
 		include: {
 			user: true,
 			counterparty: true,
-			lead: true,
+			lead: LEAD_INCLUDE,
 			deleteSigns: true,
 			Signature: ORDERED_SIGNATURE_INCLUDE,
 			moderator: true,
@@ -91,7 +96,7 @@ export const getDocumentsPaginated = async (params: {
 			include: {
 				user: true,
 				counterparty: true,
-				lead: true,
+				lead: LEAD_INCLUDE,
 				deleteSigns: true,
 				Signature: ORDERED_SIGNATURE_INCLUDE,
 				moderator: true,
@@ -119,7 +124,7 @@ export const getDocumentById = (id: number) => {
 		include: {
 			user: true,
 			counterparty: true,
-			lead: true,
+			lead: LEAD_INCLUDE,
 			deleteSigns: true,
 			Signature: ORDERED_SIGNATURE_INCLUDE,
 			moderator: true,
@@ -138,16 +143,14 @@ export const createDocument = (data: any) => {
 			user: {
 				connect: { id: data.userId },
 			},
-			counterparty: {
-				connect: { id: data.counterpartyId },
-			},
+			counterparty: data.counterpartyId ? { connect: { id: data.counterpartyId } } : undefined,
 			lead: data.leadId ? { connect: { id: data.leadId } } : undefined,
 			moderator: data.moderatorId ? { connect: { id: data.moderatorId } } : undefined,
 		},
 		include: {
 			user: true,
 			counterparty: true,
-			lead: true,
+			lead: LEAD_INCLUDE,
 			deleteSigns: true,
 			Signature: ORDERED_SIGNATURE_INCLUDE,
 			moderator: true,
@@ -162,7 +165,7 @@ export const updateDocument = (id: number, data: any) => {
 		include: {
 			user: true,
 			counterparty: true,
-			lead: true,
+			lead: LEAD_INCLUDE,
 			deleteSigns: true,
 			Signature: ORDERED_SIGNATURE_INCLUDE,
 			moderator: true,
@@ -177,7 +180,7 @@ export const updateDocumentStatusById = (id: number, status: string) => {
 		include: {
 			user: true,
 			counterparty: true,
-			lead: true,
+			lead: LEAD_INCLUDE,
 			deleteSigns: true,
 			Signature: ORDERED_SIGNATURE_INCLUDE,
 		},
@@ -195,7 +198,7 @@ export const updateDocumentModeratorById = (id: number, moderatorId: number) => 
 		include: {
 			user: true,
 			counterparty: true,
-			lead: true,
+			lead: LEAD_INCLUDE,
 			deleteSigns: true,
 			Signature: ORDERED_SIGNATURE_INCLUDE,
 			moderator: true
@@ -319,7 +322,7 @@ export const resetDocumentDeletionRequest = async (documentId: number) => {
 		include: {
 			user: true,
 			counterparty: true,
-			lead: true,
+			lead: LEAD_INCLUDE,
 			deleteSigns: true,
 			Signature: ORDERED_SIGNATURE_INCLUDE,
 			moderator: true,
@@ -463,7 +466,7 @@ export const getDocumentsByLead = (leadId: number) => {
 		include: {
 			user: true,
 			counterparty: true,
-			lead: true,
+			lead: LEAD_INCLUDE,
 			deleteSigns: true,
 			Signature: ORDERED_SIGNATURE_INCLUDE,
 		},
@@ -476,7 +479,7 @@ export const getDocumentsByUserId = (userId: number) => {
 		include: {
 			user: true,
 			counterparty: true,
-			lead: true,
+			lead: LEAD_INCLUDE,
 			deleteSigns: true,
 			Signature: ORDERED_SIGNATURE_INCLUDE,
 		},
@@ -498,7 +501,7 @@ export const getUnsignedDocuments = () => {
 		include: {
 			user: true,
 			counterparty: true,
-			lead: true,
+			lead: LEAD_INCLUDE,
 			deleteSigns: true,
 			Signature: ORDERED_SIGNATURE_INCLUDE,
 		},
@@ -521,7 +524,7 @@ export const getUnsignedDocumentsByUserId = (id: number) => {
 		include: {
 			user: true,
 			counterparty: true,
-			lead: true,
+			lead: LEAD_INCLUDE,
 			deleteSigns: true,
 			Signature: ORDERED_SIGNATURE_INCLUDE,
 		},
@@ -538,7 +541,7 @@ export const getSignedDocuments = () => {
 		include: {
 			user: true,
 			counterparty: true,
-			lead: true,
+			lead: LEAD_INCLUDE,
 			deleteSigns: true,
 			Signature: ORDERED_SIGNATURE_INCLUDE,
 		},
@@ -554,7 +557,7 @@ export const getSignedDocumentsByUserId = (id: number) => {
 		include: {
 			user: true,
 			counterparty: true,
-			lead: true,
+			lead: LEAD_INCLUDE,
 			deleteSigns: true,
 			Signature: ORDERED_SIGNATURE_INCLUDE,
 		},
@@ -574,7 +577,7 @@ export const getDocumentsMarkedForDeletion = () => {
 		include: {
 			user: true,
 			counterparty: true,
-			lead: true,
+			lead: LEAD_INCLUDE,
 			deleteSigns: {
 				include: {
 					user: true,
@@ -604,7 +607,7 @@ export const getDocumentsMarkedForDeletionByUserId = (userId: number) => {
 		include: {
 			user: true,
 			counterparty: true,
-			lead: true,
+			lead: LEAD_INCLUDE,
 			deleteSigns: {
 				include: {
 					user: true,
@@ -627,7 +630,7 @@ export const getDocumentByUserRole = (userId: number, role: string) => {
 			include: {
 				user: true,
 				counterparty: true,
-				lead: true,
+				lead: LEAD_INCLUDE,
 				deleteSigns: true,
 				Signature: ORDERED_SIGNATURE_INCLUDE,
 			},
@@ -643,7 +646,7 @@ export const getDocumentByUserRole = (userId: number, role: string) => {
 			include: {
 				user: true,
 				counterparty: true,
-				lead: true,
+				lead: LEAD_INCLUDE,
 				deleteSigns: true,
 				Signature: ORDERED_SIGNATURE_INCLUDE,
 			},
@@ -656,7 +659,7 @@ export const getDocumentByUserRole = (userId: number, role: string) => {
 		include: {
 			user: true,
 			counterparty: true,
-			lead: true,
+			lead: LEAD_INCLUDE,
 			deleteSigns: true,
 			Signature: ORDERED_SIGNATURE_INCLUDE,
 		},

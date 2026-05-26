@@ -12,7 +12,8 @@ export default defineEventHandler(async (event) => {
 		const userId = formData.get("userId") as string;
 		const type = (formData.get("type") as string) || null;
 		const status = (formData.get("status") as string) || null;
-		const counterpartyId = (formData.get("counterpartyId") as string) || null;
+		const _cpRaw = formData.get("counterpartyId") as string;
+		const counterpartyId = (_cpRaw && _cpRaw !== "null" && _cpRaw !== "undefined") ? _cpRaw : null;
 
 		const fileUrl = await createFile(event, file);
 
@@ -20,7 +21,7 @@ export default defineEventHandler(async (event) => {
 			return fileUrl;
 		}
 
-		const user = getUserById(parseInt(userId));
+		const user = await getUserById(parseInt(userId));
 
 		if (!user) {
 			event.res.statusCode = 404;
@@ -44,7 +45,7 @@ export default defineEventHandler(async (event) => {
 				status,
 			};
 		} else {
-			const counterparty = getUserById(parseInt(counterpartyId));
+			const counterparty = await getUserById(parseInt(counterpartyId));
 			if (!counterparty) {
 				event.res.statusCode = 404;
 				return {
