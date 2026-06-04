@@ -7,6 +7,7 @@ import { promises as fs } from "fs";
 import path from "path";
 import { addVisibleStamp } from "~/server/utils/addVisibleStamp"
 import { documentRequiresCounterpartySignature } from "~/lib/documents";
+import { sendSignatureNotifications } from "~/server/utils/mailer";
 
 const MAX_SIGNATURES_PER_ORGANIZATION = 2;
 
@@ -279,6 +280,10 @@ export default defineEventHandler(async (event) => {
     });
 
     await updateDocument(document.id, { status: 'Підписано' });
+
+    sendSignatureNotifications(document.id, userId).catch((err) =>
+      console.error("sendSignatureNotifications error:", err),
+    );
 
     return {
       code: 201,

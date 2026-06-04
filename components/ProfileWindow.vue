@@ -89,6 +89,29 @@
             </FormControl>
           </FormItem>
         </FormField>
+
+        <div class="border-t pt-3 mt-2">
+          <div class="text-sm font-medium mb-2">Сповіщення на пошту</div>
+
+          <FormField name="notificationEmail" v-slot="{ componentField }">
+            <FormItem class="grid grid-cols-4 items-center gap-4">
+              <FormControl>
+                <Label for="notificationEmail" class="profile-label text-start"> Пошта для сповіщень </Label>
+                <div class="col-span-3 flex flex-col gap-2">
+                  <Input id="notificationEmail" type="text" placeholder="Якщо порожнє — використовується основна пошта" v-bind="componentField" />
+                  <FormMessage />
+                </div>
+              </FormControl>
+            </FormItem>
+          </FormField>
+
+          <div class="grid grid-cols-4 items-center gap-4 mt-2">
+            <Label for="notificationsEnabled" class="profile-label text-start col-span-1"> Отримувати сповіщення </Label>
+            <div class="col-span-3 flex items-center">
+              <input id="notificationsEnabled" type="checkbox" v-model="notificationsEnabled" class="h-4 w-4" />
+            </div>
+          </div>
+        </div>
       </div>
       <DialogFooter> <Button @click="updateUser">Змінити</Button> </DialogFooter>
     </DialogContent>
@@ -109,6 +132,8 @@ const userStore = useUserStore();
 
 const isDialogOpen = ref(false);
 
+const notificationsEnabled = ref<boolean>(true);
+
 const formSchema = ref(
   toTypedSchema(
     z.object({
@@ -119,6 +144,7 @@ const formSchema = ref(
       phone: z.string().optional(),
       oldPassword: z.string().optional(),
       newPassword: z.string().optional(),
+      notificationEmail: z.string().email("Невірний формат email").optional().or(z.literal("")),
     }).refine((data) => {
       // Если oldPassword заполнен, то newPassword обязателен
       if (data.oldPassword && data.oldPassword.length > 0) {
@@ -165,6 +191,21 @@ const updateUser = form.handleSubmit(async (values) => {
     if (values.newPassword) updateData.newPassword = values.newPassword;
 
     const updatedUser = await userStore.updateUser(updateData);
+
+    const currentNotifEmail = userStore.$state.user?.notificationEmail ?? "";
+    const currentNotifEnabled = userStore.$state.user?.notificationsEnabled ?? true;
+    const nextNotifEmail = (values.notificationEmail ?? "").trim();
+    const notifPayload: any = {};
+    if (nextNotifEmail !== (currentNotifEmail ?? "")) {
+      notifPayload.notificationEmail = nextNotifEmail || null;
+    }
+    if (notificationsEnabled.value !== currentNotifEnabled) {
+      notifPayload.notificationsEnabled = notificationsEnabled.value;
+    }
+    if (Object.keys(notifPayload).length > 0) {
+      await userStore.updateNotificationSettings(notifPayload);
+    }
+
     isDialogOpen.value = false;
   } catch (error: any) {
     const { toast } = useToast();
@@ -196,7 +237,9 @@ watch(isDialogOpen, async (newVal) => {
       organization_name: userStore.$state.user.organization_name || '',
       oldPassword: '',
       newPassword: '',
+      notificationEmail: userStore.$state.user.notificationEmail || '',
     });
+    notificationsEnabled.value = userStore.$state.user.notificationsEnabled ?? true;
   }
 });
 </script>

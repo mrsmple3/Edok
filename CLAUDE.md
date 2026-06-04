@@ -305,3 +305,36 @@ PORT=3000                       # Socket.IO server
 1. `createDocument` (`server/db/document.ts`) — всегда подключал `counterparty` даже при `null` → Prisma error
 2. `getUserById` без `await` в `server/api/admin/document/index.post.ts` и `server/api/counterparty/document/index.post.ts` — Promise всегда truthy
 3. Отсутствовала проверка статуса загрузки файла в `server/api/admin/document/index.post.ts`
+
+---
+
+## Email-уведомления о подписании (2026-05-26 → 2026-06-04)
+
+**SMTP:** STARTTLS на `agroedoc.com:587`, юзер `noreply@agroedoc.com`. Пароль и host идут через **`runtimeConfig`** в `nuxt.config.ts` (`process.env.SMTP_*` напрямую в `server/utils/*` НЕ работает в продакшене — Nitro tree-shake'ит `dotenv/config`). TLS-сертификат самоподписан и истёк → в transporter стоит `tls: { rejectUnauthorized: false }`.
+
+**Триггер:** `server/api/sign/index.post.ts` → fire-and-forget `sendSignatureNotifications(documentId, signerUserId)` из `server/utils/mailer.ts` после успешного `createSign`.
+
+**Получатели:** автор + модератор + контрагент документа, минус подписант. Адрес = `user.notificationEmail || user.email`. Юзер исключается, если `notificationsEnabled=false`. Документ полностью молчит, если его `notificationsEnabled=false`. Подписант никогда не получает копию.
+
+**Управление настройками:**
+- Профиль (`PATCH /api/auth/profile/notifications`) — любой авторизованный, своё `notificationEmail` + `notificationsEnabled`. UI: `components/ProfileWindow.vue`
+- Документ (`PATCH /api/admin/document/notifications/[id]`) — только `admin | moderator | lawyer | boogalter`. Контрагент видит состояние, но не меняет. UI: `components/document/DropDown.vue` (пункт меню Bell/BellOff)
+
+**Схема БД (миграция `20260526140217_add_notifications_fields`):**
+- `User.notificationEmail String?`
+- `User.notificationsEnabled Boolean @default(true)`
+- `Document.notificationsEnabled Boolean @default(true)`
+
+**Серверные правки для доставки писем (2026-06-04):**
+- Найдено: VPS — это сам сервер 185.69.155.118 (FastPanel 2 + Exim4 + Dovecot + BIND). На котором ВЕСЬ Edok.
+- Главный баг: `primary_hostname = vps-47842` (не FQDN) → Ukr.net отклонял с `554 Invalid HELO`. **Фикс:** `/etc/exim4/conf.d/custom.conf` (override через встроенный FastPanel-механизм `.include_if_exists EXIM_CUSTOM`):
+  ```
+  primary_hostname = mail.agroedoc.com
+  qualify_domain = agroedoc.com
+  qualify_recipient = agroedoc.com
+  ```
+- DNS у домена в **adm.tools** (NS = `inhostedns.*`). Опубликованы: SPF (`ip4:185.69.155.118 a mx ~all`), MX (`10 mail.agroedoc.com.`), DMARC (`p=none`), DKIM селектор `dkim` (публичный ключ из `/etc/exim4/dkim/agroedoc.com.key`).
+- DKIM приватный ключ Exim уже был на сервере с января 2025: `/etc/exim4/dkim/agroedoc.com.private`.
+- **rDNS (PTR)** настраивается в adm.tools → VPS-47842 → IP-адреса → карандаш у `185.69.155.118` → `mail.agroedoc.com`.
+
+**Документация задачи:** `docs/notifications/TASK.md` + `STATE.md`

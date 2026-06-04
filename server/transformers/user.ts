@@ -15,6 +15,8 @@ export const userTransformer = (user: any) => {
         company_type: user.company_type,
         canDeleterDocuments: user.canDeleterDocuments,
         isActive: user.isActive,
+        notificationEmail: user.notificationEmail ?? null,
+        notificationsEnabled: user.notificationsEnabled ?? true,
         createdAt: user.createdAt,
 
     }

@@ -29,6 +29,8 @@ export interface User {
 	organization?: Organization | null;
 	company_type?: string; // Nullable
 	canDeleterDocuments: boolean;
+	notificationEmail?: string | null;
+	notificationsEnabled?: boolean;
 	createdAt: Date;
 }
 
@@ -232,6 +234,38 @@ export const useUserStore = defineStore("auth", {
 			} catch (error: any) {
 				handleApiError(error);
 
+			}
+		},
+		async updateNotificationSettings(payload: { notificationEmail?: string | null; notificationsEnabled?: boolean }) {
+			try {
+				const response = await useFetchApi(`/api/auth/profile/notifications`, {
+					method: "PATCH",
+					body: payload,
+				});
+				const updated = response.body.user;
+				if (this.user) {
+					this.$patch({
+						user: {
+							...this.user,
+							notificationEmail: updated.notificationEmail,
+							notificationsEnabled: updated.notificationsEnabled,
+						},
+					});
+				}
+				return response;
+			} catch (error: any) {
+				handleApiError(error);
+			}
+		},
+		async toggleDocumentNotifications(documentId: number, enabled: boolean) {
+			try {
+				const response = await useFetchApi(`/api/admin/document/notifications/${documentId}`, {
+					method: "PATCH",
+					body: { notificationsEnabled: enabled },
+				});
+				return response.body.document;
+			} catch (error: any) {
+				handleApiError(error);
 			}
 		},
 		async getUserByRole(role: string) {

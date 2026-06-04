@@ -15,7 +15,7 @@ model User {
   email                String?              @unique
   phone                String?              @unique
   password_hash        String
-  role                 String // Роль: "admin", "moderator", "counterparty"
+  role                 String // Роль: "admin", "moderator", "counterparty", "lawyer", "boogalter"
   isActive             Boolean?             @default(false)
   name                 String?
   surname              String?
@@ -26,6 +26,8 @@ model User {
   organization         Organization?        @relation(fields: [organizationId], references: [id], onDelete: SetNull)
   company_type         String?
   canDeleterDocuments  Boolean?             @default(false)
+  notificationEmail    String?
+  notificationsEnabled Boolean              @default(true)
   RefreshToken         RefreshToken[]
   Document             Document[]
   DocumentCounterparty Document[]           @relation("DocumentCounterparty")
@@ -54,24 +56,25 @@ model RefreshToken {
 }
 
 model Document {
-  id              Int                  @id @default(autoincrement())
-  title           String?
-  content         String?
-  filePath        String?
-  type            String
-  status          String
-  deleteSignCount Int                  @default(0)
-  userId          Int
-  user            User                 @relation(fields: [userId], references: [id])
-  counterpartyId  Int?
-  counterparty    User?                @relation("DocumentCounterparty", fields: [counterpartyId], references: [id])
-  moderatorId     Int?
-  moderator       User?                @relation("DocumentModerator", fields: [moderatorId], references: [id])
-  leadId          Int?
-  lead            Lead?                @relation(fields: [leadId], references: [id])
-  Signature       Signature[]
-  createdAt       DateTime             @default(now())
-  deleteSigns     DocumentDeleteSign[] // Связь с таблицей DocumentDeleteSign
+  id                   Int                  @id @default(autoincrement())
+  title                String?
+  content              String?
+  filePath             String?
+  type                 String
+  status               String
+  deleteSignCount      Int                  @default(0)
+  notificationsEnabled Boolean              @default(true)
+  userId               Int
+  user                 User                 @relation(fields: [userId], references: [id])
+  counterpartyId       Int?
+  counterparty         User?                @relation("DocumentCounterparty", fields: [counterpartyId], references: [id])
+  moderatorId          Int?
+  moderator            User?                @relation("DocumentModerator", fields: [moderatorId], references: [id])
+  leadId               Int?
+  lead                 Lead?                @relation(fields: [leadId], references: [id])
+  Signature            Signature[]
+  createdAt            DateTime             @default(now())
+  deleteSigns          DocumentDeleteSign[]
 
   @@index([leadId])
   @@index([userId])

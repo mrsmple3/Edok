@@ -58,6 +58,11 @@ export default defineNuxtConfig({
   runtimeConfig: {
     jwtAccessSecret: process.env.JWT_ACCESS_TOKEN_SECRET,
     jwtRefreshSecret: process.env.JWT_REFRESH_TOKEN_SECRET,
+    smtpHost: process.env.SMTP_HOST,
+    smtpPort: process.env.SMTP_PORT,
+    smtpUser: process.env.SMTP_USER,
+    smtpPass: process.env.SMTP_PASS,
+    smtpFrom: process.env.SMTP_FROM,
     public: {
       apiBase: 'http://localhost:3001' // Основное API
     }
