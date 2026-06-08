@@ -19,6 +19,7 @@
         <img alt="sms" class="sidebar-chat-icon" src="/icons/sms-blue.svg">
       </button>
       <ProfileWindow />
+      <NotificationRecipientsWindow v-if="userStore.userRole !== 'counterparty'" />
     </div>
     <div class="w-full flex-col-start gap-2 flex-grow">
       <NuxtLink v-for="link in sidebarLinks" :to="link.route" class="sidebar__link sidebar-link-item"

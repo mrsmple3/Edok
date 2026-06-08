@@ -1,11 +1,9 @@
 <template>
   <div class="page-container">
-    <div class="w-full flex-center justify-between mb-[18px]">
-      <div class="flex-center">
-        <h2 class="page__title mr-[32px]">Документи</h2>
-
+    <LayoutPageToolbar title="Документи">
+      <template #actions>
         <button
-          class="submenu-parent relative flex-center gap-[11px] rounded-[14px] border border-[#2d9cdb] py-2 px-7 text-[#2d9cdb] text-[18px] font-bold font-['Barlow'] mr-[24px] hover:active">
+          class="submenu-parent relative flex items-center gap-[11px] rounded-field border border-brand-primary py-2 px-7 text-brand-primary text-[18px] font-bold mr-[24px]">
           <img alt="plus" class="w-[19px] h-[19px]" src="/icons/plus-blue.svg" />
           Додати документ
 
@@ -80,14 +78,13 @@
 
         <DocumentSignDialogWindow :documents="selectedDocumentIds" trigger-label="Підписати обрані"
           :trigger-class="bulkSignButtonClass" :disabled="selectedDocumentIds.length === 0" />
-      </div>
-
-      <div class="flex-center gap-[15px]">
+      </template>
+      <template #filters>
         <DocumentFilter :counterparties="counterparties" />
         <RefreshData :refreshFunction="async () => await getDocument()" />
-      </div>
-    </div>
-    <div class="flex-center gap-[5px] mb-[26px]">
+      </template>
+    </LayoutPageToolbar>
+    <div class="flex items-center gap-[5px] mb-[26px]">
       <NuxtLink class="breadcrumbs" to="">Документи</NuxtLink>
     </div>
     <div class="page__block py-[30px] px-[42px]">
@@ -139,13 +136,13 @@ const counterparties = ref();
 const documentsToLeads = useState('documentsToLeads', () => []);
 const selectedDocumentIds = computed(() => documentsToLeads.value.map((doc: any) => doc.id));
 const bulkSignButtonClass = computed(() => {
-  const baseClass = "flex-center gap-[11px] rounded-[14px] border border-[#2d9cdb] py-2 px-7 text-[#2d9cdb] text-[18px] font-bold font-['Barlow'] mr-[24px]";
+  const baseClass = "inline-flex items-center gap-[11px] rounded-field border border-brand-primary py-2 px-7 text-brand-primary text-[18px] font-bold mr-[24px] transition-colors";
   return selectedDocumentIds.value.length === 0
     ? `${baseClass} opacity-50 cursor-not-allowed`
-    : `${baseClass} hover:active`;
+    : `${baseClass} hover:bg-brand-primary-soft`;
 });
 
-const selectedFile = ref<File | null>(null); // Хранение выбранного файла
+const selectedFile = ref<File | null>(null);
 
 
 const getPageFromQuery = (value: string | string[] | undefined) => {
@@ -154,9 +151,10 @@ const getPageFromQuery = (value: string | string[] | undefined) => {
   return Number.isInteger(parsed) && parsed > 0 ? parsed : 1;
 };
 
-const currentPage = ref(getPageFromQuery(route.query.page)); // Текущая страница
-const windowHeight = ref(0); // Высота окна
+const currentPage = ref(getPageFromQuery(route.query.page));
 const totalDocuments = ref(0);
+
+const itemsPerPage = computed(() => 12);
 
 watch(
   () => route.query.page,
@@ -178,70 +176,23 @@ const onPageChange = async (newPage: number) => {
   await router.replace({ query });
 };
 
+const paginatedDocuments = computed(() => adminStore.$state.filteredDocuments || []);
 
-// Динамическое определение количества элементов на странице в зависимости от высоты экрана
-const itemsPerPage = computed(() => {
-  return 12;
-  if (windowHeight.value === 0) return 6; // Значение по умолчанию
-
-  // Приблизительная высота одного элемента документа (включая отступы)
-  const itemHeight = 80; // px
-  // Высота хедера, breadcrumbs, пагинации и отступов
-  const reservedHeight = 400; // px
-
-  // Доступная высота для списка документов
-  const availableHeight = windowHeight.value - reservedHeight;
-
-  // Вычисляем максимальное количество элементов
-  const maxItems = Math.floor(availableHeight / itemHeight);
-
-  // Минимум 3 элемента, максимум 12
-  const result = Math.max(3, Math.min(12, maxItems));
-
-  return result;
-});
-
-// На этой странице документы уже приходят постранично с сервера.
-const paginatedDocuments = computed(() => {
-  return adminStore.$state.filteredDocuments || [];
-});
-
-onBeforeMount(async () => {
-  // Устанавливаем начальную высоту окна
-  // if (typeof window !== 'undefined') {
-  //   windowHeight.value = window.innerHeight;
-
-  //   // Отслеживаем изменения размера окна
-  //   const handleResize = () => {
-  //     windowHeight.value = window.innerHeight;
-  //   };
-
-  //   window.addEventListener('resize', handleResize);
-
-  //   // Очистка при размонтировании
-  //   onUnmounted(() => {
-  //     window.removeEventListener('resize', handleResize);
-  //   });
-  // }
-
-
+onBeforeMount(() => {
   watch(() => [userStore.isAuthInitialized, route.path, route.query.id],
-    async (newVal, routeFull) => {
-      if (newVal) {
+    async ([isAuthInitialized]) => {
+      if (isAuthInitialized) {
         await withLoader(async () => {
           await getDocument();
-          await userStore.getCounterparties().then(() => {
-            counterparties.value = userStore.$state.counterparties.map((counterparty) => ({
-              value: counterparty.id,
-              label: counterparty.organization_name,
-            }));
-          });
+          await userStore.getCounterparties();
+          counterparties.value = userStore.$state.counterparties.map((c) => ({
+            value: c.id,
+            label: c.organization_name,
+          }));
         });
       }
     },
-    {
-      immediate: true,
-    }
+    { immediate: true },
   )
 })
 
@@ -268,9 +219,9 @@ const getDocument = async () => {
   });
 
   if (response.code === 200 && response.body) {
-    const data = response.body as any;
-    adminStore.$state.documents = data.documents || [];
-    adminStore.$state.filteredDocuments = data.documents || [];
+    const data = response.body as { documents?: unknown[]; total?: number };
+    adminStore.$state.documents = (data.documents as never) || [];
+    adminStore.$state.filteredDocuments = (data.documents as never) || [];
     totalDocuments.value = data.total || 0;
   }
 };
@@ -330,23 +281,10 @@ const uploadDocument = async (file: File, documentType: string) => {
 
     // Обновляем список документов
     await adminStore.getDocumentsByLeadId(route.query.id);
-  } catch (error: any) {
+  } catch (error: unknown) {
     const { toast } = useToast();
-    console.log(error);
-
-    if (error.message) {
-      toast({
-        title: "Помилка",
-        description: error.message,
-        variant: "destructive",
-      });
-    } else {
-      toast({
-        title: "Невідома помилка",
-        description: "Спробуйте пізніше",
-        variant: "destructive",
-      });
-    }
+    const message = error instanceof Error ? error.message : "Спробуйте пізніше";
+    toast({ title: "Помилка", description: message, variant: "destructive" });
   }
 };
 </script>

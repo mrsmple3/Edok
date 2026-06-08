@@ -132,10 +132,31 @@ export async function sendSignatureNotifications(documentId: number, signerUserI
       return;
     }
 
-    const recipients: Array<{ id: number; email: string }> = [];
-    const seenIds = new Set<number>();
+    const recipients: Array<{ label: string; email: string }> = [];
+    const seenEmails = new Set<string>();
     const skipped: string[] = [];
 
+    // Почты самого подписанта — ему копию не шлём
+    const signerEmails = new Set(
+      [signer.email, signer.notificationEmail]
+        .filter(Boolean)
+        .map((e) => (e as string).trim().toLowerCase()),
+    );
+
+    const addRecipient = (rawEmail: string | null, label: string) => {
+      if (!rawEmail) { skipped.push(`${label}=no-email`); return; }
+      const email = rawEmail.trim();
+      const key = email.toLowerCase();
+      if (!key) { skipped.push(`${label}=no-email`); return; }
+      if (signerEmails.has(key)) { skipped.push(`${label}=signer`); return; }
+      if (seenEmails.has(key)) { skipped.push(`${label}=duplicate`); return; }
+      seenEmails.add(key);
+      recipients.push({ label, email });
+    };
+
+    // 1. Внешняя сторона: контрагенты-участники документа уведомляются на свою почту.
+    //    Сотрудники «нашей стороны» (author/moderator не-контрагенты) уведомляются
+    //    не персонально, а через общий управляемый список (ниже).
     for (const [role, candidate] of [
       ["author", document.user],
       ["counterparty", document.counterparty],
@@ -143,14 +164,23 @@ export async function sendSignatureNotifications(documentId: number, signerUserI
     ] as const) {
       if (!candidate) { skipped.push(`${role}=null`); continue; }
       if (candidate.id === signerUserId) { skipped.push(`${role}#${candidate.id}=signer`); continue; }
-      if (seenIds.has(candidate.id)) { skipped.push(`${role}#${candidate.id}=duplicate`); continue; }
+      if (candidate.role !== "counterparty") { skipped.push(`${role}#${candidate.id}=staff`); continue; }
       if (!candidate.notificationsEnabled) { skipped.push(`${role}#${candidate.id}=opted-out`); continue; }
 
-      const email = pickRecipientEmail(candidate);
-      if (!email) { skipped.push(`${role}#${candidate.id}=no-email`); continue; }
+      addRecipient(pickRecipientEmail(candidate), `${role}#${candidate.id}`);
+    }
 
-      seenIds.add(candidate.id);
-      recipients.push({ id: candidate.id, email });
+    // 2. Наша сторона: управляемый список ответственных почт — уведомляются при любом подписании.
+    try {
+      const companyRecipients = await prisma.notificationRecipient.findMany({
+        where: { enabled: true },
+        select: { id: true, email: true },
+      });
+      for (const r of companyRecipients) {
+        addRecipient(r.email, `list#${r.id}`);
+      }
+    } catch (listError) {
+      console.error("[mailer] failed to load notification recipients list:", listError);
     }
 
     if (recipients.length === 0) {
@@ -168,21 +198,21 @@ export async function sendSignatureNotifications(documentId: number, signerUserI
     const html = `
       <p>Користувач <strong>${escapeHtml(signerLabel)}</strong> підписав документ <strong>«${escapeHtml(docTitle)}»</strong> (${escapeHtml(docType)}).</p>
       <p>ID документа: ${document.id}<br/>Статус: ${escapeHtml(document.status)}</p>
-      <p style="color:#888;font-size:12px">Це автоматичне сповіщення з системи Edok. Щоб відписатися, вимкніть сповіщення у профілі.</p>
+      <p style="color:#888;font-size:12px">Це автоматичне сповіщення з системи Edok.</p>
     `;
 
     const results = await Promise.all(
       recipients.map((r) =>
         sendMail({ to: r.email, subject, text, html })
-          .then((ok) => ({ id: r.id, email: r.email, ok }))
+          .then((ok) => ({ label: r.label, email: r.email, ok }))
           .catch((err) => {
-            console.error(`[mailer] failed for user #${r.id}:`, err);
-            return { id: r.id, email: r.email, ok: false };
+            console.error(`[mailer] failed for ${r.label}:`, err);
+            return { label: r.label, email: r.email, ok: false };
           }),
       ),
     );
     for (const r of results) {
-      console.log(`[mailer] → ${r.email} (user #${r.id}): ${r.ok ? "OK" : "FAIL"}`);
+      console.log(`[mailer] → ${r.email} (${r.label}): ${r.ok ? "OK" : "FAIL"}`);
     }
   } catch (error) {
     console.error("[mailer] sendSignatureNotifications failed:", error);

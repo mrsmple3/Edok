@@ -44,9 +44,44 @@ module.exports = {
   		borderRadius: {
   			lg: 'var(--radius)',
   			md: 'calc(var(--radius) - 2px)',
-  			sm: 'calc(var(--radius) - 4px)'
+  			sm: 'calc(var(--radius) - 4px)',
+  			field: '12px',
+  			card: '14px',
+  			pill: '9999px'
   		},
-  		colors: {}
+  		boxShadow: {
+  			card: '0px 4px 12px rgba(17, 24, 39, 0.04)',
+  			popover: '0px 8px 24px rgba(17, 24, 39, 0.08)',
+  			modal: '0px 16px 48px rgba(17, 24, 39, 0.12)'
+  		},
+  		fontFamily: {
+  			sans: ['Barlow', 'system-ui', 'sans-serif']
+  		},
+  		colors: {
+  			brand: {
+  				primary: '#2d9cdb',
+  				'primary-soft': 'rgba(45, 156, 219, 0.12)',
+  				'primary-hover': '#2589c5',
+  				accent: '#00b074',
+  				'accent-soft': 'rgba(0, 176, 116, 0.15)'
+  			},
+  			ink: {
+  				900: '#212121',
+  				700: '#464255',
+  				500: '#969ba0',
+  				300: '#b9babd'
+  			},
+  			surface: {
+  				base: '#f3f2f7',
+  				card: '#ffffff',
+  				muted: '#f5f5f5',
+  				border: '#dbdbdb'
+  			},
+  			danger: {
+  				DEFAULT: '#dc2626',
+  				soft: 'rgba(239, 68, 68, 0.1)'
+  			}
+  		}
   	}
   },
   plugins: [animate, require("tailwindcss-animate")],

@@ -1,74 +1,13 @@
 <template>
 	<div class="page-container">
-		<div class="w-full flex-center justify-between m-b-18">
-			<div class="flex-center">
-				<h2 class="page__title m-r-32">Документи</h2>
-
+		<LayoutPageToolbar title="Документи">
+			<template #actions>
 				<DocumentSignDialogWindow :documents="selectedDocumentIds" trigger-label="Підписати обрані"
 					:trigger-class="bulkSignButtonClass" :disabled="selectedDocumentIds.length === 0" />
-
-				<!-- <button v-if="userStore.userRole === 'counterparty'"
-					class="submenu-parent relative flex-center page-button hover:active">
-					<img alt="plus" class="page-icon" src="/icons/plus-blue.svg" />
-					Додати документ
-					<div class="submenu">
-						<div class="cursor-pointer">
-							<label for="contract">Договір </label>
-							<input id="contract" type="file" accept="application/pdf" class="hidden"
-								@change="(event) => handleFileUpload(event, 'Договір')" />
-						</div>
-						<div class="cursor-pointer">
-							<label for="additional-agreement">Додаткова угода </label>
-							<input id="additional-agreement" type="file" accept="application/pdf" class="hidden"
-								@change="(event) => handleFileUpload(event, 'Додаткова угода')" />
-						</div>
-						<div class="cursor-pointer">
-							<label for="specification">Специфікація </label>
-							<input id="specification" type="file" accept="application/pdf" class="hidden"
-								@change="(event) => handleFileUpload(event, 'Специфікація')" />
-						</div>
-						<div class="cursor-pointer">
-							<label for="invoice">Рахунок</label>
-							<input id="invoice" type="file" accept="application/pdf" class="hidden"
-								@change="(event) => handleFileUpload(event, 'Рахунок')" />
-						</div>
-						<div class="cursor-pointer">
-							<label for="delivery-note">Видаткова накладна </label>
-							<input id="delivery-note" type="file" accept="application/pdf" class="hidden"
-								@change="(event) => handleFileUpload(event, 'Видаткова накладна')" />
-						</div>
-						<div class="cursor-pointer">
-							<label for="ttn">Товарно-транспортна накладна </label>
-							<input id="ttn" type="file" accept="application/pdf" class="hidden"
-								@change="(event) => handleFileUpload(event, 'Товарно-транспортна накладна')" />
-						</div>
-						<div class="cursor-pointer">
-							<label for="confirming">Підтверджуючі</label>
-							<input id="confirming" type="file" accept="application/pdf" class="hidden"
-								@change="(event) => handleFileUpload(event, 'Підтверджуючі')" />
-						</div>
-						<div class="cursor-pointer">
-              <label for="revaluation">Акт переоцінки</label>
-              <input id="revaluation" type="file" accept="application/pdf" class="hidden"
-                @change="(event) => handleFileUpload(event, 'Акт переоцінки')" />
-            </div>
-						<div class="cursor-pointer">
-              <label for="robit">Акт виконаних робіт/акт наданих послуг</label>
-              <input id="robit" type="file" accept="application/pdf" class="hidden"
-                @change="(event) => handleFileUpload(event, 'Акт виконаних робіт/акт наданих послуг')" />
-            </div>
-            <div class="cursor-pointer">
-              <label for="animal">АКТ ЗВІРКИ</label>
-              <input id="animal" type="file" accept="application/pdf" class="hidden"
-                @change="(event) => handleFileUpload(event, 'АКТ ЗВІРКИ')" />
-            </div>
-					</div>
-				</button> -->
-			</div>
-
-			<div class="flex-center gap-15">
+			</template>
+			<template #filters>
 				<DocumentFilter :counterparties="counterparties" />
-				<NuxtLink class="page-button flex-center gap-2 hover:active" to="/docs/trash">
+				<NuxtLink class="inline-flex items-center gap-2 h-10 px-6 rounded-field border border-brand-primary text-brand-primary font-semibold transition-colors hover:bg-brand-primary-soft" to="/docs/trash">
 					<svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
 						<path stroke-linecap="round" stroke-linejoin="round"
 							d="M9 3h6m-9 4h12m-10 0v12a1 1 0 001 1h6a1 1 0 001-1V7" />
@@ -77,12 +16,12 @@
 					Корзина
 				</NuxtLink>
 				<RefreshData :refreshFunction="async () => await getDocument()" />
-			</div>
-		</div>
-		<div class="flex-center gap-5 m-b-26">
+			</template>
+		</LayoutPageToolbar>
+		<div class="flex items-center gap-[5px] mb-[26px]">
 			<NuxtLink class="breadcrumbs" to="/docs">Документи</NuxtLink>
 		</div>
-		<div class="page__block p-y-30 p-x-42">
+		<div class="page__block py-[30px] px-[42px]">
 			<DocumentComponent v-if="adminStore.$state.filteredDocuments && adminStore.$state.filteredDocuments.length > 0"
 				:paginatedDocuments="paginatedDocuments" />
 			<NotFoundDocument v-else />
@@ -95,7 +34,7 @@
 
 				<template v-for="(item, index) in items">
 					<PaginationListItem v-if="item.type === 'page'" :key="index" :value="item.value" as-child>
-						<Button class="pagination-btn p-0" :variant="item.value === page ? 'default' : 'outline'">
+						<Button class="w-9 h-9 p-0" :variant="item.value === page ? 'default' : 'outline'">
 							{{ item.value }}
 						</Button>
 					</PaginationListItem>
@@ -130,8 +69,10 @@ const counterparties = ref();
 const documentsToLeads = useState('documentsToLeads', () => []);
 const selectedDocumentIds = computed(() => documentsToLeads.value.map((doc: any) => doc.id));
 const bulkSignButtonClass = computed(() => {
-	const base = "page-button";
-	return selectedDocumentIds.value.length === 0 ? `${base} opacity-50 cursor-not-allowed` : `${base} hover:active`;
+	const base = "inline-flex items-center gap-2 h-10 px-6 rounded-field border border-brand-primary text-brand-primary font-semibold transition-colors mr-[24px]";
+	return selectedDocumentIds.value.length === 0
+		? `${base} opacity-50 cursor-not-allowed`
+		: `${base} hover:bg-brand-primary-soft`;
 });
 const getPageFromQuery = (value: string | string[] | undefined) => {
 	const pageValue = Array.isArray(value) ? value[0] : value;
@@ -139,10 +80,11 @@ const getPageFromQuery = (value: string | string[] | undefined) => {
 	return Number.isInteger(parsed) && parsed > 0 ? parsed : 1;
 };
 
-const currentPage = ref(getPageFromQuery(route.query.page)); // Текущая страница
-const windowHeight = ref(0); // Высота окна
-const totalDocuments = ref(0); // Общее количество документов
-const isLoading = ref(false); // Состояние загрузки
+const currentPage = ref(getPageFromQuery(route.query.page));
+const totalDocuments = ref(0);
+const isLoading = ref(false);
+
+const itemsPerPage = computed(() => 12);
 
 watch(
 	() => route.query.page,
@@ -164,52 +106,9 @@ const onPageChange = async (newPage: number) => {
 	await router.replace({ query });
 };
 
-// Динамическое определение количества элементов на странице в зависимости от высоты экрана
-const itemsPerPage = computed(() => {
-	return 12;
-	if (windowHeight.value === 0) return 6; // Значение по умолчанию
+const paginatedDocuments = computed(() => adminStore.$state.filteredDocuments || []);
 
-	// Приблизительная высота одного элемента документа (включая отступы)
-	const itemHeight = 80; // px
-	// Высота хедера, breadcrumbs, пагинации и отступов
-	const reservedHeight = 400; // px
-
-	// Доступная высота для списка документов
-	const availableHeight = windowHeight.value - reservedHeight;
-
-	// Вычисляем максимальное количество элементов
-	const maxItems = Math.floor(availableHeight / itemHeight);
-
-	// Минимум 3 элемента, максимум 12
-	const result = Math.max(3, Math.min(12, maxItems));
-
-	return result;
-});
-
-// Получаем данные для текущей страницы
-const paginatedDocuments = computed(() => {
-	// Теперь документы уже приходят отсортированными с сервера
-	return adminStore.$state.filteredDocuments || [];
-});
-
-onBeforeMount(async () => {
-	// // Устанавливаем начальную высоту окна
-	// if (typeof window !== 'undefined') {
-	// 	windowHeight.value = window.innerHeight;
-
-	// 	// Отслеживаем изменения размера окна
-	// 	const handleResize = () => {
-	// 		windowHeight.value = window.innerHeight;
-	// 	};
-
-	// 	window.addEventListener('resize', handleResize);
-
-	// 	// Очистка при размонтировании
-	// 	onUnmounted(() => {
-	// 		window.removeEventListener('resize', handleResize);
-	// 	});
-	// }
-
+onBeforeMount(() => {
 	watch(
 		() => [userStore.isAuthInitialized, route.path, route.query.id],
 		async ([isAuthInitialized]) => {
@@ -264,13 +163,14 @@ const getDocument = async () => {
 		});
 
 		if (response.code === 200 && response.body) {
-			const data = response.body as any;
-			adminStore.$state.documents = data.documents || [];
-			adminStore.$state.filteredDocuments = data.documents || [];
+			const data = response.body as { documents?: unknown[]; total?: number };
+			adminStore.$state.documents = (data.documents as never) || [];
+			adminStore.$state.filteredDocuments = (data.documents as never) || [];
 			totalDocuments.value = data.total || 0;
 		}
 	} catch (error) {
-		console.error('Error loading documents:', error);
+		const { toast } = useToast();
+		toast({ title: "Помилка", description: "Не вдалося завантажити документи", variant: "destructive" });
 	} finally {
 		isLoading.value = false;
 	}
@@ -303,80 +203,12 @@ const uploadDocument = async (file: File, documentType: string) => {
 				window.location.reload();
 			}, 300);
 		})
-	} catch (error: any) {
+	} catch (error: unknown) {
 		const { toast } = useToast();
-		console.log(error);
-
-		if (error.message) {
-			toast({
-				title: "Помилка",
-				description: error.message,
-				variant: "destructive",
-			});
-		} else {
-			toast({
-				title: "Невідома помилка",
-				description: "Спробуйте пізніше",
-				variant: "destructive",
-			});
-		}
+		const message = error instanceof Error ? error.message : "Спробуйте пізніше";
+		toast({ title: "Помилка", description: message, variant: "destructive" });
 	}
 };
 </script>
 
-<style lang="scss" scoped>
-.m-r-32 {
-	margin-right: size(32px);
-}
-
-.m-b-18 {
-	margin-bottom: size(18px);
-}
-
-.page-button {
-	padding: size(8px) size(28px);
-	border: size(2px) solid #007BFF;
-	border-radius: size(14px);
-	color: #007BFF;
-	font-size: size(18px);
-	font-weight: bold;
-	font-family: 'Barlow', sans-serif;
-	display: flex;
-	align-items: center;
-	gap: size(11px);
-	position: relative;
-	margin-right: size(24px);
-}
-
-.page-icon {
-	width: size(19px);
-	height: size(19px);
-}
-
-.gap-15 {
-	gap: size(15px);
-}
-
-.gap-5 {
-	gap: size(5px);
-}
-
-.m-b-26 {
-	margin-bottom: size(26px);
-}
-
-.p-y-30 {
-	padding-top: size(30px);
-	padding-bottom: size(30px);
-}
-
-.p-x-42 {
-	padding-left: size(42px);
-	padding-right: size(42px);
-}
-
-.pagination-btn {
-	width: size(36px);
-	height: size(36px);
-}
-</style>
+<style lang="scss" scoped></style>

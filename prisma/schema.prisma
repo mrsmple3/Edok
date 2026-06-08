@@ -152,3 +152,13 @@ model Signature {
   @@index([documentId])
   @@index([userId])
 }
+
+// Управляемый список почт «нашей стороны» (сотрудники, ответственные за контрагентов).
+// На эти адреса уходит уведомление при каждом подписании документа.
+model NotificationRecipient {
+  id        Int      @id @default(autoincrement())
+  email     String   @unique
+  label     String?
+  enabled   Boolean  @default(true)
+  createdAt DateTime @default(now())
+}

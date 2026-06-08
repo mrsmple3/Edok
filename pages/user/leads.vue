@@ -1,18 +1,13 @@
 <template>
   <div class="page-container">
-    <div class="w-full flex-center justify-between mb-[18px]">
-      <div class="flex-center">
-        <h2 class="page__title mr-[32px]">Угоди</h2>
+    <LayoutPageToolbar title="Угоди">
+      <template #actions>
         <LeadsDialogWindow />
-      </div>
-
-      <div class="flex-center gap-[15px]">
-        <!-- <Badge class="w-12 h-12 bg-[#2d9cdb]/20 rounded-[15px] hover:bg-[#2d9cdb]/30">
-          <img alt="filter" src="/icons/filter.svg" />
-        </Badge> -->
+      </template>
+      <template #filters>
         <RefreshData :refreshFunction="async () => await adminStore.getLeadByUserId(userStore.userGetter.id)" />
-      </div>
-    </div>
+      </template>
+    </LayoutPageToolbar>
     <div class="flex-center gap-[5px] mb-[26px]">
       <NuxtLink class="breadcrumbs" to="">Угоди</NuxtLink>
     </div>
@@ -21,7 +16,7 @@
       <NotFoundLead v-else />
     </div>
     <Pagination class="pagination-class" v-slot="{ page }" :items-per-page="itemsPerPage"
-      :total="adminStore.$state.leads.length" :sibling-count="1" show-edges :default-page="currentPage"
+      :total="totalItems" :sibling-count="1" show-edges :default-page="currentPage"
       @update:page="onPageChange">
       <PaginationList v-slot="{ items }" class="flex items-center gap-1">
         <PaginationFirst />
@@ -44,131 +39,46 @@
 </template>
 
 <script lang="ts" setup>
-import { useAdminStore } from "~/store/admin.store"
-import { useUserStore } from "~/store/user.store"
+import type { Lead } from "~/store/user.store";
+import { byCreatedAtDesc, usePagedList } from "~/composables/usePagedList";
+import { useAdminStore } from "~/store/admin.store";
+import { useUserStore } from "~/store/user.store";
 
 definePageMeta({
   layout: "page",
-})
-
-const chatState = useState("isChat")
-
-const route = useRoute()
-const router = useRouter()
-
-const adminStore = useAdminStore()
-const userStore = useUserStore()
-const { withLoader } = usePageLoader()
-
-
-const getPageFromQuery = (value: string | string[] | undefined) => {
-  const pageValue = Array.isArray(value) ? value[0] : value;
-  const parsed = Number(pageValue);
-  return Number.isInteger(parsed) && parsed > 0 ? parsed : 1;
-};
-
-const currentPage = ref(getPageFromQuery(route.query.page)); // Текущая страница
-const windowHeight = ref(0); // Высота окна
-
-watch(
-  () => route.query.page,
-  (value) => {
-    currentPage.value = getPageFromQuery(value);
-  }
-);
-
-const onPageChange = async (newPage: number) => {
-  currentPage.value = newPage;
-  const query = { ...route.query };
-
-  if (newPage <= 1) {
-    delete query.page;
-  } else {
-    query.page = String(newPage);
-  }
-
-  await router.replace({ query });
-};
-
-// Динамическое определение количества элементов на странице в зависимости от высоты экрана
-const itemsPerPage = computed(() => {
-  return 7;
-  if (windowHeight.value === 0) return 6; // Значение по умолчанию
-
-  // Приблизительная высота одного элемента документа (включая отступы)
-  const itemHeight = 80; // px
-  // Высота хедера, breadcrumbs, пагинации и отступов
-  const reservedHeight = 400; // px
-
-  // Доступная высота для списка документов
-  const availableHeight = windowHeight.value - reservedHeight;
-
-  // Вычисляем максимальное количество элементов
-  const maxItems = Math.floor(availableHeight / itemHeight);
-
-  // Минимум 3 элемента, максимум 12
-  const result = Math.max(3, Math.min(12, maxItems));
-
-  return result;
 });
 
-// Получаем данные для текущей страницы
-const paginatedLeads = computed(() => {
-  // Сначала сортируем договоры по дате создания (новые сначала)
-  const sortedLeads = [...adminStore.$state.leads].sort((a, b) => {
-    const dateA = new Date(a.createdAt || a.updatedAt || a.date || 0);
-    const dateB = new Date(b.createdAt || b.updatedAt || b.date || 0);
-    return dateB.getTime() - dateA.getTime(); // По убыванию (новые сначала)
-  });
+const route = useRoute();
 
-  // Затем применяем пагинацию к отсортированным данным
-  const start = (currentPage.value - 1) * itemsPerPage.value;
-  const end = start + itemsPerPage.value;
-  const result = sortedLeads.slice(start, end);
+const adminStore = useAdminStore();
+const userStore = useUserStore();
+const { withLoader } = usePageLoader();
 
-  console.log('Paginated Leads:', {
-    currentPage: currentPage.value,
-    itemsPerPage: itemsPerPage.value,
-    start,
-    end,
-    totalLeads: adminStore.$state.leads.length,
-    resultLength: result.length
-  });
+const leadsSource = computed<Lead[]>(() => adminStore.$state.leads);
 
-  return result;
+const {
+  currentPage,
+  itemsPerPage,
+  totalItems,
+  paginated: paginatedLeads,
+  onPageChange,
+} = usePagedList(leadsSource, {
+  pageSize: 7,
+  sort: byCreatedAtDesc,
 });
 
-onBeforeMount(async () => {
-  // Устанавливаем начальную высоту окна
-  // if (typeof window !== 'undefined') {
-  //   windowHeight.value = window.innerHeight;
-
-  //   // Отслеживаем изменения размера окна
-  //   const handleResize = () => {
-  //     windowHeight.value = window.innerHeight;
-  //   };
-
-  //   window.addEventListener('resize', handleResize);
-
-  //   // Очистка при размонтировании
-  //   onUnmounted(() => {
-  //     window.removeEventListener('resize', handleResize);
-  //   });
-  // }
-
+onBeforeMount(() => {
   watch(
     () => [userStore.isAuthInitialized, route.path, route.query.id],
-    async ([newVal, changedRoute]) => {
-      if (newVal) {
+    async ([isAuthInitialized]) => {
+      if (isAuthInitialized) {
         await withLoader(async () => {
           await adminStore.getLeadByUserId(route.query.id);
         });
       }
     },
-    {
-      immediate: true,
-    }
-  )
+    { immediate: true },
+  );
 });
 </script>
 

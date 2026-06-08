@@ -90,7 +90,7 @@
           </FormItem>
         </FormField>
 
-        <div class="border-t pt-3 mt-2">
+        <div v-if="userStore.userGetter.role === 'counterparty'" class="border-t pt-3 mt-2">
           <div class="text-sm font-medium mb-2">Сповіщення на пошту</div>
 
           <FormField name="notificationEmail" v-slot="{ componentField }">

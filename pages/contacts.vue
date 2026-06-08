@@ -1,11 +1,9 @@
 <template>
 	<div class="page-container">
-		<div class="w-full flex-center justify-between mb-[18px]">
-			<div class="flex-center">
-				<h2 class="page__title mr-[32px]">Контакти</h2>
-
+		<LayoutPageToolbar title="Контакти">
+			<template #actions>
 				<button v-if="userStore.$state.user.role !== 'boogalter'"
-					class="submenu-parent relative flex-center gap-[11px] rounded-[14px] border border-[#2d9cdb] py-2 px-7 text-[#2d9cdb] text-[18px] font-bold font-['Barlow'] mr-[24px] hover:active">
+					class="submenu-parent relative flex-center gap-[11px] rounded-field border border-brand-primary py-2 px-7 text-brand-primary text-[18px] font-bold mr-[24px]">
 					<img alt="plus" class="w-[19px] h-[19px] min-h-max min-w-max" src="/icons/plus-blue.svg" />
 					Новий
 					<div class="submenu">
@@ -16,7 +14,7 @@
 					</div>
 				</button>
 				<button
-					class="submenu-parent relative flex-center gap-[11px] rounded-[14px] border border-[#2d9cdb] py-2 px-7 text-[#2d9cdb] text-[18px] font-bold font-['Barlow'] mr-[24px] hover:active">
+					class="submenu-parent relative flex-center gap-[11px] rounded-field border border-brand-primary py-2 px-7 text-brand-primary text-[18px] font-bold mr-[24px]">
 					<img alt="plus" class="w-[19px] h-[19px] min-h-max min-w-max" src="/icons/plus-blue.svg" />
 					Редагувати
 					<div class="submenu">
@@ -24,36 +22,45 @@
 						<span @click="deleted">Видалити</span>
 					</div>
 				</button>
-			</div>
+			</template>
 
-			<div class="flex-center gap-[15px]">
-				<!-- <Badge class="w-12 h-12 bg-[#2d9cdb]/20 rounded-[15px] hover:bg-[#2d9cdb]/30">
-					<img alt="filter" src="/icons/filter.svg" />
-				</Badge> -->
-				<RefreshData :refreshFunction="async () => await adminStore.getUserByRole(selectedRole)" />
-			</div>
-		</div>
+			<template #filters>
+				<div class="relative">
+					<Search class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-ink-500 pointer-events-none" />
+					<Input
+						v-model="searchQuery"
+						type="search"
+						placeholder="Пошук за іменем, email, телефоном…"
+						class="h-10 w-[280px] pl-9 rounded-field border-brand-primary/40 focus-visible:ring-brand-primary focus-visible:ring-offset-0"
+					/>
+				</div>
+				<Select defaultValue="counterparty" v-model="selectedRole">
+					<SelectTrigger class="w-[180px] h-10 rounded-field border-brand-primary/40">
+						<SelectValue placeholder="Користувачі" />
+					</SelectTrigger>
+					<SelectContent>
+						<SelectGroup>
+							<SelectItem v-for="role in getRoles()" :key="role.id" :value="role.value"
+								@select="onSelectUser(role.value)">
+								{{ role.name }}
+							</SelectItem>
+						</SelectGroup>
+					</SelectContent>
+				</Select>
+				<RefreshData :refreshFunction="async () => await usersStore.getUserByRole(selectedRole)" />
+			</template>
+		</LayoutPageToolbar>
 		<div class="flex-center gap-[5px] mb-[26px]">
 			<NuxtLink class="breadcrumbs" to="">Контакти</NuxtLink>
 		</div>
-		<div class="page__block relative py-[30px] px-[42px]">
-			<Select defaultValue="counterparty" v-model="selectedRole">
-				<SelectTrigger class="w-[180px] absolute top-1 right-1 z-10">
-					<SelectValue placeholder="Користувачі" />
-				</SelectTrigger>
-				<SelectContent>
-					<SelectGroup>
-						<SelectItem v-for="role in getRoles()" :key="role.id" :value="role.value"
-							@select="onSelectUser(role.value)">
-							{{ role.name }}
-						</SelectItem>
-					</SelectGroup>
-				</SelectContent>
-			</Select>
+		<div class="page__block py-[30px] px-[42px]">
 			<ContactTable ref="contactTableRef" :tableData="paginatedUsers" />
+			<div v-if="filteredUsersCount === 0" class="py-[40px] text-center text-ink-500 text-base">
+				{{ searchQuery ? 'Нічого не знайдено за вашим запитом' : 'Список порожній' }}
+			</div>
 		</div>
 		<Pagination class="pagination-class" v-slot="{ page }" :items-per-page="itemsPerPage"
-			:total="adminStore.$state.users.length" :sibling-count="1" show-edges :default-page="currentPage"
+			:total="filteredUsersCount" :sibling-count="1" show-edges :default-page="currentPage"
 			@update:page="onPageChange">
 			<PaginationList v-slot="{ items }" class="flex items-center gap-1">
 				<PaginationFirst />
@@ -76,10 +83,11 @@
 </template>
 
 <script lang="ts" setup>
-import { onMounted } from "vue";
+import type { User } from "@prisma/client";
+import { Search } from "lucide-vue-next";
 import roles from "~/assets/data/roles.json";
-import { useToast } from "~/components/ui/toast";
-import { useAdminStore } from "~/store/admin.store";
+import { byCreatedAtDesc, usePagedList } from "~/composables/usePagedList";
+import { useUsersStore } from "~/store/users.store";
 import { useUserStore } from "~/store/user.store";
 
 definePageMeta({
@@ -89,11 +97,11 @@ definePageMeta({
 const router = useRouter();
 const route = useRoute();
 
-const adminStore = useAdminStore();
+const usersStore = useUsersStore();
 const userStore = useUserStore();
 const { withLoader } = usePageLoader();
 
-const contactTableRef = ref(null);
+const contactTableRef = ref<{ activateUsers: () => void; deleteUsers: () => void } | null>(null);
 
 const getRoleFromQuery = (value: string | string[] | undefined) => {
 	const roleValue = Array.isArray(value) ? value[0] : value;
@@ -101,112 +109,53 @@ const getRoleFromQuery = (value: string | string[] | undefined) => {
 };
 
 const selectedRole = ref(getRoleFromQuery(route.query.role));
+const searchQuery = ref("");
+
+const usersSource = computed<User[]>(() => usersStore.users);
+
+const matchesSearch = (u: User): boolean => {
+	const q = searchQuery.value.trim().toLowerCase();
+	if (!q) return true;
+	const fields = [
+		u.name,
+		u.surname,
+		u.patronymic,
+		u.organization_name,
+		u.email,
+		u.phone,
+		String(u.id ?? ""),
+	];
+	return fields.some((v) => typeof v === "string" && v.toLowerCase().includes(q));
+};
+
+const {
+	currentPage,
+	itemsPerPage,
+	totalItems: filteredUsersCount,
+	paginated: paginatedUsers,
+	onPageChange,
+	resetPage,
+} = usePagedList(usersSource, {
+	pageSize: 9,
+	sort: byCreatedAtDesc,
+	filter: matchesSearch,
+});
+
+watch(searchQuery, () => {
+	resetPage();
+});
 
 const onSelectUser = async (role: string) => {
 	await withLoader(async () => {
-		await adminStore.getUserByRole(role).then(() => {
+		await usersStore.getUserByRole(role).then(() => {
 			selectedRole.value = role;
 			currentPage.value = 1;
-			router.push({ path: '/contacts', query: { role: selectedRole.value } });
-		})
+			router.push({ path: "/contacts", query: { role: selectedRole.value } });
+		});
 	});
 };
-
-const getPageFromQuery = (value: string | string[] | undefined) => {
-	const pageValue = Array.isArray(value) ? value[0] : value;
-	const parsed = Number(pageValue);
-	return Number.isInteger(parsed) && parsed > 0 ? parsed : 1;
-};
-
-const currentPage = ref(getPageFromQuery(route.query.page)); // Текущая страница
-const windowHeight = ref(0); // Высота окна
-
-watch(
-	() => route.query.page,
-	(value) => {
-		currentPage.value = getPageFromQuery(value);
-	}
-);
-
-const onPageChange = async (newPage: number) => {
-	currentPage.value = newPage;
-	const query = { ...route.query };
-
-	if (newPage <= 1) {
-		delete query.page;
-	} else {
-		query.page = String(newPage);
-	}
-
-	await router.replace({ query });
-};
-
-// Динамическое определение количества элементов на странице в зависимости от высоты экрана
-const itemsPerPage = computed(() => {
-	return 9;
-	// if (windowHeight.value === 0) return 6; // Значение по умолчанию
-
-	// // Приблизительная высота одного элемента документа (включая отступы)
-	// const itemHeight = 80; // px
-	// // Высота хедера, breadcrumbs, пагинации и отступов
-	// const reservedHeight = 400; // px
-
-	// // Доступная высота для списка документов
-	// const availableHeight = windowHeight.value - reservedHeight;
-
-	// // Вычисляем максимальное количество элементов
-	// const maxItems = Math.floor(availableHeight / itemHeight);
-
-	// // Минимум 3 элемента, максимум 12
-	// const result = Math.max(3, Math.min(12, maxItems));
-
-	// return result;
-});
-
-// Получаем данные для текущей страницы
-const paginatedUsers = computed(() => {
-
-	// Сначала сортируем документы по дате (новые сначала)
-	const sortedDocs = [...adminStore.$state.users].sort((a, b) => {
-		const dateA = new Date(a.createdAt);
-		const dateB = new Date(b.createdAt);
-		return dateB.getTime() - dateA.getTime(); // По убыванию (новые сначала)
-	});
-
-	const start = (currentPage.value - 1) * itemsPerPage.value;
-	const end = start + itemsPerPage.value;
-	const result = sortedDocs.slice(start, end);
-
-	console.log('Paginated documents:', {
-		currentPage: currentPage.value,
-		itemsPerPage: itemsPerPage.value,
-		start,
-		end,
-		totalUsers: adminStore.$state.users.length,
-		resultLength: result.length
-	});
-
-	return result;
-});
 
 onBeforeMount(() => {
-	// // Устанавливаем начальную высоту окна
-	// if (typeof window !== 'undefined') {
-	// 	windowHeight.value = window.innerHeight;
-
-	// 	// Отслеживаем изменения размера окна
-	// 	const handleResize = () => {
-	// 		windowHeight.value = window.innerHeight;
-	// 	};
-
-	// 	window.addEventListener('resize', handleResize);
-
-	// 	// Очистка при размонтировании
-	// 	onUnmounted(() => {
-	// 		window.removeEventListener('resize', handleResize);
-	// 	});
-	// }
-
 	watch(
 		() => [userStore.isAuthInitialized, route.path, route.query.role],
 		async ([isAuthInitialized]) => {
@@ -214,7 +163,7 @@ onBeforeMount(() => {
 				selectedRole.value = getRoleFromQuery(route.query.role);
 
 				await withLoader(async () => {
-					await adminStore.getUserByRole(selectedRole.value);
+					await usersStore.getUserByRole(selectedRole.value);
 
 					if (route.query.role !== selectedRole.value) {
 						router.replace({
@@ -239,10 +188,6 @@ onBeforeMount(() => {
 	);
 });
 
-onMounted(() => {
-
-})
-
 const getRoles = (): { id: string; name: string; value: string }[] => {
 	const userRole = userStore.userGetter.role;
 
@@ -253,21 +198,8 @@ const getRoles = (): { id: string; name: string; value: string }[] => {
 	return filteredRoles;
 };
 
-const activate = () => {
-	if (contactTableRef.value) {
-		contactTableRef.value.activateUsers();
-	} else {
-		console.error("contactTableRef is null or undefined.");
-	}
-}
-
-const deleted = () => {
-	if (contactTableRef.value) {
-		contactTableRef.value.deleteUsers();
-	} else {
-		console.error("contactTableRef is null or undefined.");
-	}
-}
+const activate = () => contactTableRef.value?.activateUsers();
+const deleted = () => contactTableRef.value?.deleteUsers();
 </script>
 
 <style lang="scss" scoped></style>

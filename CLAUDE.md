@@ -314,7 +314,12 @@ PORT=3000                       # Socket.IO server
 
 **Триггер:** `server/api/sign/index.post.ts` → fire-and-forget `sendSignatureNotifications(documentId, signerUserId)` из `server/utils/mailer.ts` после успешного `createSign`.
 
-**Получатели:** автор + модератор + контрагент документа, минус подписант. Адрес = `user.notificationEmail || user.email`. Юзер исключается, если `notificationsEnabled=false`. Документ полностью молчит, если его `notificationsEnabled=false`. Подписант никогда не получает копию.
+**Получатели (с 2026-06-05):**
+- **Внешняя сторона:** только участники-**контрагенты** документа (author/counterparty/moderator с `role==='counterparty'`), минус подписант. Адрес = `user.notificationEmail || user.email`, юзер исключается при `notificationsEnabled=false`. Сотрудники-участники (admin/moderator/lawyer/boogalter) персонально письма НЕ получают.
+- **Наша сторона:** управляемый глобальный список `NotificationRecipient` (поля `email`, `label?`, `enabled`) — все `enabled` адреса уведомляются при ЛЮБОМ подписании. Решает проблему «контрагент-автор, другая сторона неизвестна». Сидируется 3 адресами `hurrem-*@ukr.net`.
+- Дедуп по email, подписант исключается, документ молчит при `Document.notificationsEnabled=false`.
+
+**Управление списком `NotificationRecipient`:** только не-контрагенты. CRUD `GET/POST /api/admin/notification-recipient`, `PATCH/DELETE /api/admin/notification-recipient/[id]` (guard `server/utils/requireStaff.ts`). UI: `components/NotificationRecipientsWindow.vue` (кнопка-конверт рядом с шестерёнкой профиля в `SideBar.vue`, видна не-контрагентам). Store-экшены в `user.store.ts`. Поле «Сповіщення на пошту» в `ProfileWindow.vue` теперь видно ТОЛЬКО контрагентам.
 
 **Управление настройками:**
 - Профиль (`PATCH /api/auth/profile/notifications`) — любой авторизованный, своё `notificationEmail` + `notificationsEnabled`. UI: `components/ProfileWindow.vue`
